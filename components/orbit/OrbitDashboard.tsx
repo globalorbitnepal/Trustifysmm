@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { OrbitSiteConfig } from "@/lib/orbit/types";
+import { OrbitBrandLogo } from "@/components/orbit/OrbitBrandLogo";
 
 type OrbitSection =
   | "overview"
@@ -129,13 +130,11 @@ export function OrbitDashboard() {
   return (
     <div className="orbit-shell">
       <aside className="orbit-sidebar">
-        <div className="orbit-brand">
-          <span className="orbit-brand-mark" />
-          <div>
-            <strong>Orbit</strong>
-            <span>Site command</span>
-          </div>
-        </div>
+        <OrbitBrandLogo variant="sidebar" />
+        <p className="orbit-brand-caption">
+          <span className="orbit-brand-caption-pill">/ Orbit</span>
+          Site command
+        </p>
         <nav className="orbit-nav">
           {NAV.map((item) => (
             <button

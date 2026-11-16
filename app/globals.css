@@ -4441,18 +4441,86 @@ button {
   justify-content: space-between;
   width: min(1440px, calc(100% - 48px));
   margin: 0 auto;
-  padding: 24px 0 0;
+  padding: 18px 0 4px;
   gap: 16px;
 }
 
-.orbit-cc-logo {
+.orbit-cc-logo,
+.orbit-brand-logo {
   display: block;
   line-height: 0;
+  flex-shrink: 0;
+  text-decoration: none;
 }
 
-.orbit-cc-logo img {
-  width: clamp(140px, 18vw, 188px);
-  height: auto;
+.orbit-cc-logo-plate,
+.orbit-brand-logo-plate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: rgba(4, 2, 10, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.orbit-cc-logo-plate {
+  padding: 8px 16px 8px 12px;
+  border-radius: 16px;
+  background: rgba(4, 2, 10, 0.78);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.orbit-brand-logo-plate {
+  padding: 8px 12px 8px 10px;
+  border-radius: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.orbit-brand-logo-img {
+  display: block;
+  width: auto;
+  object-fit: contain;
+  object-position: left center;
+  background: transparent;
+}
+
+.orbit-brand-logo-img--login {
+  height: clamp(70px, 7.2vw, 92px);
+  max-width: min(440px, 74vw);
+}
+
+.orbit-brand-logo-img--sidebar {
+  height: clamp(46px, 5vw, 58px);
+  max-width: 100%;
+}
+
+.orbit-brand-logo--sidebar {
+  padding: 4px 8px 2px;
+}
+
+.orbit-brand-caption {
+  margin: -4px 10px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(224, 216, 255, 0.55);
+}
+
+.orbit-brand-caption-pill {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #e9d5ff;
+  background: rgba(124, 58, 237, 0.22);
+  border: 1px solid rgba(167, 139, 250, 0.35);
 }
 
 .orbit-cc-restricted {
@@ -4483,12 +4551,22 @@ button {
   z-index: 1;
   width: min(1440px, calc(100% - 48px));
   margin: 0 auto;
-  min-height: calc(100dvh - 88px);
+  min-height: calc(100dvh - 82px);
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(340px, 440px);
   align-items: center;
   gap: clamp(28px, 5vw, 72px);
-  padding: clamp(24px, 4vw, 48px) 0 clamp(40px, 6vw, 64px);
+  padding: clamp(8px, 1.8vh, 22px) 0 clamp(36px, 5vw, 58px);
+}
+
+.orbit-cc-hero {
+  align-self: center;
+  transform: translateY(clamp(-48px, -6vh, -26px));
+}
+
+.orbit-cc-signin-wrap {
+  align-self: center;
+  transform: translateY(clamp(8px, 1.5vh, 18px));
 }
 
 .orbit-cc-tag {
@@ -4798,6 +4876,15 @@ button {
   .orbit-cc-layout {
     grid-template-columns: 1fr;
     min-height: auto;
+    padding-top: 12px;
+  }
+
+  .orbit-cc-hero {
+    transform: none;
+  }
+
+  .orbit-cc-signin-wrap {
+    transform: none;
   }
 
   .orbit-cc-hero h1 .orbit-cc-gradient {
@@ -4851,32 +4938,6 @@ button {
   position: sticky;
   top: 0;
   height: 100vh;
-}
-
-.orbit-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
-}
-
-.orbit-brand-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #a855f7, #287bff);
-  box-shadow: 0 0 24px rgba(168, 85, 247, 0.45);
-}
-
-.orbit-brand strong {
-  display: block;
-  font-size: 18px;
-  color: #fff;
-}
-
-.orbit-brand span {
-  font-size: 12px;
-  color: rgba(224, 216, 255, 0.55);
 }
 
 .orbit-nav {

@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { OrbitBrandLogo } from "@/components/orbit/OrbitBrandLogo";
 
 const FEATURES = [
   {
@@ -100,9 +101,7 @@ export function OrbitLogin() {
       </div>
 
       <header className="orbit-cc-top">
-        <a href="/" className="orbit-cc-logo" aria-label="TrustifySMM home">
-          <img src="/brand/logo-on-dark.png" alt="" width={1024} height={341} />
-        </a>
+        <OrbitBrandLogo variant="login" />
         <p className="orbit-cc-restricted">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden>
             <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" />
