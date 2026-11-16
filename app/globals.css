@@ -11,7 +11,7 @@ body {
 }
 
 body {
-  font-family: var(--font-poppins), Poppins, system-ui, sans-serif;
+  font-family: var(--font-outfit), Outfit, system-ui, sans-serif;
   overflow-x: hidden;
 }
 
@@ -29,12 +29,12 @@ button {
   position: relative;
   min-height: 100svh;
   isolation: isolate;
-  overflow: hidden;
+  overflow-x: hidden;
   background:
-    radial-gradient(70% 80% at 12% 18%, rgba(192, 80, 255, 0.38), transparent 58%),
-    radial-gradient(55% 70% at 88% 30%, rgba(56, 189, 248, 0.28), transparent 55%),
-    radial-gradient(50% 50% at 70% 90%, rgba(168, 85, 247, 0.28), transparent 60%),
-    linear-gradient(165deg, #1b0a4f 0%, #2a1278 42%, #3a1d8a 72%, #1c0b55 100%);
+    radial-gradient(80% 90% at 8% 8%, rgba(196, 90, 255, 0.42), transparent 52%),
+    radial-gradient(60% 80% at 92% 28%, rgba(56, 189, 248, 0.32), transparent 52%),
+    radial-gradient(50% 50% at 78% 92%, rgba(34, 211, 238, 0.22), transparent 55%),
+    linear-gradient(160deg, #16084a 0%, #271075 38%, #3b1d94 68%, #1a0b58 100%);
 }
 
 .hero-shell::before {
@@ -285,7 +285,7 @@ button {
 }
 
 .headline .grad {
-  background: linear-gradient(90deg, #c084fc 0%, #d946ef 45%, #67e8f9 100%);
+  background: linear-gradient(90deg, #c084fc 0%, #e879f9 42%, #93c5fd 78%, #67e8f9 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -328,6 +328,7 @@ button {
   aspect-ratio: 1;
   margin-left: auto;
   z-index: 2;
+  overflow: visible;
 }
 
 .orbit-glow {
@@ -366,23 +367,24 @@ button {
 .glass-node {
   position: absolute;
   z-index: 2;
-  animation: floaty 6s ease-in-out infinite;
 }
 
 .glass-node img {
   width: 100%;
   height: auto;
   display: block;
-  filter: drop-shadow(0 16px 28px rgba(12, 4, 40, 0.4));
 }
 
 .glass-node-core {
   z-index: 4;
-  animation-duration: 8s;
 }
 
-.glass-node-lift img {
-  filter: drop-shadow(0 16px 28px rgba(12, 4, 40, 0.4)) brightness(1.45) contrast(1.1);
+.orbit-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .ribbon {
