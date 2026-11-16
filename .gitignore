@@ -1,0 +1,28 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/generated/prisma
+
+# Next.js
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Generated Prisma
+/generated/prisma/
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
