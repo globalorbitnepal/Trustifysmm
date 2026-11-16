@@ -26,3 +26,8 @@ npm-debug.log*
 
 # TypeScript build cache
 tsconfig.tsbuildinfo
+
+# Generated source JPGs (transparent PNGs are committed)
+public/brand/*.jpg
+public/brand/*-raw.png
+public/brand/logo-official-clean.png

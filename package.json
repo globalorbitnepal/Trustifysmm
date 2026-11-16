@@ -1,27 +1,30 @@
 {
+  "name": "trustifysmm",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3010",
+    "build": "next build",
+    "start": "next start --port 3010",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "assets:knockout": "node scripts/knockout.mjs"
+  },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "dotenv": "^18.0.10",
-    "next": "^16.4.6",
+    "next": "^15.5.6",
     "prisma": "^6.19.3",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.5",
-    "@types/node": "^26.6.6",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.4.6",
-    "tailwindcss": "^4.3.5",
-    "typescript": "^6.0.3"
-  },
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "eslint-config-next": "^15.5.6",
+    "sharp": "^0.34.4",
+    "typescript": "^5.9.3"
   }
 }
