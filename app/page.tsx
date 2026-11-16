@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExactHero } from "@/components/ExactHero";
 import { Header } from "@/components/Header";
 import { NeonWaves } from "@/components/NeonWaves";
 import { OrbitCluster } from "@/components/OrbitCluster";
@@ -6,51 +7,39 @@ import { OrbitCluster } from "@/components/OrbitCluster";
 export default function HomePage() {
   return (
     <main className="hero-shell">
-      <Header />
-      <section className="hero">
-        <div>
-          <div className="badge">
-            <Lightning />
-            #1 SMM Panel for Resellers & Agencies
+      <ExactHero />
+
+      <div className="hero-html">
+        <Header />
+        <section className="hero">
+          <div>
+            <div className="badge">
+              <Lightning />
+              #1 SMM Panel for Resellers & Agencies
+            </div>
+            <h1 className="headline">
+              Grow Your
+              <br />
+              Social Media Faster
+              <br />
+              with <span className="grad">TrustifySMM</span>
+            </h1>
+            <p className="lede">
+              Reliable, affordable and fully automated SMM services to boost your
+              presence on all major social media platforms.
+            </p>
+            <div className="hero-actions">
+              <Link className="btn btn-primary" href="/signup">
+                <Rocket /> Create Free Account <span aria-hidden>→</span>
+              </Link>
+              <Link className="btn btn-demo" href="/#demo">
+                <Play /> Watch Demo
+              </Link>
+            </div>
           </div>
-          <h1 className="headline">
-            Grow Your
-            <br />
-            <span className="nowrap">Social Media Faster</span>
-            <br />
-            with <span className="grad">TrustifySMM</span>
-          </h1>
-          <p className="lede">
-            Reliable, affordable and fully automated SMM services to boost your
-            presence on all major social media platforms.
-          </p>
-          <div className="hero-actions">
-            <Link className="btn btn-primary" href="/signup">
-              <Rocket /> Create Free Account <span aria-hidden>→</span>
-            </Link>
-            <Link className="btn btn-demo" href="/#demo">
-              <Play /> Watch Demo
-            </Link>
-          </div>
-        </div>
-        <OrbitCluster />
-      </section>
-      <NeonWaves />
-      <div className="waves top-left" aria-hidden>
-        <svg viewBox="0 0 400 240" fill="none">
-          <path
-            d="M-20 160C40 40 90 20 140 70C190 120 150 210 230 190C310 170 300 40 420 80"
-            stroke="url(#tl)"
-            strokeWidth="16"
-            strokeLinecap="round"
-          />
-          <defs>
-            <linearGradient id="tl" x1="0" y1="0" x2="400" y2="0">
-              <stop stopColor="#e879f9" />
-              <stop offset="1" stopColor="#67e8f9" />
-            </linearGradient>
-          </defs>
-        </svg>
+          <OrbitCluster />
+        </section>
+        <NeonWaves />
       </div>
     </main>
   );
@@ -66,13 +55,9 @@ function Lightning() {
 
 function Rocket() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M12 3c4 2 7 7 7 12-3 0-6.2.6-9 2.2C7.2 14.2 6 9.8 12 3z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <circle cx="14" cy="9" r="1.3" fill="currentColor" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12.2 2.4c3.6 2.2 6.6 6.4 6.8 11.2-2.8-.1-5.7.6-8.4 2.2C8.4 12.2 8.6 7.4 12.2 2.4z" />
+      <path d="M8 16.4c-.8 1.6-1.4 3.4-1.2 5.2 1.8.1 3.4-.8 4.8-1.8-.9-1.2-2.2-2.4-3.6-3.4z" opacity="0.85" />
     </svg>
   );
 }
