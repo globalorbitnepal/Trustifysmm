@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 
 export default function SignUpPage() {
   return (
-    <main className="hero-shell">
+    <main className="page">
       <Header />
       <section className="page-pad">
         <h1 className="headline">Create Free Account</h1>

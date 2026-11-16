@@ -1,13 +1,13 @@
 const icons = [
-  { src: "/brand/icon-youtube.png?v=6", name: "YouTube", left: "8%", top: "20%", size: "20%" },
-  { src: "/brand/icon-instagram.png?v=6", name: "Instagram", left: "32%", top: "2%", size: "18%" },
-  { src: "/brand/icon-tiktok.png?v=6", name: "TikTok", left: "56%", top: "-2%", size: "18%" },
-  { src: "/brand/icon-facebook.png?v=6", name: "Facebook", left: "74%", top: "14%", size: "19%" },
-  { src: "/brand/icon-telegram.png?v=6", name: "Telegram", left: "78%", top: "42%", size: "17%" },
-  { src: "/brand/icon-threads.png?v=6", name: "Threads", left: "64%", top: "66%", size: "17%" },
-  { src: "/brand/icon-snapchat.png?v=6", name: "Snapchat", left: "40%", top: "74%", size: "17%" },
-  { src: "/brand/icon-whatsapp.png?v=6", name: "WhatsApp", left: "16%", top: "62%", size: "18%" },
-  { src: "/brand/icon-x.png?v=6", name: "X", left: "6%", top: "42%", size: "17%" },
+  { src: "/brand/icon-youtube.png?v=8", name: "YouTube", left: "8%", top: "20%", size: "20%" },
+  { src: "/brand/icon-instagram.png?v=8", name: "Instagram", left: "32%", top: "2%", size: "18%" },
+  { src: "/brand/icon-tiktok.png?v=8", name: "TikTok", left: "56%", top: "-2%", size: "18%" },
+  { src: "/brand/icon-facebook.png?v=8", name: "Facebook", left: "74%", top: "14%", size: "19%" },
+  { src: "/brand/icon-telegram.png?v=8", name: "Telegram", left: "78%", top: "42%", size: "17%" },
+  { src: "/brand/icon-threads.png?v=8", name: "Threads", left: "64%", top: "66%", size: "17%" },
+  { src: "/brand/icon-snapchat.png?v=8", name: "Snapchat", left: "40%", top: "74%", size: "17%" },
+  { src: "/brand/icon-whatsapp.png?v=8", name: "WhatsApp", left: "16%", top: "62%", size: "18%" },
+  { src: "/brand/icon-x.png?v=8", name: "X", left: "6%", top: "42%", size: "17%" },
 ] as const;
 
 export function OrbitCluster() {
@@ -51,7 +51,7 @@ export function OrbitCluster() {
         />
       </svg>
       <div className="glass-node glass-node-core" style={{ left: "30%", top: "26%", width: "40%" }}>
-        <img src="/brand/icon-trustify-t.png?v=6" alt="" />
+        <img src="/brand/icon-trustify-t.png?v=8" alt="" />
       </div>
       {icons.map((icon) => (
         <div

@@ -8,7 +8,10 @@
     "start": "next start --port 3010",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "assets:knockout": "node scripts/knockout.mjs"
+    "assets:knockout": "node scripts/knockout.mjs",
+    "assets:glass-clean": "node scripts/glass-clean.mjs",
+    "assets:crypto-clean": "node scripts/crypto-clean.mjs",
+    "data:import-pricing": "node scripts/import-honestsmm-pricing.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

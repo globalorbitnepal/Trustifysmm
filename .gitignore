@@ -27,6 +27,9 @@ npm-debug.log*
 # TypeScript build cache
 tsconfig.tsbuildinfo
 
+# Local API demo store (balances, orders, invoices)
+data/runtime/
+
 # Generated source JPGs (transparent PNGs are committed)
 public/brand/*.jpg
 public/brand/*-raw.png

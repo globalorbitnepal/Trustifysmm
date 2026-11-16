@@ -1,24 +1,24 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const outfit = Outfit({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-sans",
   display: "swap",
   weight: ["500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
-  title: "TrustifySMM — #1 SMM Panel for Resellers & Agencies",
+  title: "TrustifySMM — Premium SMM Panel",
   description:
-    "Reliable, affordable and fully automated SMM services to boost your presence on all major social media platforms.",
+    "Power your social media growth with reliable, affordable and automated services across the platforms you love.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={outfit.variable}>{children}</body>
+      <body className={jakarta.variable}>{children}</body>
     </html>
   );
 }
