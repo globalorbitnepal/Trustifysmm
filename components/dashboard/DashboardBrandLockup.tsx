@@ -6,22 +6,30 @@ type Props = {
   className?: string;
 };
 
-/** Same wordmark assets as the public site — crisp per theme. */
+/** Transparent mark + vector wordmark — sharp in light and dark, no logo PNG crop. */
 export function DashboardBrandLockup({ compact = false, theme = "dark", className = "" }: Props) {
-  const logo = theme === "light" ? "/brand/orbit-logo-light.png" : "/brand/orbit-logo-dark.png";
-
   return (
     <Link
       href="/dashboard"
       className={`cp-brand-lockup${theme === "light" ? " is-light" : ""}${compact ? " is-compact" : ""} ${className}`.trim()}
       aria-label="TrustifySMM customer panel"
     >
-      {compact ? (
-        <span className="cp-brand-mark cp-brand-mark--vector" aria-hidden>
-          T
+      <img
+        className="cp-brand-mark-img"
+        src="/brand/logo-mark-transparent.png"
+        alt=""
+        width={512}
+        height={512}
+        decoding="async"
+        draggable={false}
+      />
+      {compact ? null : (
+        <span className="cp-brand-copy">
+          <strong>
+            Trustify<span>SMM</span>
+          </strong>
+          <small>— SMM PANEL —</small>
         </span>
-      ) : (
-        <img className="cp-brand-logo" src={logo} alt="TrustifySMM SMM Panel" width={964} height={320} decoding="async" draggable={false} />
       )}
     </Link>
   );
