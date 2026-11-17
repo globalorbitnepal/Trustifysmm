@@ -1,9 +1,21 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { ORBIT_COOKIE_NAME, verifyOrbitSessionToken } from "@/lib/orbit/auth";
+import { CUSTOMER_COOKIE_NAME, verifyCustomerSessionTokenEdge } from "@/lib/customer/session-edge";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/dashboard")) {
+    const token = request.cookies.get(CUSTOMER_COOKIE_NAME)?.value;
+    const userId = await verifyCustomerSessionTokenEdge(token);
+    if (!userId) {
+      const signin = new URL("/signin", request.url);
+      signin.searchParams.set("next", pathname);
+      return NextResponse.redirect(signin);
+    }
+    return NextResponse.next();
+  }
 
   if (!pathname.startsWith("/orbit") && !pathname.startsWith("/api/orbit")) {
     return NextResponse.next();
@@ -29,5 +41,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/orbit/:path*", "/api/orbit/:path*"],
+  matcher: ["/dashboard/:path*", "/dashboard", "/orbit/:path*", "/api/orbit/:path*"],
 };

@@ -1,0 +1,9 @@
+# Instant workaround while ISP DNS still shows Hostinger parking (no A record).
+# 1. Open Notepad as Administrator
+# 2. File -> Open -> C:\Windows\System32\drivers\etc\hosts
+# 3. Add these two lines at the end, save
+# 4. ipconfig /flushdns
+# Remove these lines after dnschecker.org shows Cloudflare IPs everywhere.
+
+51.15.21.166 trustifysmm.com
+51.15.21.166 www.trustifysmm.com

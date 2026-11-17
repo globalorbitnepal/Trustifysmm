@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SignInPageContent } from "@/components/SignInPageContent";
@@ -42,7 +43,9 @@ export default function SignInPage() {
       <section className="auth-signup">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
         <div className="auth-signup-inner">
-          <SignInPageContent />
+          <Suspense fallback={<div className="auth-signup-card" />}>
+            <SignInPageContent />
+          </Suspense>
         </div>
       </section>
       <Footer />

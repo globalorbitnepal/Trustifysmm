@@ -46,6 +46,32 @@ export async function getAccountByKey(key: string) {
   return store.accounts.find((a) => a.key === key) ?? null;
 }
 
+/** Register or refresh a customer wallet without resetting balance. */
+export async function ensureDemoAccount(input: { email: string; key: string; balance: number }) {
+  const store = await ensureStore();
+  const byKey = store.accounts.find((a) => a.key === input.key);
+  const byEmail = store.accounts.find((a) => a.email.toLowerCase() === input.email.toLowerCase());
+  if (byKey) {
+    byKey.email = input.email;
+    await persist(store);
+    return byKey;
+  }
+  if (byEmail) {
+    byEmail.key = input.key;
+    await persist(store);
+    return byEmail;
+  }
+  const account: DemoAccount = {
+    key: input.key,
+    email: input.email,
+    balance: input.balance,
+    currency: "USD",
+  };
+  store.accounts.push(account);
+  await persist(store);
+  return account;
+}
+
 export async function addBalance(key: string, amountUsd: number) {
   const store = await ensureStore();
   const account = store.accounts.find((a) => a.key === key);

@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AuthDivider } from "@/components/AuthDivider";
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 
 const PERKS = [
   {
@@ -50,6 +53,7 @@ const PERKS = [
 ] as const;
 
 export function SignUpPageContent() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,10 +61,9 @@ export function SignUpPageContent() {
   const [terms, setTerms] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (password !== confirm) {
@@ -76,15 +79,28 @@ export function SignUpPageContent() {
       return;
     }
     setLoading(true);
-    window.setTimeout(() => {
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Could not create account.");
+        return;
+      }
+      router.replace("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Connection failed. Try again.");
+    } finally {
       setLoading(false);
-      setDone(true);
-    }, 700);
+    }
   }
 
   const canSubmit =
     !loading &&
-    !done &&
     name.trim().length > 1 &&
     email.includes("@") &&
     password.length >= 8 &&
@@ -147,23 +163,10 @@ export function SignUpPageContent() {
             <p>Already reselling? Get your API key in minutes.</p>
           </div>
 
-          {done ? (
-            <div className="auth-signup-success">
-              <p>
-                <strong>You&apos;re on the list.</strong> Self-serve panel signup is rolling out — we saved your details
-                locally. Open support or sign in if you already have access.
-              </p>
-              <div className="auth-signup-success-actions">
-                <Link className="btn btn-primary" href="/signin">
-                  Sign in
-                </Link>
-                <Link className="btn btn-ghost" href="/support">
-                  Help center
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <form className="auth-signup-form" onSubmit={onSubmit}>
+          <GoogleAuthButton mode="signup" disabled={loading} />
+          <AuthDivider />
+
+          <form className="auth-signup-form" onSubmit={onSubmit}>
               <label htmlFor="signup-name">Full name</label>
               <div className="auth-signup-field">
                 <span className="auth-signup-field-icon" aria-hidden>
@@ -265,21 +268,18 @@ export function SignUpPageContent() {
                   </>
                 )}
               </button>
-            </form>
-          )}
+          </form>
 
           <p className="auth-signup-foot">
             <ShieldIcon />
             Encrypted signup · No card required
           </p>
-          {!done ? (
-            <p className="auth-signup-alt">
-              Already have an account?{" "}
-              <Link href="/signin" className="auth-signup-link">
-                Sign in
-              </Link>
-            </p>
-          ) : null}
+          <p className="auth-signup-alt">
+            Already have an account?{" "}
+            <Link href="/signin" className="auth-signup-link">
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </div>

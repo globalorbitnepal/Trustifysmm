@@ -1,15 +1,58 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  passwordHash  String?
+  googleId      String?   @unique
+  role          UserRole  @default(CUSTOMER)
+  apiKey        String    @unique
+  balance       Decimal   @default(0) @db.Decimal(12, 4)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        PanelOrder[]
+  transactions  WalletTransaction[]
+}
+
+model PanelOrder {
+  id         Int      @id @default(autoincrement())
+  externalId Int
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service    Int
+  link       String
+  quantity   Int
+  charge     Decimal  @db.Decimal(12, 4)
+  status     String
+  remains    Int
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([externalId])
+}
+
+model WalletTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Decimal  @db.Decimal(12, 4)
+  type      String
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

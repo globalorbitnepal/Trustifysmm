@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { AuthDivider } from "@/components/AuthDivider";
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 
 const PERKS = [
   {
@@ -51,16 +54,31 @@ const PERKS = [
   },
 ] as const;
 
+const OAUTH_ERRORS: Record<string, string> = {
+  access_denied: "Google sign-in was cancelled.",
+  invalid_oauth_state: "Sign-in expired. Please try again.",
+  google_not_configured: "Google Sign-In is not configured yet.",
+  account_conflict: "Could not link this Google account. Contact support.",
+  google_callback_failed: "Google sign-in failed. Try again.",
+  session_unavailable: "Server session secret is missing. Set SESSION_SECRET.",
+};
+
 export function SignInPageContent() {
+  const router = useRouter();
+  const search = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  function onSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    const code = search.get("error");
+    if (code) setError(OAUTH_ERRORS[code] ?? "Could not sign in. Try again.");
+  }, [search]);
+
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (!email.includes("@")) {
@@ -72,13 +90,28 @@ export function SignInPageContent() {
       return;
     }
     setLoading(true);
-    window.setTimeout(() => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, remember }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Could not sign in.");
+        return;
+      }
+      const next = search.get("next") || "/dashboard";
+      router.replace(next);
+      router.refresh();
+    } catch {
+      setError("Connection failed. Try again.");
+    } finally {
       setLoading(false);
-      setDone(true);
-    }, 650);
+    }
   }
 
-  const canSubmit = !loading && !done && email.includes("@") && password.length >= 4;
+  const canSubmit = !loading && email.includes("@") && password.length >= 4;
 
   return (
     <div className="auth-signup-split">
@@ -135,23 +168,10 @@ export function SignInPageContent() {
             <p>Use the email and password from your reseller account.</p>
           </div>
 
-          {done ? (
-            <div className="auth-signup-success">
-              <p>
-                <strong>Panel login is almost live.</strong> We couldn&apos;t verify credentials yet — browse services,
-                read the API docs or contact support with your order ID while access rolls out.
-              </p>
-              <div className="auth-signup-success-actions">
-                <Link className="btn btn-primary" href="/services">
-                  Browse services
-                </Link>
-                <Link className="btn btn-ghost" href="/api">
-                  API docs
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <form className="auth-signup-form" onSubmit={onSubmit}>
+          <GoogleAuthButton mode="login" disabled={loading} />
+          <AuthDivider />
+
+          <form className="auth-signup-form" onSubmit={onSubmit}>
               <label htmlFor="signin-email">Email</label>
               <div className="auth-signup-field">
                 <span className="auth-signup-field-icon" aria-hidden>
@@ -214,21 +234,18 @@ export function SignInPageContent() {
                   </>
                 )}
               </button>
-            </form>
-          )}
+          </form>
 
           <p className="auth-signup-foot">
             <ShieldIcon />
             Secure session · HTTPS only
           </p>
-          {!done ? (
-            <p className="auth-signup-alt">
-              New to TrustifySMM?{" "}
-              <Link href="/signup" className="auth-signup-link">
-                Create free account
-              </Link>
-            </p>
-          ) : null}
+          <p className="auth-signup-alt">
+            New to TrustifySMM?{" "}
+            <Link href="/signup" className="auth-signup-link">
+              Create free account
+            </Link>
+          </p>
         </div>
       </div>
     </div>
