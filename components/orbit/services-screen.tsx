@@ -218,7 +218,7 @@ export function ServicesScreen() {
         <button className="ob-btn" type="button" disabled={!data || page >= data.pages} onClick={() => setPage((value) => value + 1)}>Next</button>
       </div>
 
-      <article className="ob-card">
+      <article className="ob-card" id="categories">
         <h3 style={{ marginTop: 0 }}>Categories</h3>
         <div className="ob-table-wrap">
           <table className="ob-table">

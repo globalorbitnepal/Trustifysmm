@@ -30,98 +30,221 @@ type Traffic = {
   paths: { path: string; count: number }[];
 };
 
-const donutColors = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#9aa6c9"];
+const donutColors = ["#3b82f6", "#14b8a6", "#f59e0b", "#ec4899", "#8b5cf6", "#06b6d4"];
 const ranges = [
-  { id: "24h", label: "24 hrs" },
-  { id: "7", label: "7 days" },
-  { id: "15", label: "15 days" },
-  { id: "30", label: "30 days" },
-  { id: "90", label: "90 days" },
-  { id: "1y", label: "1 year" },
+  { id: "24h", label: "Last 24 Hours" },
+  { id: "7", label: "Last 7 Days" },
+  { id: "15", label: "Last 15 Days" },
+  { id: "30", label: "Last 30 Days" },
+  { id: "90", label: "Last 90 Days" },
+  { id: "1y", label: "Last 1 Year" },
 ];
+
+const platformIcons: Record<string, { src?: string; color: string; label: string }> = {
+  instagram: { src: "/brand/icon-instagram.png", color: "#a855f7", label: "Instagram" },
+  youtube: { src: "/brand/icon-youtube.png", color: "#ef4444", label: "YouTube" },
+  tiktok: { src: "/brand/icon-tiktok.png", color: "#111827", label: "TikTok" },
+  facebook: { src: "/brand/icon-facebook.png", color: "#2563eb", label: "Facebook" },
+  telegram: { src: "/brand/icon-telegram.png", color: "#0ea5e9", label: "Telegram" },
+  twitter: { src: "/brand/icon-x.png", color: "#1f2937", label: "X / Twitter" },
+  x: { src: "/brand/icon-x.png", color: "#1f2937", label: "X / Twitter" },
+  whatsapp: { src: "/brand/icon-whatsapp.png", color: "#22c55e", label: "WhatsApp" },
+  snapchat: { src: "/brand/icon-snapchat.png", color: "#eab308", label: "Snapchat" },
+  threads: { src: "/brand/icon-threads.png", color: "#334155", label: "Threads" },
+};
 
 export function DashboardScreen() {
   const [range, setRange] = useState("30");
   const { data, error, loading } = useOrbit<Overview>(`/api/orbit/overview?range=${range}`);
   const traffic = useOrbit<Traffic>(`/api/orbit/traffic?range=${range}`);
-  const orderSpark = useMemo(() => data?.series.slice(-10).map((row) => row.orders) ?? [], [data]);
-  const customerSpark = useMemo(() => data?.series.slice(-10).map((row) => row.customers) ?? [], [data]);
-  const statusSlices = (data?.statuses ?? []).slice(0, 6).map((row, index) => ({
-    label: row.status,
-    value: row.count,
-    color: donutColors[index % donutColors.length],
-  }));
-  const statusTotal = statusSlices.reduce((sum, row) => sum + row.value, 0);
-  const platformMax = Math.max(1, ...(data?.platforms ?? []).map((row) => row.count));
+
+  const statusSlices = useMemo(() => {
+    const raw = (data?.statuses ?? []).slice(0, 5).map((row, index) => ({
+      label: row.status,
+      value: row.count,
+      color: donutColors[index % donutColors.length],
+    }));
+    if (raw.length) return raw;
+    return [
+      { label: "Completed", value: 0, color: "#3b82f6" },
+      { label: "Processing", value: 0, color: "#14b8a6" },
+      { label: "Pending", value: 0, color: "#f59e0b" },
+      { label: "Cancelled", value: 0, color: "#ec4899" },
+    ];
+  }, [data]);
+
+  const platformRows = useMemo(() => {
+    const list = data?.platforms ?? [];
+    const total = list.reduce((s, r) => s + r.count, 0) || 1;
+    const max = Math.max(1, ...list.map((r) => r.count));
+    if (list.length) {
+      return list.slice(0, 5).map((r) => {
+        const key = r.platform.toLowerCase();
+        const meta = platformIcons[key] ?? { color: "#6d3df0", label: r.platform };
+        return {
+          key: r.platform,
+          label: meta.label,
+          src: meta.src,
+          color: meta.color,
+          count: r.count,
+          pct: Math.round((r.count / total) * 1000) / 10,
+          bar: Math.max(8, (r.count / max) * 100),
+        };
+      });
+    }
+    return (["instagram", "youtube", "tiktok", "facebook"] as const).map((k) => ({
+      key: k,
+      label: platformIcons[k].label,
+      src: platformIcons[k].src,
+      color: platformIcons[k].color,
+      count: 0,
+      pct: 0,
+      bar: 6,
+    }));
+  }, [data]);
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+  const activityItems = useMemo(() => {
+    const out: { id: string; dot: string; text: string; when: string }[] = [];
+    for (const o of (data?.recentOrders ?? []).slice(0, 2)) {
+      out.push({ id: `ord-${o.id}`, dot: "#3b82f6", text: `New order #TS-${o.id} placed (${o.service})`, when: o.createdAt ? timeAgo(o.createdAt) : "recent" });
+    }
+    for (const t of (data?.recentTransactions ?? []).slice(0, 2)) {
+      out.push({ id: `tx-${t.id}`, dot: "#14b8a6", text: `${t.type === "deposit" ? "Deposit received" : "Wallet update"}: ${usd(t.amount)}`, when: timeAgo(t.createdAt) });
+    }
+    for (const k of (data?.recentTickets ?? []).slice(0, 1)) {
+      out.push({ id: `tk-${k.id}`, dot: "#8b5cf6", text: `Support ticket opened: ${k.subject}`, when: timeAgo(k.updatedAt) });
+    }
+    for (const c of (data?.recentCustomers ?? []).slice(0, 1)) {
+      out.push({ id: `cu-${c.id}`, dot: "#ec4899", text: `New customer registered (${c.email})`, when: timeAgo(c.createdAt) });
+    }
+    return out.slice(0, 5);
+  }, [data]);
 
   return (
     <div className="ob-home">
       <section className="ob-hero">
         <div className="ob-hero-copy">
-          <span className="ob-hero-tag">Orbit Control Center</span>
-          <h2>Welcome back, Admin Owner 👋</h2>
+          <h2>
+            Welcome back, <span>Admin Owner</span> 👋
+          </h2>
           <p>Manage your entire TrustifySMM business from one powerful dashboard.</p>
           <div className="ob-hero-meta">
-            <span className="ob-hero-pill">{loading ? "Loading live data…" : new Date().toLocaleString()}</span>
-            <span className="ob-hero-pill">{data?.gateway.live ? "● System online" : "● Gateway setup needed"}</span>
-            <span className="ob-hero-pill">{traffic.data?.visits ?? 0} site visits in range</span>
+            <span>📅 {loading ? "Syncing…" : dateStr}</span>
+            <span>🕒 {timeStr}</span>
+            <span className="ob-online-dot">
+              <i style={{ background: data?.gateway.live ? "#22c55e" : "#f59e0b" }} />
+              {data?.gateway.live ? "System Online" : "System Online · Gateway Pending"}
+            </span>
           </div>
         </div>
-        <div className="ob-hero-art" aria-hidden>
-          <span className="ob-orb ob-orb--a" />
-          <span className="ob-orb ob-orb--b" />
-          <span className="ob-orb ob-orb--c" />
-          <div className="ob-hero-card">
-            <span>Live revenue</span>
-            <strong>{data ? usd(data.stats.revenue) : "—"}</strong>
-            <small>{ranges.find((row) => row.id === range)?.label}</small>
-          </div>
+        <div className="ob-hero-visual" aria-hidden>
+          <img src="/brand/orbit-hero-art.png" alt="" />
         </div>
       </section>
       {error ? <p className="ob-error">{error}</p> : null}
 
       <div className="ob-stat-grid ob-stat-grid--5">
-        <StatCard label="Total Customers" value={String(data?.stats.customers ?? "—")} hint={`+${data?.stats.customersToday ?? 0} today`} spark={customerSpark} icon={<OrbitIcon name="customers" />} />
-        <StatCard label="New Customers" value={String(data?.stats.customersInRange ?? data?.stats.customersToday ?? "—")} hint="In selected range" spark={customerSpark} icon={<OrbitIcon name="customers" />} />
-        <StatCard label="Total Orders" value={String(data?.stats.orders ?? "—")} hint={`+${data?.stats.ordersToday ?? 0} today`} spark={orderSpark} icon={<OrbitIcon name="orders" />} />
-        <StatCard label="Orders in range" value={String(data?.stats.ordersInRange ?? data?.stats.ordersToday ?? "—")} hint="Tracked volume" spark={orderSpark} icon={<OrbitIcon name="activity" />} />
-        <StatCard label="Active Orders" value={String(data?.stats.activeOrders ?? "—")} hint={`${data?.stats.completedOrders ?? 0} completed`} spark={orderSpark} icon={<OrbitIcon name="services" />} />
+        <StatCard
+          tone="purple"
+          label="Total Customers"
+          value={(data?.stats.customers ?? 0).toLocaleString()}
+          hint={`${data?.stats.customersToday ?? 0} today`}
+          icon={<OrbitIcon name="customers" />}
+        />
+        <StatCard
+          tone="blue"
+          label="New Customers Today"
+          value={(data?.stats.customersToday ?? 0).toLocaleString()}
+          hint={`${data?.stats.customersInRange ?? 0} in range`}
+          icon={<OrbitIcon name="userPlus" />}
+        />
+        <StatCard
+          tone="pink"
+          label="Total Orders"
+          value={(data?.stats.orders ?? 0).toLocaleString()}
+          hint={`${data?.stats.completedOrders ?? 0} done`}
+          icon={<OrbitIcon name="orders" />}
+        />
+        <StatCard
+          tone="cyan"
+          label="Orders Today"
+          value={(data?.stats.ordersToday ?? 0).toLocaleString()}
+          hint={`${data?.stats.ordersInRange ?? 0} in range`}
+          icon={<OrbitIcon name="bolt" />}
+        />
+        <StatCard
+          tone="green"
+          label="Active Orders"
+          value={(data?.stats.activeOrders ?? 0).toLocaleString()}
+          hint="Live queue"
+          icon={<OrbitIcon name="check" />}
+        />
       </div>
 
       <div className="ob-dash-mid">
         <article className="ob-panel ob-card">
           <div className="ob-panel-head">
-            <div>
-              <h3>Revenue Overview</h3>
-              <strong className="ob-rev">{data ? usd(data.stats.revenue) : "—"}</strong>
-              <p className="ob-muted" style={{ margin: "2px 0 0" }}>{ranges.find((row) => row.id === range)?.label} · deposits {data ? usd(data.stats.deposits) : "—"}</p>
-            </div>
-            <div className="ob-chart-tabs ob-chart-tabs--wrap">
-              {ranges.map((item) => (
-                <button key={item.id} className={range === item.id ? "is-on" : ""} type="button" onClick={() => setRange(item.id)}>
-                  {item.label}
-                </button>
+            <h3 className="ob-sec-title">
+              <OrbitIcon name="activity" /> Revenue Overview
+            </h3>
+            <select className="ob-range-select" value={range} onChange={(e) => setRange(e.target.value)} aria-label="Time range">
+              {ranges.map((r) => (
+                <option key={r.id} value={r.id}>{r.label}</option>
               ))}
-            </div>
+            </select>
+          </div>
+          <div className="ob-rev-row">
+            <strong className="ob-rev">{data ? usd(data.stats.revenue) : "$0.00"}</strong>
+            <span className="ob-rev-delta">↑ Deposits {data ? usd(data.stats.deposits) : "$0.00"}</span>
           </div>
           <AreaChart series={data?.series ?? []} keys={["revenue", "deposits"]} />
         </article>
+
         <article className="ob-panel ob-card">
-          <h3>Order Status Distribution</h3>
-          {statusSlices.length ? <Donut slices={statusSlices} /> : <p className="ob-muted">No orders in this range.</p>}
-          {statusTotal ? <p className="ob-muted" style={{ marginTop: 8 }}>{statusTotal} orders in view</p> : null}
+          <div className="ob-panel-head">
+            <h3 className="ob-sec-title">
+              <OrbitIcon name="orders" /> Order Status Distribution
+            </h3>
+          </div>
+          <Donut
+            slices={statusSlices}
+            centerValue={(data?.stats.orders ?? 0).toLocaleString()}
+            centerLabel="Total Orders"
+          />
         </article>
+
         <article className="ob-panel ob-card">
-          <h3>Top Platforms</h3>
-          <div className="ob-bars">
-            {(data?.platforms ?? []).slice(0, 6).map((row) => (
-              <div key={row.platform} className="ob-bar-row">
-                <span>{row.platform}</span>
-                <i><b style={{ width: `${Math.max(8, (row.count / platformMax) * 100)}%` }} /></i>
-                <em>{row.count}</em>
+          <div className="ob-panel-head">
+            <h3 className="ob-sec-title">
+              <OrbitIcon name="activity" /> Top Platforms
+            </h3>
+            <select className="ob-range-select" value={range} onChange={(e) => setRange(e.target.value)} aria-label="Platform range">
+              {ranges.map((r) => (
+                <option key={r.id} value={r.id}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="ob-plat-list">
+            {platformRows.map((row) => (
+              <div key={row.key} className="ob-plat-row">
+                {row.src ? <img src={row.src} alt="" className="ob-plat-ico" /> : <span className="ob-plat-dot" style={{ background: row.color }} />}
+                <div className="ob-plat-mid">
+                  <div className="ob-plat-top">
+                    <strong>{row.label}</strong>
+                    <span>
+                      <b>{row.count.toLocaleString()}</b> <em>{row.pct}%</em>
+                    </span>
+                  </div>
+                  <i className="ob-plat-track">
+                    <b style={{ width: `${row.bar}%`, background: row.color }} />
+                  </i>
+                </div>
               </div>
             ))}
-            {!data?.platforms.length ? <p className="ob-muted">No platform orders yet.</p> : null}
           </div>
         </article>
       </div>
@@ -129,61 +252,84 @@ export function DashboardScreen() {
       <div className="ob-dash-low">
         <article className="ob-panel ob-card">
           <div className="ob-panel-head">
-            <h3>Quick Actions</h3>
-            <Link href="/orbit/orders">View all →</Link>
+            <div>
+              <h3 className="ob-sec-title"><OrbitIcon name="bolt" /> Quick Actions</h3>
+              <p className="ob-sub">Get started with these powerful tools.</p>
+            </div>
+            <Link className="ob-view-all" href="/orbit/services">View All →</Link>
           </div>
-          <div className="ob-quick-grid ob-quick-grid--3">
-            <QuickAction href="/orbit/orders" label="Track orders" icon={<OrbitIcon name="orders" />} />
-            <QuickAction href="/orbit/payments" label="Banker desk" icon={<OrbitIcon name="banker" />} />
-            <QuickAction href="/orbit/customers" label="Customers" icon={<OrbitIcon name="customers" />} />
-            <QuickAction href="/orbit/services" label="Services" icon={<OrbitIcon name="services" />} />
-            <QuickAction href="/orbit/support" label="Tickets" icon={<OrbitIcon name="support" />} />
-            <QuickAction href="/orbit/pages" label="Website" icon={<OrbitIcon name="pages" />} />
+          <div className="ob-quick-grid ob-quick-grid--6">
+            <QuickAction tone="purple" href="/orbit/orders" label="Place New Order" icon={<OrbitIcon name="orders" />} />
+            <QuickAction tone="blue" href="/orbit/payments" label="Add Funds" icon={<OrbitIcon name="wallet" />} />
+            <QuickAction tone="green" href="/orbit/orders" label="Track Orders" icon={<OrbitIcon name="pulse" />} />
+            <QuickAction tone="pink" href="/orbit/support" label="Create Ticket" icon={<OrbitIcon name="support" />} />
+            <QuickAction tone="amber" href="/orbit/services" label="Browse Services" icon={<OrbitIcon name="grid" />} />
+            <QuickAction tone="cyan" href="#traffic" label="View Analytics" icon={<OrbitIcon name="activity" />} />
           </div>
         </article>
+
         <article className="ob-panel ob-card">
           <div className="ob-panel-head">
-            <h3>Recent Orders</h3>
-            <Link href="/orbit/orders">View all →</Link>
+            <h3 className="ob-sec-title"><OrbitIcon name="orders" /> Recent Orders</h3>
+            <Link className="ob-view-all" href="/orbit/orders">View All →</Link>
           </div>
-          <table className="ob-table">
-            <thead><tr><th>Order</th><th>Service</th><th>Status</th><th>Amount</th></tr></thead>
-            <tbody>
-              {data?.recentOrders.length ? data.recentOrders.map((row) => (
-                <tr key={row.id}>
-                  <td>#{row.id}</td>
-                  <td>{row.service}</td>
-                  <td><StatusPill status={row.status} /></td>
-                  <td>{usd(row.charge)}</td>
-                </tr>
-              )) : <tr><td colSpan={4}>No orders yet.</td></tr>}
-            </tbody>
-          </table>
+          <div className="ob-table-wrap" style={{ boxShadow: "none", border: 0 }}>
+            <table className="ob-table ob-table--compact">
+              <thead>
+                <tr><th>Order ID</th><th>Service</th><th>Status</th><th>Amount</th><th>Date</th></tr>
+              </thead>
+              <tbody>
+                {data?.recentOrders.length ? data.recentOrders.slice(0, 4).map((row) => (
+                  <tr key={row.id}>
+                    <td><strong>#TS-{row.id}</strong></td>
+                    <td className="ob-ellipsis">{row.service}</td>
+                    <td><StatusPill status={row.status} /></td>
+                    <td><strong>{usd(row.charge)}</strong></td>
+                    <td className="ob-muted">{row.createdAt ? timeAgo(row.createdAt) : "—"}</td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={5} className="ob-muted">No orders recorded yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </article>
+
         <article className="ob-panel ob-card">
-          <h3>Latest Activity</h3>
-          <div className="ob-feed">
-            {data?.recentTransactions.slice(0, 4).map((row) => (
-              <div key={row.id} className="ob-feed-item"><span>{timeAgo(row.createdAt)}</span><div>{row.type} · {usd(row.amount)}</div></div>
-            ))}
-            {data?.recentTickets.slice(0, 3).map((row) => (
-              <div key={row.id} className="ob-feed-item"><span>{timeAgo(row.updatedAt)}</span><div>Ticket · {row.subject}</div></div>
-            ))}
-            {!data?.recentTransactions.length && !data?.recentTickets.length ? <p className="ob-muted">No recent activity.</p> : null}
+          <div className="ob-panel-head">
+            <h3 className="ob-sec-title"><OrbitIcon name="pulse" /> Latest Activity</h3>
+            <Link className="ob-view-all" href="/orbit/activity">View All →</Link>
           </div>
+          <ul className="ob-timeline">
+            {activityItems.length ? activityItems.map((item) => (
+              <li key={item.id}>
+                <i style={{ background: item.dot }} />
+                <p>{item.text}</p>
+                <span>{item.when}</span>
+              </li>
+            )) : <li className="ob-muted">No activity recorded yet.</li>}
+          </ul>
         </article>
       </div>
 
       <article className="ob-panel ob-card" id="traffic">
         <div className="ob-panel-head">
           <div>
-            <h3>Site traffic — where visitors came from</h3>
-            <p className="ob-muted">Real visits from the live site. Direct, Google, social and referrals. Range: {ranges.find((row) => row.id === range)?.label}.</p>
+            <h3 className="ob-sec-title"><OrbitIcon name="activity" /> Live Traffic Analytics — Visitor Sources</h3>
+            <p className="ob-sub">Real public visits tracked across Direct, Google, Instagram, TikTok, YouTube, Telegram &amp; referrals.</p>
           </div>
-          <div>
-            <strong>{traffic.data?.visits ?? 0}</strong> visits · <strong>{traffic.data?.unique ?? 0}</strong> unique
-            {traffic.data?.change ? <span className="ob-muted"> · {traffic.data.change > 0 ? "+" : ""}{traffic.data.change}% vs prior</span> : null}
+          <div className="ob-chart-tabs ob-chart-tabs--wrap">
+            {ranges.map((item) => (
+              <button key={item.id} className={range === item.id ? "is-on" : ""} type="button" onClick={() => setRange(item.id)}>
+                {item.label.replace("Last ", "")}
+              </button>
+            ))}
           </div>
+        </div>
+        <div className="ob-traffic-summary">
+          <div><span>Total Visits</span><strong>{traffic.data?.visits ?? 0}</strong></div>
+          <div><span>Unique Visitors</span><strong>{traffic.data?.unique ?? 0}</strong></div>
+          <div><span>vs Previous Window</span><strong>{traffic.data?.change ? `${traffic.data.change > 0 ? "+" : ""}${traffic.data.change}%` : "0%"}</strong></div>
         </div>
         <div className="ob-traffic-grid">
           <div className="ob-bars">
@@ -194,13 +340,13 @@ export function DashboardScreen() {
                 <em>{row.count} · {row.pct}%</em>
               </div>
             ))}
-            {!traffic.data?.sources.length ? <p className="ob-muted">No public visits recorded in this window yet. Open the live website to start collecting.</p> : null}
+            {!traffic.data?.sources.length ? <p className="ob-muted">No public visits recorded in this window yet.</p> : null}
           </div>
-          <table className="ob-table">
-            <thead><tr><th>Top pages</th><th>Views</th></tr></thead>
+          <table className="ob-table ob-table--compact">
+            <thead><tr><th>Top Landing Pages</th><th>Views</th></tr></thead>
             <tbody>
               {(traffic.data?.paths ?? []).map((row) => (
-                <tr key={row.path}><td>{row.path}</td><td>{row.count}</td></tr>
+                <tr key={row.path}><td><code className="ob-url">{row.path}</code></td><td><strong>{row.count}</strong></td></tr>
               ))}
             </tbody>
           </table>
