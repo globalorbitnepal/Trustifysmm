@@ -35,7 +35,7 @@ export function PricingCatalog({ data: initial }: { data?: ServicePricingData })
 
   return (
     <div className="price-deck">
-      <aside className="price-deck-rail" aria-label="Platforms">
+      <aside className="price-deck-rail banker-scroll" aria-label="Platforms">
         <p className="price-deck-rail-label">Platforms</p>
         <button
           type="button"

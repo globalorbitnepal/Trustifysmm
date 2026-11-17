@@ -91,7 +91,7 @@ export function ServicesPricingCatalog({ data: initial }: { data?: ServicePricin
           sections.map(([title, rows]) => (
             <section key={title} className="services-pricing-group" id={slug(title)}>
               <h2 className="services-pricing-group-title">{title}</h2>
-              <div className="services-pricing-table-wrap">
+              <div className="services-pricing-table-wrap banker-scroll">
                 <table className="services-pricing-table">
                   <thead>
                     <tr>

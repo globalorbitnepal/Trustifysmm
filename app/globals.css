@@ -6,6 +6,66 @@
   --violet: #a855f7;
   --lavender: #dccbff;
   --white: #ffffff;
+  --banker-scroll-track: rgba(255, 255, 255, 0.045);
+  --banker-scroll-track-edge: rgba(220, 203, 255, 0.1);
+  --banker-scroll-thumb: linear-gradient(180deg, #c084fc 0%, #7028e8 48%, #287bff 100%);
+  --banker-scroll-thumb-hover: linear-gradient(180deg, #e9d5ff 0%, #a855f7 42%, #3b82f6 100%);
+  --banker-scroll-glow: rgba(168, 85, 247, 0.5);
+}
+
+/* Premium banker scrollbars — glass track, neon gradient thumb */
+.banker-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.9) var(--banker-scroll-track);
+}
+
+.banker-scroll::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.banker-scroll::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.banker-scroll::-webkit-scrollbar-track {
+  margin: 10px 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    var(--banker-scroll-track) 35%,
+    rgba(40, 123, 255, 0.08) 100%
+  );
+  border-radius: 999px;
+  border: 1px solid var(--banker-scroll-track-edge);
+  box-shadow: inset 0 0 16px rgba(4, 2, 16, 0.55);
+}
+
+.banker-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--banker-scroll-thumb);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 0 12px var(--banker-scroll-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.banker-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--banker-scroll-thumb-hover);
+  box-shadow:
+    0 0 18px rgba(168, 85, 247, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.banker-scroll::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #a855f7 0%, #5b21b6 50%, #1d4ed8 100%);
+}
+
+.banker-scroll::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 * {
@@ -20,6 +80,33 @@ html {
   overflow-x: clip;
   overflow-y: auto;
   scrollbar-gutter: stable;
+  scrollbar-color: rgba(112, 40, 232, 0.75) rgba(8, 4, 24, 0.85);
+}
+
+html::-webkit-scrollbar {
+  width: 10px;
+}
+
+html::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+html::-webkit-scrollbar-track {
+  background: rgba(8, 4, 24, 0.9);
+  border-left: 1px solid rgba(220, 203, 255, 0.06);
+}
+
+html::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--banker-scroll-thumb);
+  border: 2px solid rgba(8, 4, 24, 0.9);
+  box-shadow: 0 0 14px var(--banker-scroll-glow);
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--banker-scroll-thumb-hover);
 }
 
 body {
@@ -2132,6 +2219,11 @@ button {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.services-pricing-table-wrap.banker-scroll,
+.price-deck-rail.banker-scroll {
+  scrollbar-gutter: stable;
+}
+
 .services-pricing-table {
   width: 100%;
   min-width: 760px;
@@ -2232,11 +2324,14 @@ button {
   gap: 8px;
   max-height: calc(100vh - 110px);
   overflow-y: auto;
-  padding: 14px 12px;
+  padding: 14px 8px 14px 12px;
   border-radius: 22px;
   background: rgba(8, 4, 28, 0.55);
   border: 1px solid rgba(220, 203, 255, 0.12);
   backdrop-filter: blur(16px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 40px rgba(6, 4, 20, 0.35);
 }
 
 .price-deck-rail-label {
