@@ -12,9 +12,23 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "TrustifySMM — Premium SMM Panel",
+  metadataBase: new URL("https://trustifysmm.com"),
+  applicationName: "TrustifySMM",
+  title: {
+    default: "TrustifySMM — Premium SMM Panel",
+    template: "%s",
+  },
   description:
     "Power your social media growth with reliable, affordable and automated services across the platforms you love.",
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
+    shortcut: "/favicon-32.png",
+  },
 };
 
 export const revalidate = 60;

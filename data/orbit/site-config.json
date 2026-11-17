@@ -8,7 +8,8 @@
     "headlineBrand": "TrustifySMM",
     "lede": "Reliable, affordable and fully automated SMM services to boost your presence on all major social media platforms.",
     "primaryCta": "Create Free Account",
-    "secondaryCta": "Watch Demo"
+    "secondaryCta": "View Services",
+    "secondaryCtaHref": "/services"
   },
   "whyFeatures": [
     { "title": "Instant Orders", "text": "Get your orders started within seconds, 24/7 automated system.", "tone": "violet" },
@@ -24,7 +25,7 @@
   ],
   "pages": {
     "/": { "title": "TrustifySMM — Premium SMM Panel", "description": "Power your social media growth with reliable, affordable and automated services.", "keywords": "smm panel, trustifysmm" },
-    "/services": { "title": "All SMM Services & Prices | TrustifySMM Panel", "description": "Browse 1,900+ SMM services with live USD rates per 1000.", "keywords": "smm services, smm prices" },
+    "/services": { "title": "TrustifySMM · Services & Prices", "description": "Browse 1,900+ SMM services with live USD rates per 1000.", "keywords": "smm services, smm prices" },
     "/pricing": { "title": "SMM Rate Deck | TrustifySMM Pricing", "description": "Compare SMM rates per 1,000 with premium Rate Deck chapters.", "keywords": "smm pricing, rate deck" },
     "/api": { "title": "API Documentation & Banker | TrustifySMM Panel", "description": "Panel API, Banker crypto top-ups, PHP client download.", "keywords": "smm api, banker" },
     "/blogs": { "title": "SMM Panel Blogs & Growth Guides | TrustifySMM", "description": "Long SEO guides for resellers and agencies.", "keywords": "smm blog" },

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/SiteHeader";
+import { HeroStat, HeroStatGrid, PublicPageHero } from "@/components/PublicPageHero";
 import { SupportPageContent } from "@/components/SupportPageContent";
 import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
@@ -71,58 +71,47 @@ export default function SupportPage() {
   return (
     <main className="page">
       <SiteHeader />
-      <section className="support-page">
+      <section className="support-page public-page-band">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(helpPageJsonLd) }} />
 
-        <div className="support-page-inner">
-          <p className="services-page-badge">
-            <LifebeltIcon />
-            {hero.badge}
-          </p>
-          <h1 className="services-page-title">
-            {hero.title} {hero.titleAccent ? <span className="grad">{hero.titleAccent}</span> : null}
-          </h1>
-          <p className="services-page-lede">{hero.lede}</p>
-          {hero.heroImage ? <img src={hero.heroImage} alt={hero.heroImageAlt || ""} style={{ maxWidth: 420, width: "100%", borderRadius: 20, marginBottom: 16 }} /> : null}
-
-          <div className="support-stats" aria-label="Support highlights">
-            <a href={`mailto:${contact.email}`} className="support-stat support-stat--link">
-              <strong>{contact.email}</strong>
-              <span>{supportStats[0]?.label || "Email · 4–12h reply"}</span>
-            </a>
-            {contact.phone ? (
-              <a href={`tel:${contact.phone.replace(/\s/g, "")}`} className="support-stat support-stat--link">
-                <strong>{contact.phone}</strong>
-                <span>Phone</span>
+        <div className="support-page-inner public-page-inner">
+          <PublicPageHero
+            id="support-hero-title"
+            badge={hero.badge}
+            badgeIcon={<LifebeltIcon />}
+            title={hero.title}
+            titleAccent={hero.titleAccent}
+            lede={hero.lede}
+            heroImage={hero.heroImage}
+            heroImageAlt={hero.heroImageAlt}
+            primary={
+              hero.ctaPrimary ? { label: hero.ctaPrimary, href: hero.ctaPrimaryHref || "/signin" } : undefined
+            }
+            secondary={
+              hero.ctaSecondary
+                ? { label: hero.ctaSecondary, href: hero.ctaSecondaryHref || "#support-faq" }
+                : undefined
+            }
+          >
+            <div className="support-stats support-stats--contact" aria-label="Contact">
+              <a href={`mailto:${contact.email}`} className="support-stat support-stat--link">
+                <strong>{contact.email}</strong>
+                <span>{supportStats[0]?.label || "Email · 4–12h reply"}</span>
               </a>
-            ) : null}
-            <div className="support-stat">
-              <strong>{supportStats[1]?.value || "24/7"}</strong>
-              <span>{supportStats[1]?.label || "Docs & catalog online"}</span>
+              {contact.phone ? (
+                <a href={`tel:${contact.phone.replace(/\s/g, "")}`} className="support-stat support-stat--link">
+                  <strong>{contact.phone}</strong>
+                  <span>Phone</span>
+                </a>
+              ) : null}
             </div>
-            <div className="support-stat">
-              <strong>{allFaq.length}+</strong>
-              <span>{supportStats[2]?.label || "Help articles"}</span>
-            </div>
-            <div className="support-stat">
-              <strong>{supportStats[3]?.value || "Order ID"}</strong>
-              <span>{supportStats[3]?.label || "Required for tickets"}</span>
-            </div>
-          </div>
-
-          <div className="services-page-hero-actions">
-            {hero.ctaPrimary ? (
-              <Link className="btn btn-primary btn-lg" href={hero.ctaPrimaryHref || "/signin"}>
-                {hero.ctaPrimary}
-              </Link>
-            ) : null}
-            {hero.ctaSecondary ? (
-              <a className="btn btn-ghost btn-lg" href={hero.ctaSecondaryHref || "#support-faq"}>
-                {hero.ctaSecondary}
-              </a>
-            ) : null}
-          </div>
+            <HeroStatGrid label="Support highlights">
+              <HeroStat value={supportStats[1]?.value || "24/7"} label={supportStats[1]?.label || "Docs & catalog online"} />
+              <HeroStat value={`${allFaq.length}+`} label={supportStats[2]?.label || "Help articles"} />
+              <HeroStat value={supportStats[3]?.value || "Order ID"} label={supportStats[3]?.label || "Required for tickets"} />
+            </HeroStatGrid>
+          </PublicPageHero>
 
           <SupportPageContent
             email={contact.email}

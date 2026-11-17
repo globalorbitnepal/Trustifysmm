@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { BlogCard } from "@/components/BlogCard";
 import { BlogIndexFaq } from "@/components/BlogIndexFaq";
 import { Footer } from "@/components/Footer";
+import { HeroStat, HeroStatGrid, PublicPageHero } from "@/components/PublicPageHero";
 import { SiteHeader } from "@/components/SiteHeader";
 import { blogsIndexFaq } from "@/data/blogs-index-faq";
 import { getAllBlogPosts } from "@/data/blog-utils";
@@ -82,32 +82,35 @@ export default function BlogsPage() {
   return (
     <main className="page">
       <SiteHeader />
-      <section className="blog-page">
+      <section className="blog-page public-page-band">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
-        <div className="blog-page-inner">
-          <p className="services-page-badge">
-            <PenIcon />
-            {hero.badge}
-          </p>
-          <h1 className="services-page-title">
-            {hero.title} {hero.titleAccent ? <span className="grad">{hero.titleAccent}</span> : null}
-          </h1>
-          <p className="services-page-lede">{hero.lede}</p>
-          {hero.heroImage ? <img src={hero.heroImage} alt={hero.heroImageAlt || ""} style={{ maxWidth: 420, width: "100%", borderRadius: 20, marginBottom: 16 }} /> : null}
-          <div className="services-page-hero-actions">
-            {hero.ctaPrimary ? (
-              <Link className="btn btn-primary btn-lg" href={hero.ctaPrimaryHref || "/signup"}>
-                {hero.ctaPrimary}
-              </Link>
-            ) : null}
-            {hero.ctaSecondary ? (
-              <Link className="btn btn-ghost btn-lg" href={hero.ctaSecondaryHref || "/services"}>
-                {hero.ctaSecondary}
-              </Link>
-            ) : null}
-          </div>
+        <div className="blog-page-inner public-page-inner">
+          <PublicPageHero
+            id="blogs-hero-title"
+            badge={hero.badge}
+            badgeIcon={<PenIcon />}
+            title={hero.title}
+            titleAccent={hero.titleAccent}
+            lede={hero.lede}
+            heroImage={hero.heroImage}
+            heroImageAlt={hero.heroImageAlt}
+            primary={
+              hero.ctaPrimary ? { label: hero.ctaPrimary, href: hero.ctaPrimaryHref || "/signup" } : undefined
+            }
+            secondary={
+              hero.ctaSecondary
+                ? { label: hero.ctaSecondary, href: hero.ctaSecondaryHref || "/services" }
+                : undefined
+            }
+          >
+            <HeroStatGrid label="Blog highlights">
+              <HeroStat value={posts.length} label="Guides & articles" />
+              <HeroStat value="SEO" label="Schema & focus keywords" />
+              <HeroStat value="16:9" label="Hero image on every post" />
+            </HeroStatGrid>
+          </PublicPageHero>
 
           {featured ? <BlogCard post={featured} featured /> : null}
 

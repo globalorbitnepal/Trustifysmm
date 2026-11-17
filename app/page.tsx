@@ -65,8 +65,8 @@ export default function HomePage() {
                 {site.home.primaryCta}
                 <Arrow />
               </Link>
-              <Link className="btn btn-ghost btn-lg" href={site.home.secondaryCtaHref || "/#services"}>
-                <Play />
+              <Link className="btn btn-ghost btn-lg" href={site.home.secondaryCtaHref || "/services"}>
+                <Grid />
                 {site.home.secondaryCta}
               </Link>
             </div>
@@ -146,11 +146,13 @@ function Rocket() {
   );
 }
 
-function Play() {
+function Grid() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <circle cx="8" cy="8" r="6.2" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M6.7 5.6v4.8L11 8 6.7 5.6Z" fill="currentColor" />
+      <rect x="2" y="2" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="9" y="2" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="2" y="9" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="9" y="9" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
     </svg>
   );
 }

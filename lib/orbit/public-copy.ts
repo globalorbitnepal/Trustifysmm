@@ -1,6 +1,20 @@
 import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import type { PageHeroContent, SectionHeading } from "@/lib/orbit/types";
 
+/** CMS often stores "" — treat whitespace-only as missing so page fallbacks apply. */
+function copyText(cms?: string, fallback?: string): string {
+  const trimmed = cms?.trim();
+  if (trimmed) return trimmed;
+  return fallback?.trim() ?? "";
+}
+
+function copyOptional(cms?: string, fallback?: string): string | undefined {
+  const trimmed = cms?.trim();
+  if (trimmed) return trimmed;
+  const fb = fallback?.trim();
+  return fb || undefined;
+}
+
 const sectionDefaults: Record<string, SectionHeading> = {
   why: {
     badge: "Why Choose TrustifySMM",
@@ -43,7 +57,14 @@ const sectionDefaults: Record<string, SectionHeading> = {
 export function sectionHeading(id: keyof typeof sectionDefaults): SectionHeading {
   const site = liveSiteConfig();
   const row = site.sectionCopy?.[id as keyof typeof site.sectionCopy];
-  return { ...sectionDefaults[id], ...(row ?? {}) };
+  const base = sectionDefaults[id];
+  if (!row) return base;
+  return {
+    badge: copyText(row.badge, base.badge),
+    title: copyText(row.title, base.title),
+    titleAccent: copyText(row.titleAccent, base.titleAccent),
+    lede: copyText(row.lede, base.lede),
+  };
 }
 
 export function pageHero(path: string, fallback: PageHeroContent = {}): Required<Pick<PageHeroContent, "badge" | "title" | "lede">> &
@@ -51,15 +72,15 @@ export function pageHero(path: string, fallback: PageHeroContent = {}): Required
   const site = liveSiteConfig();
   const row = site.pageContent?.[path] ?? {};
   return {
-    badge: row.badge ?? fallback.badge ?? "",
-    title: row.title ?? fallback.title ?? "",
-    titleAccent: row.titleAccent ?? fallback.titleAccent,
-    lede: row.lede ?? fallback.lede ?? "",
-    ctaPrimary: row.ctaPrimary ?? fallback.ctaPrimary,
-    ctaSecondary: row.ctaSecondary ?? fallback.ctaSecondary,
-    ctaPrimaryHref: row.ctaPrimaryHref ?? fallback.ctaPrimaryHref,
-    ctaSecondaryHref: row.ctaSecondaryHref ?? fallback.ctaSecondaryHref,
-    heroImage: row.heroImage ?? fallback.heroImage,
-    heroImageAlt: row.heroImageAlt ?? fallback.heroImageAlt,
+    badge: copyText(row.badge, fallback.badge),
+    title: copyText(row.title, fallback.title),
+    titleAccent: copyOptional(row.titleAccent, fallback.titleAccent),
+    lede: copyText(row.lede, fallback.lede),
+    ctaPrimary: copyOptional(row.ctaPrimary, fallback.ctaPrimary),
+    ctaSecondary: copyOptional(row.ctaSecondary, fallback.ctaSecondary),
+    ctaPrimaryHref: copyOptional(row.ctaPrimaryHref, fallback.ctaPrimaryHref),
+    ctaSecondaryHref: copyOptional(row.ctaSecondaryHref, fallback.ctaSecondaryHref),
+    heroImage: copyOptional(row.heroImage, fallback.heroImage),
+    heroImageAlt: copyOptional(row.heroImageAlt, fallback.heroImageAlt),
   };
 }

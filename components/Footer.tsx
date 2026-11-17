@@ -83,9 +83,9 @@ export function Footer() {
   return (
     <footer className="site-footer" id="footer">
       <div className="site-footer-inner">
-        <div className="site-footer-head">
+        <div className="site-footer-cta">
           <div className="site-footer-head-copy">
-            <p className="site-footer-kicker">TrustifySMM</p>
+            <p className="site-footer-kicker">Banker desk · TrustifySMM</p>
             <h2 className="site-footer-headline">
               {copy.blurb === "Premium growth from one panel" ? (
                 <>
@@ -95,6 +95,9 @@ export function Footer() {
                 copy.blurb
               )}
             </h2>
+            <p className="site-footer-cta-copy">
+              Crypto wallet, live catalog and API in one secure workspace for resellers and agencies.
+            </p>
           </div>
           <div className="site-footer-head-actions">
             <Link className="btn btn-primary" href="/signup">
@@ -102,14 +105,14 @@ export function Footer() {
               Get Started
             </Link>
             <Link className="btn btn-ghost" href="/services">
-              Services
+              View Services
             </Link>
           </div>
         </div>
 
         <section className="site-footer-social" aria-labelledby="footer-social-title">
           <h3 id="footer-social-title" className="site-footer-social-title">
-            Follow us on social
+            Follow us
           </h3>
           <div className="site-footer-social-row" role="list">
             {socialPlatforms.map((item) => {
@@ -136,8 +139,6 @@ export function Footer() {
             })}
           </div>
         </section>
-
-        <p className="site-footer-divider" aria-hidden />
 
         <div className="site-footer-columns">
           <div className="site-footer-brand">
@@ -172,22 +173,20 @@ export function Footer() {
           </div>
         </div>
 
-        <p className="site-footer-divider" aria-hidden />
-
         <div className="site-footer-util">
           <div className="site-footer-pay">
-            <span className="site-footer-pay-label">Crypto payments</span>
-            <span className="site-footer-pay-tickers">BTC · ETH · USDT · SOL</span>
+            <span className="site-footer-pay-label">Banker crypto</span>
             <span className="site-footer-pay-coins" aria-hidden>
               {coins.map((id) => (
                 <PayCoinArt key={id} id={id} className="site-footer-coin-art" />
               ))}
             </span>
+            <span className="site-footer-pay-tickers">BTC · ETH · USDT · SOL</span>
           </div>
           <div className="site-footer-trust">
             <span>
               <ShieldIcon />
-              Secure payments
+              Gateway verified
             </span>
             <span>
               <BoltIcon />
@@ -195,7 +194,7 @@ export function Footer() {
             </span>
             <span>
               <HeadsetIcon />
-              Dedicated support
+              Ticket support
             </span>
           </div>
         </div>

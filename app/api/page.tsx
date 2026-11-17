@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ApiDocumentation } from "@/components/ApiDocumentation";
 import { Footer } from "@/components/Footer";
+import { HeroStat, HeroStatGrid, PublicPageHero } from "@/components/PublicPageHero";
 import { SiteHeader } from "@/components/SiteHeader";
 import { metadataForPath } from "@/lib/orbit/page-meta";
 import { pageExtras } from "@/lib/orbit/page-extras";
 import { pageHero } from "@/lib/orbit/public-copy";
+import { livePricingData } from "@/lib/orbit/live-catalog";
 
 const apiMetadata: Metadata = {
   title: "API Documentation & Banker | TrustifySMM Panel",
@@ -28,6 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function ApiPage() {
   const apiBlocks = pageExtras("/api").body ?? [];
+  const catalog = livePricingData();
   const hero = pageHero("/api", {
     badge: "Developer API",
     title: "Panel",
@@ -41,30 +43,38 @@ export default function ApiPage() {
   return (
     <main className="page">
       <SiteHeader />
-      <section className="api-page">
-        <div className="api-page-inner">
-          <p className="services-page-badge">
-            <CodeIcon />
-            {hero.badge}
-          </p>
-          <h1 className="services-page-title">
-            {hero.title} {hero.titleAccent ? <span className="grad">{hero.titleAccent}</span> : null}
-          </h1>
-          <p className="services-page-lede">{hero.lede}</p>
-          {hero.heroImage ? <img src={hero.heroImage} alt={hero.heroImageAlt || ""} style={{ maxWidth: 420, width: "100%", borderRadius: 20, marginBottom: 16 }} /> : null}
-          <div className="services-page-hero-actions">
-            {hero.ctaPrimary ? (
-              <a className="btn btn-primary btn-lg" href={hero.ctaPrimaryHref || "/downloads/trustifysmm-api-client.php"} download={hero.ctaPrimaryHref?.includes(".php")}>
-                {hero.ctaPrimary}
-                <Arrow />
-              </a>
-            ) : null}
-            {hero.ctaSecondary ? (
-              <Link className="btn btn-ghost btn-lg" href={hero.ctaSecondaryHref || "#api-endpoints"}>
-                {hero.ctaSecondary}
-              </Link>
-            ) : null}
-          </div>
+      <section className="api-page public-page-band">
+        <div className="api-page-inner public-page-inner">
+          <PublicPageHero
+            id="api-hero-title"
+            badge={hero.badge}
+            badgeIcon={<CodeIcon />}
+            title={hero.title}
+            titleAccent={hero.titleAccent}
+            lede={hero.lede}
+            heroImage={hero.heroImage}
+            heroImageAlt={hero.heroImageAlt}
+            primary={
+              hero.ctaPrimary
+                ? {
+                    label: hero.ctaPrimary,
+                    href: hero.ctaPrimaryHref || "/downloads/trustifysmm-api-client.php",
+                    download: true,
+                  }
+                : undefined
+            }
+            secondary={
+              hero.ctaSecondary
+                ? { label: hero.ctaSecondary, href: hero.ctaSecondaryHref || "#api-endpoints" }
+                : undefined
+            }
+          >
+            <HeroStatGrid label="API highlights">
+              <HeroStat value={`${catalog.serviceCount.toLocaleString()}+`} label="Services via API" />
+              <HeroStat value="REST" label="Orders, balance & status" />
+              <HeroStat value="Banker" label="Crypto invoice top-ups" />
+            </HeroStatGrid>
+          </PublicPageHero>
 
           <ApiDocumentation />
           {apiBlocks.length ? (
@@ -94,14 +104,6 @@ function CodeIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-    </svg>
-  );
-}
-
-function Arrow() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

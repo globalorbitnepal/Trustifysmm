@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Footer } from "@/components/Footer";
+import { HeroStat, HeroStatGrid, PublicPageHero } from "@/components/PublicPageHero";
 import { SiteHeader } from "@/components/SiteHeader";
 import { PricingCatalog } from "@/components/PricingCatalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
@@ -36,6 +36,7 @@ const pageDescription =
   "Premium pricing cards for every SMM service. Compare rates per 1,000 units, min/max orders and delivery times.";
 
 export default function PricingPage() {
+  const catalog = livePricingData();
   const hero = pageHero("/pricing", {
     badge: "Pricing",
     title: "Rate",
@@ -51,7 +52,7 @@ export default function PricingPage() {
   return (
     <main className="page">
       <SiteHeader />
-      <section className="pricing-page" id="pricing">
+      <section className="pricing-page public-page-band" id="pricing">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -65,33 +66,35 @@ export default function PricingPage() {
           }}
         />
 
-        <div className="services-page-inner pricing-page-inner">
-          <p className="services-page-badge">
-            <StarIcon />
-            {hero.badge}
-          </p>
-          <h1 className="pricing-page-title services-page-title">
-            {hero.title} {hero.titleAccent ? <span className="grad">{hero.titleAccent}</span> : null}
-          </h1>
-          <p className="services-page-lede">{hero.lede}</p>
-          {banner ? <p className="services-page-lede">{banner}</p> : null}
-          {hero.heroImage ? <img src={hero.heroImage} alt={hero.heroImageAlt || ""} style={{ maxWidth: 420, width: "100%", borderRadius: 20, marginBottom: 16 }} /> : null}
+        <div className="services-page-inner pricing-page-inner public-page-inner">
+          <PublicPageHero
+            id="pricing-hero-title"
+            badge={hero.badge}
+            badgeIcon={<StarIcon />}
+            title={hero.title}
+            titleAccent={hero.titleAccent}
+            lede={hero.lede}
+            extraLede={banner || undefined}
+            heroImage={hero.heroImage}
+            heroImageAlt={hero.heroImageAlt}
+            titleClassName="pricing-page-title"
+            primary={
+              hero.ctaPrimary ? { label: hero.ctaPrimary, href: hero.ctaPrimaryHref || "/signup" } : undefined
+            }
+            secondary={
+              hero.ctaSecondary
+                ? { label: hero.ctaSecondary, href: hero.ctaSecondaryHref || "/services" }
+                : undefined
+            }
+          >
+            <HeroStatGrid label="Pricing highlights">
+              <HeroStat value={`${catalog.serviceCount.toLocaleString()}+`} label="Services with live rates" />
+              <HeroStat value="Per 1K" label="Bold USD on every card" />
+              <HeroStat value="Instant" label="Order right after signup" />
+            </HeroStatGrid>
+          </PublicPageHero>
 
-          <div className="pricing-page-links">
-            {hero.ctaPrimary ? (
-              <Link className="btn btn-primary btn-lg" href={hero.ctaPrimaryHref || "/signup"}>
-                {hero.ctaPrimary}
-                <Arrow />
-              </Link>
-            ) : null}
-            {hero.ctaSecondary ? (
-              <Link className="btn btn-ghost btn-lg" href={hero.ctaSecondaryHref || "/services"}>
-                {hero.ctaSecondary}
-              </Link>
-            ) : null}
-          </div>
-
-          <PricingCatalog data={livePricingData()} />
+          <PricingCatalog data={catalog} />
         </div>
       </section>
 
@@ -123,14 +126,6 @@ function StarIcon() {
         d="m12 4.2 1.8 4.2 4.5.4-3.4 2.9 1 4.3L12 13.8l-4 2.2 1-4.3-3.4-2.9 4.5-.4L12 4.2Z"
         fill="currentColor"
       />
-    </svg>
-  );
-}
-
-function Arrow() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
