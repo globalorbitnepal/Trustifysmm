@@ -3,7 +3,11 @@
 const COOKIE_NAME = "orbit_session";
 
 export function orbitPasskey() {
-  return process.env.ORBIT_PASSKEY?.trim() ?? "";
+  let value = process.env.ORBIT_PASSKEY?.trim() ?? "";
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    value = value.slice(1, -1);
+  }
+  return value;
 }
 
 export function verifyPasskey(input: string) {

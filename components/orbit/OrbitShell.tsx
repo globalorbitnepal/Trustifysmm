@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState, type ComponentProps } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { OrbitIcon } from "@/components/orbit/orbit-icons";
 import { usd } from "@/components/orbit/orbit-ui";
 import { ORBIT_PAGES } from "@/lib/orbit/page-registry";
@@ -14,11 +14,12 @@ type NavLink = {
   nested?: boolean;
   exact?: boolean;
 };
-type NavGroup = { title: string; links: NavLink[] };
+type NavGroup = { title: string; icon: NavLink["icon"]; links: NavLink[] };
 
 const groups: NavGroup[] = [
   {
     title: "Customers",
+    icon: "customers",
     links: [
       { href: "/orbit/customers", label: "All customers", icon: "customers" },
       { href: "/orbit/wallet", label: "Customer wallets", icon: "wallet" },
@@ -27,6 +28,7 @@ const groups: NavGroup[] = [
   },
   {
     title: "SMM Management",
+    icon: "services",
     links: [
       { href: "/orbit/services", label: "Services", icon: "services" },
       { href: "/orbit/providers", label: "Providers", icon: "providers" },
@@ -34,10 +36,12 @@ const groups: NavGroup[] = [
   },
   {
     title: "Orders",
+    icon: "orders",
     links: [{ href: "/orbit/orders", label: "All orders", icon: "orders" }],
   },
   {
     title: "Finance",
+    icon: "banker",
     links: [
       { href: "/orbit/payments", label: "Banker desk", icon: "banker" },
       { href: "/orbit/wallet", label: "Wallet management", icon: "wallet" },
@@ -46,6 +50,7 @@ const groups: NavGroup[] = [
   },
   {
     title: "Website Control",
+    icon: "pages",
     links: [
       { href: "/orbit/pages/home", label: "Homepage builder", icon: "pages" },
       { href: "/orbit/pages", label: "All pages", icon: "pages", exact: true },
@@ -62,6 +67,7 @@ const groups: NavGroup[] = [
   },
   {
     title: "Support",
+    icon: "support",
     links: [{ href: "/orbit/support", label: "Tickets", icon: "support" }],
   },
 ];
@@ -70,6 +76,8 @@ type HeaderStats = { openTickets: number; walletLiability: number; gatewayLive: 
 
 export function OrbitShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchRef = useRef<HTMLInputElement>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [collapsed, setCollapsed] = useState(false);
   const [closed, setClosed] = useState<string[]>([]);
@@ -115,6 +123,31 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
   const current = flat.find((link) => link.href === pathname);
   const title = current?.label || "Dashboard";
   const query = search.trim().toLowerCase();
+  const matches = useMemo(() => {
+    const rows = [{ href: "/orbit", label: "Dashboard", group: "Overview" }, ...groups.flatMap((group) => group.links.map((link) => ({ href: link.href, label: link.label, group: group.title })))];
+    const unique = new Map<string, { href: string; label: string; group: string }>();
+    for (const row of rows) unique.set(`${row.href}:${row.label}`, row);
+    const list = [...unique.values()];
+    if (!query) return list.slice(0, 6);
+    return list.filter((row) => `${row.label} ${row.group}`.toLowerCase().includes(query)).slice(0, 8);
+  }, [query]);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function logout() {
+    fetch("/api/orbit/auth/logout", { method: "POST" }).finally(() => {
+      window.location.href = "/orbit/login";
+    });
+  }
   const filteredGroups = useMemo(() => {
     if (!query) return groups;
     return groups
@@ -130,13 +163,13 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={`ob${theme === "dark" ? " is-dark" : ""}${collapsed ? " is-collapsed" : ""}`}>
       <header className="ob-top">
-        <Link href="/orbit" className="ob-lockup" aria-label="Orbit home">
-          <img src="/brand/icon-trustify-t.png" alt="" />
+        <Link href="/orbit" className="ob-lockup" aria-label="Orbit master admin">
+          <img src="/brand/logo-mark-transparent.png" alt="" />
           <div>
             <strong>
               Trustify<span>SMM</span>
             </strong>
-            <small>SMM Panel</small>
+            <small>Master Admin</small>
           </div>
         </Link>
         <button className="ob-icon-btn" type="button" onClick={() => setCollapsed((value) => !value)} aria-label="Toggle sidebar">
@@ -144,13 +177,44 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
             <path d="M4 7h16M4 12h16M4 17h10" />
           </svg>
         </button>
-        <label className="ob-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search anything…  (Ctrl + K)" aria-label="Search modules" />
-        </label>
+        <div className="ob-search-wrap">
+          <label className="ob-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && matches[0]) {
+                  router.push(matches[0].href);
+                  setSearch("");
+                }
+              }}
+              placeholder="Search admin modules…  Ctrl + K"
+              aria-label="Search admin modules"
+            />
+          </label>
+          {search.trim() ? (
+            <div className="ob-search-pop" role="listbox">
+              {matches.length ? matches.map((row) => (
+                <button
+                  key={`${row.href}-${row.label}`}
+                  type="button"
+                  onClick={() => {
+                    router.push(row.href);
+                    setSearch("");
+                  }}
+                >
+                  <strong>{row.label}</strong>
+                  <span>{row.group}</span>
+                </button>
+              )) : <p>No admin module matches.</p>}
+            </div>
+          ) : null}
+        </div>
         <div className="ob-actions">
           <Link className="ob-icon-btn" href="/orbit/support" aria-label="Open tickets">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -158,17 +222,21 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
             </svg>
             {header.openTickets ? <span className="ob-top-badge">{header.openTickets}</span> : null}
           </Link>
-          <span className="ob-chip ob-chip--wallet">{usd(header.walletLiability)}</span>
-          <Link className="ob-btn primary ob-top-cta" href="/orbit/payments">
-            + Add Funds
-          </Link>
+          <span className="ob-chip ob-chip--wallet" title="Customer wallet liability">{usd(header.walletLiability)}</span>
+          <Link className="ob-btn primary ob-top-cta" href="/orbit/payments">+ Add Funds</Link>
           <div className="ob-profile">
-            <div className="ob-avatar">AO</div>
+            <div className="ob-avatar">SA</div>
             <div className="ob-profile-copy">
-              <span>Admin</span>
-              <small>Super Admin</small>
+              <span>Super Admin</span>
+              <small>Master panel</small>
             </div>
           </div>
+          <button className="ob-icon-btn" type="button" onClick={logout} aria-label="Log out of Orbit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M10 7V5a2 2 0 0 1 2-2h7v18h-7a2 2 0 0 1-2-2v-2" />
+              <path d="M15 12H3m0 0 3-3m-3 3 3 3" />
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -176,7 +244,7 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
         <div className="ob-side-badge">Orbit Control Center</div>
         <nav className="ob-nav" aria-label="Orbit modules">
           <Link href="/orbit" className={`ob-link ob-link--home${pathname === "/orbit" ? " is-active" : ""}`}>
-            <OrbitIcon name="dashboard" />
+            <span className="ob-nav-ico"><OrbitIcon name="dashboard" /></span>
             <span className="ob-label">Dashboard</span>
           </Link>
           {filteredGroups.map((group) => {
@@ -188,14 +256,15 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
                   type="button"
                   onClick={() => setClosed((items) => (items.includes(group.title) ? items.filter((item) => item !== group.title) : [...items, group.title]))}
                 >
-                  <span>{group.title}</span>
-                  <span aria-hidden>{hidden ? "+" : "–"}</span>
+                  <span className="ob-nav-ico ob-nav-ico--group"><OrbitIcon name={group.icon} /></span>
+                  <span className="ob-group-name">{group.title}</span>
+                  <span className="ob-chevron" aria-hidden>{hidden ? "+" : "–"}</span>
                 </button>
                 {hidden ? null : (
                   <div className="ob-links">
                     {group.links.map((link) => (
                       <Link key={`${group.title}-${link.href}-${link.label}`} href={link.href} className={`ob-link${link.nested ? " ob-link--nested" : ""}${linkIsActive(link) ? " is-active" : ""}`}>
-                        <OrbitIcon name={link.icon} />
+                        <span className="ob-nav-ico"><OrbitIcon name={link.icon} /></span>
                         <span className="ob-label">{link.label}</span>
                       </Link>
                     ))}
@@ -207,7 +276,8 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="ob-side-foot">
           <button type="button" className="ob-theme-row" onClick={toggleTheme}>
-            {theme === "light" ? "Dark mode" : "Light mode"}
+            <span className="ob-nav-ico"><OrbitIcon name="settings" /></span>
+            <span>{theme === "light" ? "Dark mode" : "Light mode"}</span>
           </button>
           <div className="ob-side-user">
             <div className="ob-avatar">AO</div>
@@ -217,14 +287,12 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <button
+            className="ob-theme-row"
             type="button"
-            onClick={() =>
-              fetch("/api/orbit/auth/logout", { method: "POST" }).then(() => {
-                window.location.href = "/orbit/login";
-              })
-            }
+            onClick={logout}
           >
-            Logout
+            <span className="ob-nav-ico"><OrbitIcon name="activity" /></span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>

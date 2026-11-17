@@ -293,6 +293,33 @@ export function SettingsScreen() {
           reload();
         }}>Save contact</button>
       </article>
+      <article className="ob-card ob-form">
+        <h2>Orbit master password</h2>
+        <p className="ob-muted">This is the Super Admin passkey for /orbit. Saving writes it into the server environment immediately. You will sign in again with the new password.</p>
+        <form
+          className="ob-form"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            setMessage("");
+            const response = await fetch("/api/orbit/auth/password", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ current: form.get("current"), next: form.get("next") }),
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+              setMessage(payload.error || "Could not change password.");
+              return;
+            }
+            window.location.href = "/orbit/login";
+          }}
+        >
+          <label>Current password<input name="current" type="password" required autoComplete="current-password" /></label>
+          <label>New password<input name="next" type="password" minLength={8} required autoComplete="new-password" /></label>
+          <button className="ob-btn primary" type="submit">Update Orbit password</button>
+        </form>
+      </article>
       <article className="ob-card">
         <h2>Access</h2>
         <p>This login is the Super Admin. Staff roles are not enabled, and every Orbit route checks the admin session on the server.</p>
