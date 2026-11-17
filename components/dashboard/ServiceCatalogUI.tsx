@@ -72,7 +72,7 @@ export function ServiceCatalogUI({
         <>
           <div className="cp-plat-grid-premium" role="tablist" aria-label="Filter by platform">
             <button type="button" className={`cp-plat-card ${platform === "" ? "is-on" : ""}`} onClick={() => onPlatform("")}>
-              <PlatformFilterIcon platform="all" className="cp-plat-mark" variant="glass" />
+              <PlatformFilterIcon platform="all" className="cp-plat-mark" variant="tile" />
               <span>All</span>
             </button>
             {catalog.platforms.map((item) => (
@@ -82,7 +82,7 @@ export function ServiceCatalogUI({
                 className={`cp-plat-card ${platform === item.id ? "is-on" : ""}`}
                 onClick={() => onPlatform(item.id)}
               >
-                <PlatformFilterIcon platform={item.id} className="cp-plat-mark" variant="glass" />
+                <PlatformFilterIcon platform={item.id} className="cp-plat-mark" variant="tile" />
                 <span>{item.label}</span>
               </button>
             ))}
@@ -156,7 +156,7 @@ export function ServiceCatalogUI({
           {filtered.map((service) => (
             <article key={service.id} className="cp-service-card">
               <div className="cp-service-card-mark">
-                <PlatformFilterIcon platform={service.platform} className="cp-plat-mark cp-plat-mark--card" variant="glass" />
+                <PlatformFilterIcon platform={service.platform} className="cp-plat-mark cp-plat-mark--card" variant="tile" />
               </div>
               <div className="cp-service-card-body">
                 <h3>{service.name}</h3>

@@ -6,7 +6,7 @@ type Props = {
   className?: string;
 };
 
-/** Sidebar header lockup — crisp mark + vector wordmark (no soft PNG banner). */
+/** Vector lockup — no raster halos on light/dark panels. */
 export function DashboardBrandLockup({ compact = false, theme = "dark", className = "" }: Props) {
   return (
     <Link
@@ -14,15 +14,8 @@ export function DashboardBrandLockup({ compact = false, theme = "dark", classNam
       className={`cp-brand-lockup${theme === "light" ? " is-light" : ""}${compact ? " is-compact" : ""} ${className}`.trim()}
       aria-label="TrustifySMM customer panel"
     >
-      <span className="cp-brand-mark" aria-hidden>
-        <img
-          src="/brand/icon-trustify-t.png"
-          alt=""
-          width={512}
-          height={512}
-          decoding="async"
-          draggable={false}
-        />
+      <span className="cp-brand-mark cp-brand-mark--vector" aria-hidden>
+        T
       </span>
       {compact ? null : (
         <span className="cp-brand-copy">

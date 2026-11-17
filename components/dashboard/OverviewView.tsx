@@ -53,13 +53,13 @@ export function OverviewView({ name }: { name?: string }) {
           <h2>Welcome back, {name || "there"}</h2>
           <p>Grow on every major platform — orders, wallet and support in one premium workspace.</p>
           <div className="cp-hero-actions">
-            <Link className="cp-btn" href="/dashboard/new-order">New order</Link>
-            <Link className="cp-btn-ghost cp-hero-ghost" href="/dashboard/add-funds">Add funds</Link>
+            <Link className="cp-btn cp-hero-primary" href="/dashboard/new-order">New Order</Link>
+            <Link className="cp-btn-ghost cp-hero-ghost" href="/dashboard/add-funds">Add Funds</Link>
           </div>
         </div>
         <div className="cp-hero-orbit" aria-hidden>
           {["instagram", "youtube", "tiktok", "telegram"].map((p) => (
-            <PlatformFilterIcon key={p} platform={p} variant="glass" className="cp-hero-orbit-icon" />
+            <PlatformFilterIcon key={p} platform={p} variant="tile" className="cp-hero-orbit-icon" />
           ))}
         </div>
       </section>
