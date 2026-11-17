@@ -47,8 +47,6 @@ export default function ApiPage() {
         <div className="api-page-inner public-page-inner">
           <PublicPageHero
             id="api-hero-title"
-            badge={hero.badge}
-            badgeIcon={<CodeIcon />}
             title={hero.title}
             titleAccent={hero.titleAccent}
             lede={hero.lede}
@@ -91,19 +89,5 @@ export default function ApiPage() {
       </section>
       <Footer />
     </main>
-  );
-}
-
-function CodeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M8 8 4 12l4 4M16 8l4 4-4 4M14 5l-4 14"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

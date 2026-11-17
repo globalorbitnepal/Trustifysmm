@@ -3,8 +3,6 @@ import type { ReactNode } from "react";
 
 export type PublicPageHeroProps = {
   id?: string;
-  badge: string;
-  badgeIcon?: ReactNode;
   title: string;
   titleAccent?: string;
   lede: string;
@@ -19,8 +17,6 @@ export type PublicPageHeroProps = {
 
 export function PublicPageHero({
   id = "public-page-hero-title",
-  badge,
-  badgeIcon,
   title,
   titleAccent,
   lede,
@@ -35,11 +31,7 @@ export function PublicPageHero({
   const titleClass = titleClassName ? `${titleClassName} services-page-title` : "services-page-title";
 
   return (
-    <div className="public-page-hero" aria-labelledby={id}>
-      <p className="services-page-badge">
-        {badgeIcon}
-        {badge}
-      </p>
+    <div className="public-page-hero public-page-hero--compact" aria-labelledby={id}>
       <h1 id={id} className={titleClass}>
         {title} {titleAccent ? <span className="grad">{titleAccent}</span> : null}
       </h1>

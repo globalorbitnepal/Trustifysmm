@@ -76,8 +76,6 @@ export default function ServicesPage() {
         <div className="services-page-inner public-page-inner">
           <PublicPageHero
             id="services-hero-title"
-            badge={hero.badge}
-            badgeIcon={<StarIcon />}
             title={hero.title}
             titleAccent={hero.titleAccent}
             lede={hero.lede}
@@ -108,16 +106,5 @@ export default function ServicesPage() {
       <ServicesFaq />
       <Footer />
     </main>
-  );
-}
-
-function StarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="m12 4.2 1.8 4.2 4.5.4-3.4 2.9 1 4.3L12 13.8l-4 2.2 1-4.3-3.4-2.9 4.5-.4L12 4.2Z"
-        fill="currentColor"
-      />
-    </svg>
   );
 }

@@ -78,8 +78,6 @@ export default function SupportPage() {
         <div className="support-page-inner public-page-inner">
           <PublicPageHero
             id="support-hero-title"
-            badge={hero.badge}
-            badgeIcon={<LifebeltIcon />}
             title={hero.title}
             titleAccent={hero.titleAccent}
             lede={hero.lede}
@@ -128,15 +126,5 @@ export default function SupportPage() {
       </section>
       <Footer />
     </main>
-  );
-}
-
-function LifebeltIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M8.5 8.5c1.2-1.2 2.5-1.8 3.5-1.8s2.3.6 3.5 1.8M8.5 15.5c1.2 1.2 2.5 1.8 3.5 1.8s2.3-.6 3.5-1.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <path d="M12 6v3M12 15v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
   );
 }

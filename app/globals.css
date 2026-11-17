@@ -1753,7 +1753,7 @@ button {
 .support-page {
   position: relative;
   z-index: 2;
-  padding: clamp(28px, 4.5vh, 56px) 0 clamp(64px, 8vh, 96px);
+  padding: clamp(4px, 1vh, 12px) 0 clamp(64px, 8vh, 96px);
   background:
     radial-gradient(760px 420px at 14% 18%, rgba(168, 85, 247, 0.15), transparent 62%),
     radial-gradient(700px 400px at 86% 14%, rgba(40, 123, 255, 0.12), transparent 58%),
@@ -1776,8 +1776,8 @@ button {
 .services-page-hero {
   position: relative;
   max-width: min(920px, 100%);
-  margin: 0 auto clamp(36px, 5vw, 52px);
-  padding: clamp(28px, 4.5vw, 48px) clamp(22px, 4vw, 48px);
+  margin: 0 auto clamp(28px, 4vw, 40px);
+  padding: clamp(22px, 3vw, 32px) clamp(22px, 4vw, 48px);
   border-radius: 28px;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.02) 48%),
@@ -1847,6 +1847,14 @@ button {
 .public-page-hero .services-page-hero-actions,
 .services-page-hero .services-page-hero-actions {
   margin-bottom: 0;
+}
+
+.public-page-hero--compact .services-page-title {
+  margin-top: 0;
+}
+
+.public-page-hero--compact .services-page-hero-actions {
+  margin-top: clamp(18px, 2.5vw, 24px);
 }
 
 .public-page-hero-media {

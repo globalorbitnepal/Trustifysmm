@@ -89,8 +89,6 @@ export default function BlogsPage() {
         <div className="blog-page-inner public-page-inner">
           <PublicPageHero
             id="blogs-hero-title"
-            badge={hero.badge}
-            badgeIcon={<PenIcon />}
             title={hero.title}
             titleAccent={hero.titleAccent}
             lede={hero.lede}
@@ -125,19 +123,5 @@ export default function BlogsPage() {
       </section>
       <Footer />
     </main>
-  );
-}
-
-function PenIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M12 20h9M5 17l9.2-9.2a2.8 2.8 0 1 0-4-4L4 14v4h1Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

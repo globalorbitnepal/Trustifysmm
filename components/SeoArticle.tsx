@@ -5,7 +5,7 @@ export type SeoFaq = { q: string; a: string };
 
 export function SeoArticle({
   id,
-  badge,
+  badge: _badge,
   title,
   titleAccent,
   lede,
@@ -47,7 +47,6 @@ export function SeoArticle({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
       <div className="services-page-inner seo-article-inner">
-        <p className="services-page-badge">{badge}</p>
         <h1 className="services-page-title" id={`${id}-title`}>
           {title} {titleAccent ? <span className="grad">{titleAccent}</span> : null}
         </h1>
