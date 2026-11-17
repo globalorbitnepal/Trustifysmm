@@ -73,7 +73,9 @@ type Deposit = {
 export function PaymentsScreen() {
   const { data, error, reload } = useOrbit<{ gateway: { live: boolean; currencies: string[] }; deposits: Deposit[] }>("/api/orbit/banker");
   const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState("");
   const deposits = data?.deposits ?? [];
   const stats = {
     queue: deposits.filter((row) => row.status === "pending" || row.status === "confirming").length,
@@ -81,16 +83,20 @@ export function PaymentsScreen() {
     failed: deposits.filter((row) => row.status === "failed" || row.status === "expired").length,
     volume: deposits.filter((row) => row.status === "paid").reduce((sum, row) => sum + row.amountUsd, 0),
   };
-  const rows = deposits.filter((row) => (filter === "all" ? true : row.status === filter));
+  const search = query.trim().toLowerCase();
+  const rows = deposits.filter((row) => (filter === "all" ? true : row.status === filter) && (!search || `${row.id} ${row.email} ${row.name ?? ""} ${row.txHash ?? ""}`.toLowerCase().includes(search)));
 
   async function act(invoiceId: string, action: "credit" | "expire" | "fail") {
+    setBusy(`${invoiceId}:${action}`);
+    setMessage("");
     const response = await fetch("/api/orbit/banker", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ invoiceId, action }),
     });
     const payload = await response.json();
-    setMessage(response.ok ? (action === "credit" ? "Deposit credited to customer wallet." : `Deposit marked ${action}.`) : payload.error || "Action failed");
+    setBusy("");
+    setMessage(response.ok ? (action === "credit" ? "Deposit credited to the customer wallet." : `Deposit marked ${action}.`) : payload.error || "Action failed");
     reload();
   }
 
@@ -98,12 +104,13 @@ export function PaymentsScreen() {
     <>
       <section className="ob-banker-hero">
         <div>
-          <p className="ob-muted">Banker desk</p>
-          <h2 style={{ margin: "4px 0 8px", fontSize: 28, letterSpacing: "-0.03em" }}>Crypto deposit command center</h2>
-          <p className="ob-muted">Review deposits, verify gateway confirmation, and credit wallets with a full audit trail.</p>
-          <p className="ob-note" style={{ marginTop: 12 }}>
-            Customer transaction hashes do not credit wallets. Credit only after the gateway confirms payment or you verify the transfer yourself.
-          </p>
+          <span className="ob-hero-tag">Finance · Banker</span>
+          <h2>Crypto deposit command center</h2>
+          <p>Verify gateway confirmation, credit customer wallets, and keep a full audit trail.</p>
+          <div className="ob-hero-meta">
+            <span className="ob-hero-pill">{data?.gateway.live ? "● Gateway live" : "● Gateway not configured"}</span>
+            <span className="ob-hero-pill">{data?.gateway.currencies.length ? data.gateway.currencies.join(" · ") : "No coins enabled"}</span>
+          </div>
         </div>
         <div className="ob-banker-stats">
           <div className="ob-banker-stat"><span>Review queue</span><strong>{stats.queue}</strong></div>
@@ -148,6 +155,7 @@ export function PaymentsScreen() {
         ].map(([id, label]) => (
           <button key={id} type="button" className={`ob-btn ghost${filter === id ? " is-on" : ""}`} onClick={() => setFilter(id)}>{label}</button>
         ))}
+        <input placeholder="Search deposit, email, hash" value={query} onChange={(event) => setQuery(event.target.value)} />
       </div>
 
       {error ? <p className="ob-error">{error}</p> : null}
@@ -184,9 +192,9 @@ export function PaymentsScreen() {
                   <div className="ob-toolbar">
                     {row.status === "paid" ? <span className="ob-muted">Settled</span> : (
                       <>
-                        <button className="ob-btn primary" type="button" onClick={() => act(row.id, "credit")}>Credit</button>
-                        <button className="ob-btn" type="button" onClick={() => act(row.id, "expire")}>Expire</button>
-                        <button className="ob-btn warn" type="button" onClick={() => act(row.id, "fail")}>Fail</button>
+                        <button className="ob-btn primary" type="button" disabled={busy === `${row.id}:credit`} onClick={() => act(row.id, "credit")}>{busy === `${row.id}:credit` ? "Crediting…" : "Credit"}</button>
+                        <button className="ob-btn" type="button" disabled={busy === `${row.id}:expire`} onClick={() => act(row.id, "expire")}>Expire</button>
+                        <button className="ob-btn warn" type="button" disabled={busy === `${row.id}:fail`} onClick={() => act(row.id, "fail")}>Fail</button>
                       </>
                     )}
                   </div>
