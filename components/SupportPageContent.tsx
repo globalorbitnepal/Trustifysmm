@@ -8,7 +8,15 @@ import {
   supportQuickLinks,
 } from "@/data/support-faq";
 
-export function SupportPageContent() {
+export function SupportPageContent({
+  email = "support@trustifysmm.com",
+  phone = "",
+  whatsapp = "",
+}: {
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+}) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
 
@@ -76,7 +84,27 @@ export function SupportPageContent() {
         </div>
 
         <div className="support-channels" id="contact">
-          {supportChannels.map((ch) => (
+          <article className="support-channel-card">
+            <h2>Email support</h2>
+            <p>Billing, API issues, refill disputes, account access</p>
+            <p className="support-channel-sla">Typical reply within 4–12 hours</p>
+            <a className="btn btn-primary support-channel-btn" href={`mailto:${email}`}>{email}</a>
+          </article>
+          {phone ? (
+            <article className="support-channel-card">
+              <h2>Phone</h2>
+              <p>Call the number published by TrustifySMM.</p>
+              <a className="btn btn-primary support-channel-btn" href={`tel:${phone.replace(/\s/g, "")}`}>{phone}</a>
+            </article>
+          ) : null}
+          {whatsapp ? (
+            <article className="support-channel-card">
+              <h2>WhatsApp</h2>
+              <p>Message the official WhatsApp contact.</p>
+              <a className="btn btn-primary support-channel-btn" href={whatsapp.startsWith("http") ? whatsapp : `https://wa.me/${whatsapp.replace(/[^\d]/g, "")}`}>Open WhatsApp</a>
+            </article>
+          ) : null}
+          {supportChannels.filter((ch) => ch.id !== "email").map((ch) => (
             <article key={ch.id} className="support-channel-card">
               <h2>{ch.title}</h2>
               <p>{ch.detail}</p>

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SupportPageContent } from "@/components/SupportPageContent";
 import { supportFaqCategories } from "@/data/support-faq";
+import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
+import { pageHero } from "@/lib/orbit/public-copy";
 
 const supportMetadata: Metadata = {
   title: "Help Center & Support | TrustifySMM Panel",
@@ -33,6 +35,17 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function SupportPage() {
   const allFaq = supportFaqCategories.flatMap((c) => c.items);
+  const contact = liveSiteConfig().contact;
+  const hero = pageHero("/support", {
+    badge: "Help Center",
+    title: "Premium",
+    titleAccent: "Support & FAQ",
+    lede: "Long-form professional answers for orders, refills, crypto Banker balance, API automation and account security — plus direct contact options when you need a human.",
+    ctaPrimary: "Open panel & ticket",
+    ctaPrimaryHref: "/signin",
+    ctaSecondary: "Jump to FAQ",
+    ctaSecondaryHref: "#support-faq",
+  });
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -54,7 +67,7 @@ export default function SupportPage() {
 
   return (
     <main className="page">
-      <Header />
+      <SiteHeader />
       <section className="support-page">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(helpPageJsonLd) }} />
@@ -62,21 +75,25 @@ export default function SupportPage() {
         <div className="support-page-inner">
           <p className="services-page-badge">
             <LifebeltIcon />
-            Help Center
+            {hero.badge}
           </p>
           <h1 className="services-page-title">
-            Premium <span className="grad">Support</span> &amp; FAQ
+            {hero.title} {hero.titleAccent ? <span className="grad">{hero.titleAccent}</span> : null}
           </h1>
-          <p className="services-page-lede">
-            Long-form professional answers for orders, refills, crypto Banker balance, API automation and account
-            security — plus direct contact options when you need a human.
-          </p>
+          <p className="services-page-lede">{hero.lede}</p>
+          {hero.heroImage ? <img src={hero.heroImage} alt={hero.heroImageAlt || ""} style={{ maxWidth: 420, width: "100%", borderRadius: 20, marginBottom: 16 }} /> : null}
 
           <div className="support-stats" aria-label="Support highlights">
-            <a href="mailto:support@trustifysmm.com" className="support-stat support-stat--link">
-              <strong>support@trustifysmm.com</strong>
+            <a href={`mailto:${contact.email}`} className="support-stat support-stat--link">
+              <strong>{contact.email}</strong>
               <span>Email · 4–12h reply</span>
             </a>
+            {contact.phone ? (
+              <a href={`tel:${contact.phone.replace(/\s/g, "")}`} className="support-stat support-stat--link">
+                <strong>{contact.phone}</strong>
+                <span>Phone</span>
+              </a>
+            ) : null}
             <div className="support-stat">
               <strong>24/7</strong>
               <span>Docs &amp; catalog online</span>
@@ -92,15 +109,19 @@ export default function SupportPage() {
           </div>
 
           <div className="services-page-hero-actions">
-            <Link className="btn btn-primary btn-lg" href="/signin">
-              Open panel &amp; ticket
-            </Link>
-            <a className="btn btn-ghost btn-lg" href="#support-faq">
-              Jump to FAQ
-            </a>
+            {hero.ctaPrimary ? (
+              <Link className="btn btn-primary btn-lg" href={hero.ctaPrimaryHref || "/signin"}>
+                {hero.ctaPrimary}
+              </Link>
+            ) : null}
+            {hero.ctaSecondary ? (
+              <a className="btn btn-ghost btn-lg" href={hero.ctaSecondaryHref || "#support-faq"}>
+                {hero.ctaSecondary}
+              </a>
+            ) : null}
           </div>
 
-          <SupportPageContent />
+          <SupportPageContent email={contact.email} phone={contact.phone} whatsapp={contact.whatsapp} />
         </div>
       </section>
       <Footer />

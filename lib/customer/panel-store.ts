@@ -168,6 +168,39 @@ export async function createTicket(input: {
   });
 }
 
+export async function listAllTickets() {
+  const store = await load();
+  return [...store.tickets].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+}
+
+export async function staffReply(ticketId: string, body: string, status: TicketStatus = "answered") {
+  return withStoreLock(async () => {
+    const store = await load();
+    const ticket = store.tickets.find((row) => row.id === ticketId);
+    if (!ticket) return { error: "Ticket not found." as const };
+    const text = body.trim();
+    if (text.length < 2 && status === ticket.status) return { error: "Write a reply first." as const };
+    const now = new Date().toISOString();
+    if (text.length >= 2) {
+      ticket.messages.push({ id: nid("msg"), author: "support", body: text, createdAt: now });
+      store.notifications.push({
+        id: nid("ntf"),
+        userId: ticket.userId,
+        type: "support_reply",
+        title: "Support replied",
+        body: text.slice(0, 180),
+        href: `/dashboard/tickets/${ticket.id}`,
+        read: false,
+        createdAt: now,
+      });
+    }
+    ticket.status = status;
+    ticket.updatedAt = now;
+    await save(store);
+    return { ticket };
+  });
+}
+
 export async function listTickets(userId: string) {
   const store = await load();
   return store.tickets
@@ -242,6 +275,11 @@ export async function recordLogin(userId: string, method: LoginEvent["method"], 
 export async function listLogins(userId: string) {
   const store = await load();
   return store.logins.filter((row) => row.userId === userId).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+export async function listAllLogins() {
+  const store = await load();
+  return [...store.logins].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
 export async function recordAudit(userId: string, action: string) {

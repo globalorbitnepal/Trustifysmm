@@ -1,3 +1,5 @@
+import { sectionHeading } from "@/lib/orbit/public-copy";
+
 const steps = [
   {
     num: "01",
@@ -37,6 +39,7 @@ const perks = [
 ] as const;
 
 export function HowItWorks() {
+  const copy = sectionHeading("how");
   return (
     <section className="how" id="how">
       <svg className="how-waves" viewBox="0 0 1440 640" preserveAspectRatio="none" aria-hidden>
@@ -81,14 +84,12 @@ export function HowItWorks() {
       <div className="how-inner">
         <p className="how-badge">
           <PlayBadgeIcon />
-          How It Works
+          {copy.badge}
         </p>
         <h2 className="how-title">
-          Get Started in Just <span className="grad-cyan">4 Simple Steps</span>
+          {copy.title} {copy.titleAccent ? <span className="grad-cyan">{copy.titleAccent}</span> : null}
         </h2>
-        <p className="how-lede">
-          Start using TrustifySMM in minutes. It&apos;s fast, easy and fully automated.
-        </p>
+        <p className="how-lede">{copy.lede}</p>
 
         <div className="how-steps">
           {steps.map((step, i) => (

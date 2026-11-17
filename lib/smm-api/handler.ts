@@ -1,6 +1,4 @@
-import pricingData from "@/data/service-pricing.json";
-import type { ServicePricingData } from "@/data/service-pricing-types";
-import { applyOrbitPricing } from "@/lib/orbit/pricing-display";
+import { livePricingData } from "@/lib/orbit/live-catalog";
 import { findPricingService, pricingToApiServices } from "@/lib/smm-api/catalog";
 import {
   createDemoOrder,
@@ -10,8 +8,6 @@ import {
 } from "@/lib/smm-api/demo-store";
 import type { SmmApiParams } from "@/lib/smm-api/types";
 import { proxyToUpstream, upstreamConfigured } from "@/lib/smm-api/upstream";
-
-const catalog = applyOrbitPricing(pricingData as ServicePricingData);
 
 function parseIntSafe(value: string | undefined) {
   const n = Number.parseInt(value ?? "", 10);
@@ -45,7 +41,7 @@ export async function handleSmmApi(params: SmmApiParams): Promise<unknown> {
 
   switch (action) {
     case "services":
-      return pricingToApiServices(catalog);
+      return pricingToApiServices(livePricingData());
 
     case "balance":
       return {
@@ -60,7 +56,7 @@ export async function handleSmmApi(params: SmmApiParams): Promise<unknown> {
       if (!Number.isFinite(serviceId) || !Number.isFinite(quantity) || !link) {
         return { error: "service, link and quantity are required" };
       }
-      const svc = findPricingService(catalog, serviceId);
+      const svc = findPricingService(livePricingData(), serviceId);
       if (!svc) return { error: "Service not found" };
       const charge = (svc.ratePer1000 * quantity) / 1000;
       const result = await createDemoOrder({

@@ -8,19 +8,23 @@ import { OrbitBrandLogo } from "@/components/orbit/OrbitBrandLogo";
 
 type OrbitSection =
   | "overview"
+  | "customers"
   | "homepage"
   | "sections"
   | "pages"
+  | "contact"
   | "pricing"
   | "banker";
 
 const NAV: { id: OrbitSection; label: string; hint: string }[] = [
-  { id: "overview", label: "Overview", hint: "Status & quick links" },
-  { id: "homepage", label: "Homepage", hint: "Hero & CTAs" },
-  { id: "sections", label: "Sections", hint: "Why choose + footer stats" },
-  { id: "pages", label: "All pages", hint: "SEO meta every route" },
-  { id: "pricing", label: "Pricing", hint: "All services & markup" },
-  { id: "banker", label: "Banker", hint: "Crypto & API upstream" },
+  { id: "overview", label: "Overview", hint: "Live panel status" },
+  { id: "customers", label: "Customers", hint: "Accounts, balance, access" },
+  { id: "pricing", label: "Services", hint: "Edit every rate" },
+  { id: "banker", label: "Banker", hint: "Deposits and credits" },
+  { id: "contact", label: "Contact", hint: "Email, phone, WhatsApp" },
+  { id: "homepage", label: "Homepage", hint: "Hero and CTAs" },
+  { id: "sections", label: "Sections", hint: "Why choose and stats" },
+  { id: "pages", label: "All pages", hint: "SEO for every route" },
 ];
 
 type PricingRow = {
@@ -31,6 +35,32 @@ type PricingRow = {
   baseRate: number;
   rate: number;
   overridden: boolean;
+};
+
+type CustomerRow = {
+  id: string;
+  email: string;
+  name: string | null;
+  username: string | null;
+  balance: number;
+  orders: number;
+  apiKeyMasked: string;
+  apiKeyRevoked: boolean;
+  google: boolean;
+  hasPassword: boolean;
+  createdAt: string;
+};
+
+type DepositRow = {
+  id: string;
+  email: string;
+  name: string | null;
+  amountUsd: number;
+  payCurrency: string | null;
+  txHash: string | null;
+  status: string;
+  provider: string;
+  createdAt: string;
 };
 
 export function OrbitDashboard() {
@@ -45,11 +75,30 @@ export function OrbitDashboard() {
   const [priceRows, setPriceRows] = useState<PricingRow[]>([]);
   const [priceTotal, setPriceTotal] = useState(0);
   const [overrideCount, setOverrideCount] = useState(0);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [deposits, setDeposits] = useState<DepositRow[]>([]);
+  const [gateway, setGateway] = useState<{ live: boolean; currencies: string[] }>({ live: false, currencies: [] });
 
   const loadConfig = useCallback(async () => {
     const res = await fetch("/api/orbit/config");
     if (!res.ok) return;
     setConfig((await res.json()) as OrbitSiteConfig);
+  }, []);
+
+  const loadCustomers = useCallback(async () => {
+    const res = await fetch("/api/orbit/customers");
+    if (!res.ok) return;
+    const data = (await res.json()) as { customers: CustomerRow[] };
+    setCustomers(data.customers);
+  }, []);
+
+  const loadBanker = useCallback(async () => {
+    const res = await fetch("/api/orbit/banker");
+    if (!res.ok) return;
+    const data = (await res.json()) as { deposits: DepositRow[]; gateway: { live: boolean; currencies: string[] } };
+    setDeposits(data.deposits);
+    setGateway(data.gateway);
   }, []);
 
   const loadPricing = useCallback(async () => {
@@ -80,7 +129,9 @@ export function OrbitDashboard() {
 
   useEffect(() => {
     if (section === "pricing" || section === "overview") void loadPricing();
-  }, [section, loadPricing]);
+    if (section === "customers" || section === "overview") void loadCustomers();
+    if (section === "banker" || section === "overview") void loadBanker();
+  }, [section, loadPricing, loadCustomers, loadBanker]);
 
   async function saveConfig(next: OrbitSiteConfig) {
     setSaving(true);
@@ -106,6 +157,17 @@ export function OrbitDashboard() {
   async function logout() {
     await fetch("/api/orbit/auth/logout", { method: "POST" });
     router.replace("/orbit/login");
+  }
+
+  async function bankerAction(invoiceId: string, action: "credit" | "expire") {
+    const res = await fetch("/api/orbit/banker", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invoiceId, action }),
+    });
+    const data = (await res.json()) as { error?: string };
+    setToast(data.error || (action === "credit" ? "Wallet credited." : "Deposit updated."));
+    void loadBanker();
   }
 
   async function patchPricing(body: Record<string, unknown>) {
@@ -174,25 +236,57 @@ export function OrbitDashboard() {
             </p>
             <div className="orbit-stat-grid">
               <div className="orbit-stat-card">
-                <strong>{Object.keys(config.pages).length}</strong>
-                <span>Pages with SEO fields</span>
+                <strong>{customers.length}</strong>
+                <span>Customers</span>
+              </div>
+              <div className="orbit-stat-card">
+                <strong>{priceTotal ? priceTotal.toLocaleString() : "—"}</strong>
+                <span>Services</span>
+              </div>
+              <div className="orbit-stat-card">
+                <strong>{deposits.filter((row) => row.status === "pending" || row.status === "confirming").length}</strong>
+                <span>Deposits waiting</span>
               </div>
               <div className="orbit-stat-card">
                 <strong>{config.pricing.globalMarkupPercent}%</strong>
                 <span>Global price markup</span>
               </div>
-              <div className="orbit-stat-card">
-                <strong>{overrideCount || "—"}</strong>
-                <span>Price overrides</span>
-              </div>
-              <div className="orbit-stat-card">
-                <strong>{config.banker.demoAutoPay ? "On" : "Off"}</strong>
-                <span>Demo Banker auto-pay</span>
-              </div>
             </div>
           </div>
         )}
 
+        {section === "customers" && (
+          <div className="orbit-panel orbit-panel--wide">
+            <p className="orbit-panel-lede">Edit a customer’s name, wallet balance, or API access. Balance changes are written as an adjustment and do not delete orders.</p>
+            <div className="orbit-price-toolbar">
+              <input type="search" placeholder="Search name or email" value={customerQuery} onChange={(e) => setCustomerQuery(e.target.value)} />
+              <span>{customers.length} customers</span>
+            </div>
+            <div className="orbit-table-wrap">
+              <table className="orbit-table">
+                <thead>
+                  <tr><th>Customer</th><th>Balance</th><th>Orders</th><th>Access</th><th>Edit</th></tr>
+                </thead>
+                <tbody>
+                  {customers.filter((row) => `${row.email} ${row.name ?? ""}`.toLowerCase().includes(customerQuery.toLowerCase())).map((row) => (
+                    <CustomerEditor key={row.id} row={row} onSaved={() => void loadCustomers()} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {section === "contact" && (
+          <div className="orbit-panel">
+            <p className="orbit-panel-lede">These details appear in the website footer and help center.</p>
+            <Field label="Support email" value={config.contact.email} onChange={(v) => setConfig({ ...config, contact: { ...config.contact, email: v } })} />
+            <Field label="Phone number" value={config.contact.phone} onChange={(v) => setConfig({ ...config, contact: { ...config.contact, phone: v } })} />
+            <Field label="WhatsApp number or link" value={config.contact.whatsapp} onChange={(v) => setConfig({ ...config, contact: { ...config.contact, whatsapp: v } })} />
+            <Field label="Telegram link" value={config.contact.telegram} onChange={(v) => setConfig({ ...config, contact: { ...config.contact, telegram: v } })} />
+            <SaveBar saving={saving} onSave={() => void saveConfig(config)} />
+          </div>
+        )}
         {section === "homepage" && (
           <div className="orbit-panel">
             <Field label="Badge" value={config.home.badge} onChange={(v) => setConfig({ ...config, home: { ...config.home, badge: v } })} />
@@ -343,35 +437,79 @@ export function OrbitDashboard() {
         )}
 
         {section === "banker" && (
-          <div className="orbit-panel">
-            <Field label="Pay currency (e.g. usdttrc20)" value={config.banker.payCurrency} onChange={(v) => setConfig({ ...config, banker: { ...config.banker, payCurrency: v } })} />
-            <label className="orbit-check">
-              <input
-                type="checkbox"
-                checked={config.banker.demoAutoPay}
-                onChange={(e) => setConfig({ ...config, banker: { ...config.banker, demoAutoPay: e.target.checked } })}
-              />
-              Demo Banker auto-pay (orbit + /api/banker/pay?confirm=1)
-            </label>
-            <Field label="Upstream API URL (reference)" value={config.banker.upstreamApiUrl} onChange={(v) => setConfig({ ...config, banker: { ...config.banker, upstreamApiUrl: v } })} />
-            <Field label="Admin notes" value={config.banker.notes} multiline onChange={(v) => setConfig({ ...config, banker: { ...config.banker, notes: v } })} />
-            <p className="orbit-hint">
-              Secrets (NOWPAYMENTS_API_KEY, SMM_UPSTREAM_API_URL) still live in server <code>.env</code>. Orbit stores
-              display preferences and demo flags.
-            </p>
-            <div className="orbit-banker-links">
-              <Link href="/api" target="_blank" className="btn btn-ghost">
-                API docs
-              </Link>
-              <a href="/api/banker/invoice" target="_blank" rel="noreferrer" className="btn btn-ghost">
-                Banker invoice endpoint
-              </a>
+          <div className="orbit-panel orbit-panel--wide">
+            <div className="orbit-stat-grid">
+              <div className="orbit-stat-card">
+                <strong>{gateway.live ? "Live" : "Not configured"}</strong>
+                <span>Payment gateway</span>
+              </div>
+              <div className="orbit-stat-card">
+                <strong>{gateway.currencies.join(", ") || "—"}</strong>
+                <span>Enabled coins</span>
+              </div>
             </div>
+            <p className="orbit-hint">
+              A deposit is credited only after the signed gateway webhook, or after you confirm it here. A customer hash never adds balance by itself.
+              Gateway keys stay in the server environment.
+            </p>
+            <div className="orbit-table-wrap">
+              <table className="orbit-table">
+                <thead>
+                  <tr><th>Deposit</th><th>Customer</th><th>Amount</th><th>Status</th><th>Hash</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {deposits.length === 0 ? (
+                    <tr><td colSpan={6}>No deposits yet.</td></tr>
+                  ) : deposits.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.id}<br /><small>{row.createdAt.slice(0, 16).replace("T", " ")}</small></td>
+                      <td>{row.name || row.email}<br /><small>{row.email}</small></td>
+                      <td>${row.amountUsd.toFixed(2)}<br /><small>{row.payCurrency || row.provider}</small></td>
+                      <td>{row.status}</td>
+                      <td className="orbit-cell-name">{row.txHash || "—"}</td>
+                      <td>
+                        {row.status !== "paid" ? (
+                          <>
+                            <button type="button" className="orbit-mini-btn" onClick={() => void bankerAction(row.id, "credit")}>Credit</button>
+                            <button type="button" className="orbit-mini-btn" onClick={() => void bankerAction(row.id, "expire")}>Expire</button>
+                          </>
+                        ) : <small>Credited</small>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <h2>Gateway preferences</h2>
+            <Field label="Default pay currency" value={config.banker.payCurrency} onChange={(v) => setConfig({ ...config, banker: { ...config.banker, payCurrency: v } })} />
+            <Field label="Admin notes" value={config.banker.notes} multiline onChange={(v) => setConfig({ ...config, banker: { ...config.banker, notes: v } })} />
             <SaveBar saving={saving} onSave={() => void saveConfig(config)} />
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function CustomerEditor({ row, onSaved }: { row: CustomerRow; onSaved: () => void }) {
+  const [name, setName] = useState(row.name || "");
+  const [balance, setBalance] = useState(String(row.balance));
+  return (
+    <tr>
+      <td>
+        <span className="orbit-cell-name">{name || row.email}</span>
+        <small>{row.email} · {row.apiKeyMasked} · {row.google ? "Google" : row.hasPassword ? "Password" : "Account"}</small>
+      </td>
+      <td>${row.balance.toFixed(2)}</td>
+      <td>{row.orders}</td>
+      <td>{row.apiKeyRevoked ? "Revoked" : "Active"}</td>
+      <td>
+        <input className="orbit-rate-input" value={name} onChange={(e) => setName(e.target.value)} aria-label="Name" />
+        <input className="orbit-rate-input" value={balance} onChange={(e) => setBalance(e.target.value)} aria-label="Balance" />
+        <button type="button" className="orbit-mini-btn" onClick={() => void fetch("/api/orbit/customers", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: row.id, name, balance: Number(balance) }) }).then(onSaved)}>Save</button>
+        <button type="button" className="orbit-mini-btn" onClick={() => void fetch("/api/orbit/customers", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: row.id, revoked: !row.apiKeyRevoked }) }).then(onSaved)}>{row.apiKeyRevoked ? "Restore" : "Revoke"}</button>
+      </td>
+    </tr>
   );
 }
 

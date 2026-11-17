@@ -5,7 +5,22 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 
-export function Header() {
+export function Header({
+  links = [
+    { href: "/", label: "Home" },
+    { href: "/services", label: "Services" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/api", label: "API" },
+    { href: "/blogs", label: "Blogs" },
+    { href: "/support", label: "Support" },
+  ],
+  signInLabel = "Sign In",
+  signUpLabel = "Sign Up",
+}: {
+  links?: { href: string; label: string }[];
+  signInLabel?: string;
+  signUpLabel?: string;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -37,54 +52,27 @@ export function Header() {
         </button>
 
         <nav className={`nav-links${open ? " open" : ""}`}>
-          <Link href="/" prefetch className={pathname === "/" ? "is-active" : ""} onClick={() => setOpen(false)}>
-            Home
-          </Link>
-          <Link
-            href="/services"
-            prefetch
-            className={pathname === "/services" ? "is-active" : ""}
-            onClick={() => setOpen(false)}
-          >
-            Services
-          </Link>
-          <Link href="/pricing" prefetch className={pathname === "/pricing" ? "is-active" : ""} onClick={() => setOpen(false)}>
-            Pricing
-          </Link>
-          <Link
-            href="/api"
-            prefetch
-            className={pathname === "/api" ? "is-active" : ""}
-            onClick={() => setOpen(false)}
-          >
-            API
-          </Link>
-          <Link
-            href="/blogs"
-            prefetch
-            className={pathname === "/blogs" || pathname.startsWith("/blogs/") ? "is-active" : ""}
-            onClick={() => setOpen(false)}
-          >
-            Blogs
-          </Link>
-          <Link
-            href="/support"
-            prefetch
-            className={pathname === "/support" ? "is-active" : ""}
-            onClick={() => setOpen(false)}
-          >
-            Support
-          </Link>
+          {links.map((item) => (
+            <Link
+              key={item.href + item.label}
+              href={item.href}
+              prefetch
+              className={item.href === "/" ? (pathname === "/" ? "is-active" : "") : pathname === item.href || pathname.startsWith(`${item.href}/`) ? "is-active" : ""}
+              onClick={() => setOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
         <div className={`nav-cta${open ? " open" : ""}`}>
           <Link className="btn btn-ghost" href="/signin" prefetch onClick={() => setOpen(false)}>
             <UserIcon />
-            Sign In
+            {signInLabel}
           </Link>
           <Link className="btn btn-primary" href="/signup" prefetch onClick={() => setOpen(false)}>
             <UserIcon />
-            Sign Up
+            {signUpLabel}
           </Link>
         </div>
       </div>

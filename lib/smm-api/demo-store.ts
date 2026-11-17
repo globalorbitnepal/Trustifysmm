@@ -238,9 +238,105 @@ export async function listOrdersByAccount(key: string) {
   return store.orders.filter((order) => order.accountKey === key).sort((a, b) => b.order - a.order);
 }
 
+export async function listAllOrders() {
+  const store = await ensureStore();
+  return [...store.orders].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+export async function listAllLedger() {
+  const store = await ensureStore();
+  return [...store.transactions].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
 export async function listLedger(key: string) {
   const store = await ensureStore();
   return store.transactions.filter((row) => row.accountKey === key).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+export async function listAllInvoices() {
+  const store = await ensureStore();
+  return [...store.invoices].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+export async function adjustAccount(
+  key: string,
+  delta: number,
+  description: string,
+  ref?: string,
+) {
+  return withStoreLock(async () => {
+    const store = await ensureStore();
+    const account = store.accounts.find((row) => row.key === key);
+    if (!account) return { error: "Wallet not found." as const };
+    const amount = Math.round(delta * 10000) / 10000;
+    if (!Number.isFinite(amount) || amount === 0) return { error: "Enter an amount greater than zero." as const };
+    if (ref && store.transactions.some((row) => row.ref === ref)) {
+      return { error: "This reference was already used." as const };
+    }
+    const next = Math.round((account.balance + amount) * 10000) / 10000;
+    if (next < 0) return { error: "That debit would make the wallet negative." as const };
+    account.balance = next;
+    pushLedger(store, {
+      accountKey: key,
+      type: amount > 0 ? "adjustment" : "adjustment",
+      amount,
+      balanceAfter: next,
+      description,
+      ref,
+    });
+    await persist(store);
+    return { account };
+  });
+}
+
+export async function refundOrder(orderId: number, description: string) {
+  return withStoreLock(async () => {
+    const store = await ensureStore();
+    const order = store.orders.find((row) => row.order === orderId);
+    if (!order) return { error: "Order not found." as const };
+    if (!order.accountKey) return { error: "This order is not linked to a customer wallet." as const };
+    if (order.status === "Refunded") return { error: "This order is already refunded." as const };
+    const account = store.accounts.find((row) => row.key === order.accountKey);
+    if (!account) return { error: "Wallet not found." as const };
+    const amount = Math.round(order.charge * 10000) / 10000;
+    if (amount < 0) return { error: "Invalid charge." as const };
+    account.balance = Math.round((account.balance + amount) * 10000) / 10000;
+    order.status = "Refunded";
+    order.updatedAt = new Date().toISOString();
+    pushLedger(store, {
+      accountKey: account.key,
+      type: "refund",
+      amount,
+      balanceAfter: account.balance,
+      description,
+      ref: `refund:${order.order}`,
+    });
+    await persist(store);
+    return { order, account };
+  });
+}
+
+export async function setAccountBalance(key: string, nextBalance: number, description: string) {
+  return withStoreLock(async () => {
+    const store = await ensureStore();
+    const account = store.accounts.find((row) => row.key === key);
+    if (!account) return null;
+    const next = Math.round(nextBalance * 10000) / 10000;
+    if (!Number.isFinite(next) || next < 0) return null;
+    const delta = Math.round((next - account.balance) * 10000) / 10000;
+    account.balance = next;
+    if (delta !== 0) {
+      pushLedger(store, {
+        accountKey: key,
+        type: "adjustment",
+        amount: delta,
+        balanceAfter: next,
+        description,
+      });
+    }
+    await persist(store);
+    return account;
+  });
 }
 
 export async function listInvoicesForKey(key: string) {

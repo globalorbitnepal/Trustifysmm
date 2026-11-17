@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const scope = url.searchParams.get("scope") || "";
   let orders = await listOrdersByAccount(user.apiKey);
   if (scope === "history") {
-    orders = orders.filter((order) => ["Completed", "Partial", "Canceled", "Failed"].includes(order.status));
+    orders = orders.filter((order) => ["Completed", "Partial", "Canceled", "Failed", "Refunded"].includes(order.status));
   }
   if (status) orders = orders.filter((order) => order.status === status);
   if (from) orders = orders.filter((order) => order.createdAt.slice(0, 10) >= from);

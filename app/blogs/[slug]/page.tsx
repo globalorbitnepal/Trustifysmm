@@ -2,10 +2,17 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BlogArticle } from "@/components/BlogArticle";
 import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
+import { SiteHeader } from "@/components/SiteHeader";
 import { getBlogPostBySlug, getBlogSlugs } from "@/data/blog-utils";
+import { publicManagedPosts } from "@/lib/orbit/blog-store";
 
 type PageProps = { params: Promise<{ slug: string }> };
+
+export const dynamic = "force-dynamic";
+
+function findPost(slug: string) {
+  return publicManagedPosts().find((post) => post.slug === slug) ?? getBlogPostBySlug(slug);
+}
 
 export function generateStaticParams() {
   return getBlogSlugs().map((slug) => ({ slug }));
@@ -13,7 +20,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = findPost(slug);
   if (!post) return { title: "Blog | TrustifySMM" };
 
   const ogImage = post.image.src.startsWith("http") ? post.image.src : `https://trustifysmm.com${post.image.src}`;
@@ -44,7 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = findPost(slug);
   if (!post) notFound();
 
   const faqJsonLd = {
@@ -77,7 +84,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   return (
     <main className="page">
-      <Header />
+      <SiteHeader />
       <section className="blog-post-page">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />

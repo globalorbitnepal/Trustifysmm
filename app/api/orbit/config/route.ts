@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readSiteConfig, writeSiteConfig } from "@/lib/orbit/site-config";
 import type { OrbitSiteConfig } from "@/lib/orbit/types";
 import { clearPricingOverridesCache } from "@/lib/orbit/pricing-display";
+import { clearLiveCatalogCache } from "@/lib/orbit/live-catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,8 +23,9 @@ export async function PUT(request: NextRequest) {
 
   const saved = await writeSiteConfig(body);
   clearPricingOverridesCache();
+  clearLiveCatalogCache();
 
-  for (const path of ["/", "/services", "/pricing", "/api", "/blogs", "/support"]) {
+  for (const path of ["/", "/services", "/pricing", "/api", "/blogs", "/support", "/terms", "/privacy", "/signin", "/signup"]) {
     revalidatePath(path);
   }
   revalidatePath("/orbit");

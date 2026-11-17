@@ -3,6 +3,8 @@ import { PaymentWalletVisual } from "@/components/PaymentWalletVisual";
 import type { CryptoId } from "@/components/CryptoBrandIcon";
 import { PayCoinArt } from "@/components/PayCoinArt";
 
+import { sectionHeading } from "@/lib/orbit/public-copy";
+
 const coins = [
   { id: "btc", name: "Bitcoin", ticker: "BTC", tone: "violet" },
   { id: "eth", name: "Ethereum", ticker: "ETH", tone: "blue" },
@@ -17,6 +19,7 @@ const perks = [
 ] as const;
 
 export function PaymentMethods() {
+  const copy = sectionHeading("payments");
   return (
     <section className="payments" id="payments">
       <svg className="payments-waves" viewBox="0 0 1440 720" preserveAspectRatio="none" aria-hidden>
@@ -61,14 +64,12 @@ export function PaymentMethods() {
       <div className="payments-inner">
         <p className="payments-badge">
           <WalletIcon />
-          Payment Methods
+          {copy.badge}
         </p>
         <h2 className="payments-title">
-          Secure &amp; Fast <span className="grad">Payments</span>
+          {copy.title} {copy.titleAccent ? <span className="grad">{copy.titleAccent}</span> : null}
         </h2>
-        <p className="payments-lede">
-          Add funds to your account instantly with supported cryptocurrencies.
-        </p>
+        <p className="payments-lede">{copy.lede}</p>
 
         <div className="payments-showcase">
           <PaymentWalletVisual />

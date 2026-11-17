@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BrandGlassIcon, type BrandGlassId } from "@/components/BrandGlassIcon";
-import { getSiteConfigSync } from "@/lib/orbit/site-config-sync";
+import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import { PayCoinArt } from "@/components/PayCoinArt";
 import { Logo } from "./Logo";
 
@@ -19,14 +19,6 @@ const panelLinks = [
   { href: "/signup", label: "Create Account" },
 ] as const;
 
-const supportLinks = [
-  { href: "/support", label: "Help Center" },
-  { href: "/blogs", label: "Blog" },
-  { href: "mailto:support@trustifysmm.com", label: "Email Support" },
-  { href: "/terms", label: "Terms of Service" },
-  { href: "/privacy", label: "Privacy Policy" },
-] as const;
-
 const socialPlatforms: { href: string; id: BrandGlassId; label: string }[] = [
   { href: "https://instagram.com", id: "instagram", label: "Instagram" },
   { href: "https://facebook.com", id: "facebook", label: "Facebook" },
@@ -38,7 +30,7 @@ const socialPlatforms: { href: string; id: BrandGlassId; label: string }[] = [
 ];
 
 function footerStats() {
-  return getSiteConfigSync().footerStats;
+  return liveSiteConfig().footerStats;
 }
 
 const coins = ["btc", "eth", "usdt", "sol"] as const;
@@ -73,6 +65,20 @@ function LinkColumn({
 export function Footer() {
   const year = new Date().getFullYear();
   const stats = footerStats();
+  const contact = liveSiteConfig().contact;
+  const copy = liveSiteConfig().footerCopy;
+  const supportLinks = [
+    { href: "/support", label: "Help Center" },
+    { href: "/blogs", label: "Blog" },
+    { href: `mailto:${contact.email}`, label: "Email Support" },
+    { href: "/terms", label: "Terms of Service" },
+    { href: "/privacy", label: "Privacy Policy" },
+  ];
+  const whatsappHref = contact.whatsapp
+    ? contact.whatsapp.startsWith("http")
+      ? contact.whatsapp
+      : `https://wa.me/${contact.whatsapp.replace(/[^\d]/g, "")}`
+    : "https://whatsapp.com";
 
   return (
     <footer className="site-footer" id="footer">
@@ -81,7 +87,13 @@ export function Footer() {
           <div className="site-footer-head-copy">
             <p className="site-footer-kicker">TrustifySMM</p>
             <h2 className="site-footer-headline">
-              Premium growth from <span className="grad">one panel</span>
+              {copy.blurb === "Premium growth from one panel" ? (
+                <>
+                  Premium growth from <span className="grad">one panel</span>
+                </>
+              ) : (
+                copy.blurb
+              )}
             </h2>
           </div>
           <div className="site-footer-head-actions">
@@ -100,10 +112,17 @@ export function Footer() {
             Follow us on social
           </h3>
           <div className="site-footer-social-row" role="list">
-            {socialPlatforms.map((item) => (
+            {socialPlatforms.map((item) => {
+              const href =
+                item.id === "whatsapp"
+                  ? whatsappHref
+                  : item.id === "telegram" && contact.telegram
+                    ? contact.telegram
+                    : item.href;
+              return (
               <a
                 key={item.id}
-                href={item.href}
+                href={href}
                 className="site-footer-social-link"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -113,7 +132,8 @@ export function Footer() {
                 <BrandGlassIcon id={item.id} className="site-footer-social-icon" />
                 <span>{item.label}</span>
               </a>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -134,10 +154,15 @@ export function Footer() {
                 </div>
               ))}
             </div>
-            <a className="site-footer-mail" href="mailto:support@trustifysmm.com">
+            <a className="site-footer-mail" href={`mailto:${contact.email}`}>
               <MailIcon />
-              support@trustifysmm.com
+              {contact.email}
             </a>
+            {contact.phone ? (
+              <a className="site-footer-mail" href={`tel:${contact.phone.replace(/\s/g, "")}`}>
+                {contact.phone}
+              </a>
+            ) : null}
           </div>
 
           <div className="site-footer-navs">
@@ -176,7 +201,7 @@ export function Footer() {
         </div>
 
         <div className="site-footer-bar">
-          <p>© {year} TrustifySMM. All rights reserved.</p>
+          <p>© {year} {copy.copyright}</p>
           <div className="site-footer-legal">
             <Link href="/terms">Terms</Link>
             <Link href="/privacy">Privacy</Link>

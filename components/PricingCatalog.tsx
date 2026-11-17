@@ -14,10 +14,10 @@ import {
 import pricingData from "@/data/service-pricing.json";
 import { applyOrbitPricing } from "@/lib/orbit/pricing-display";
 
-export function PricingCatalog() {
+export function PricingCatalog({ data: initial }: { data?: ServicePricingData }) {
   const data = useMemo(
-    () => applyOrbitPricing(pricingData as ServicePricingData),
-    [],
+    () => initial ?? applyOrbitPricing(pricingData as ServicePricingData),
+    [initial],
   );
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState("all");

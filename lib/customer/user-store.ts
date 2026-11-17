@@ -48,6 +48,11 @@ export async function getUserByEmail(email: string) {
   return store.users.find((u) => u.email === e) ?? null;
 }
 
+export async function listCustomers() {
+  const store = await loadStore();
+  return store.users.map((user) => ({ ...user }));
+}
+
 export async function getUserByApiKey(apiKey: string) {
   const store = await loadStore();
   return store.users.find((user) => user.apiKey === apiKey) ?? null;
@@ -58,7 +63,7 @@ export async function getUserByGoogleId(googleId: string) {
   return store.users.find((u) => u.googleId === googleId) ?? null;
 }
 
-async function persistUser(user: CustomerUser) {
+export async function persistCustomer(user: CustomerUser) {
   const store = await loadStore();
   const idx = store.users.findIndex((u) => u.id === user.id);
   if (idx >= 0) store.users[idx] = user;
@@ -99,7 +104,7 @@ export async function registerWithEmail(input: {
     createdAt: now,
     updatedAt: now,
   };
-  await persistUser(user);
+  await persistCustomer(user);
   await ensureDemoAccount(user.email, user.apiKey, user.balance);
   return { user };
 }
@@ -112,6 +117,7 @@ export async function loginWithEmail(email: string, password: string): Promise<{
   if (!verifyPassword(password, user.passwordHash)) {
     return { error: "Invalid email or password." };
   }
+  if (user.suspended) return { error: "This account is suspended." };
   return { user };
 }
 
@@ -132,12 +138,14 @@ export async function loginOrRegisterWithGoogle(
   const email = normalizeEmail(profile.email);
   const byGoogle = await getUserByGoogleId(profile.sub);
   if (byGoogle) {
+    if (byGoogle.suspended) return { error: "This account is suspended." };
     const updated = await touchGoogleProfile(byGoogle, profile);
     return { user: updated, created: false };
   }
 
   const byEmail = await getUserByEmail(email);
   if (byEmail) {
+    if (byEmail.suspended) return { error: "This account is suspended." };
     if (byEmail.googleId && byEmail.googleId !== profile.sub) {
       return { error: "This email is linked to a different Google account." };
     }
@@ -146,7 +154,7 @@ export async function loginOrRegisterWithGoogle(
     if (!byEmail.name && profile.name) byEmail.name = profile.name;
     if (!byEmail.image && profile.picture) byEmail.image = profile.picture;
     byEmail.updatedAt = new Date().toISOString();
-    await persistUser(byEmail);
+    await persistCustomer(byEmail);
     await ensureDemoAccount(byEmail.email, byEmail.apiKey, byEmail.balance);
     return { user: byEmail, created: false };
   }
@@ -166,7 +174,7 @@ export async function loginOrRegisterWithGoogle(
     createdAt: now,
     updatedAt: now,
   };
-  await persistUser(user);
+  await persistCustomer(user);
   await ensureDemoAccount(user.email, user.apiKey, user.balance);
   return { user, created: true };
 }
@@ -183,7 +191,7 @@ async function touchGoogleProfile(user: CustomerUser, profile: GoogleProfile) {
   }
   if (changed) {
     user.updatedAt = new Date().toISOString();
-    await persistUser(user);
+    await persistCustomer(user);
   }
   await ensureDemoAccount(user.email, user.apiKey, user.balance);
   return user;
@@ -232,7 +240,7 @@ export async function updateCustomerProfile(
     user.timezone = timezone || null;
   }
   user.updatedAt = new Date().toISOString();
-  await persistUser(user);
+  await persistCustomer(user);
   return { user };
 }
 
@@ -251,7 +259,7 @@ export async function changeCustomerPassword(
   user.passwordHash = hashPassword(nextPassword);
   user.sessionVersion = Date.now();
   user.updatedAt = new Date().toISOString();
-  await persistUser(user);
+  await persistCustomer(user);
   return { user };
 }
 
@@ -260,7 +268,7 @@ export async function bumpSessionVersion(userId: string) {
   if (!user) return null;
   user.sessionVersion = Date.now();
   user.updatedAt = new Date().toISOString();
-  await persistUser(user);
+  await persistCustomer(user);
   return user;
 }
 
@@ -270,6 +278,6 @@ export async function replaceCustomerApiKey(userId: string, nextKey: string, rev
   user.apiKey = nextKey;
   user.apiKeyRevoked = revoked;
   user.updatedAt = new Date().toISOString();
-  await persistUser(user);
+  await persistCustomer(user);
   return user;
 }

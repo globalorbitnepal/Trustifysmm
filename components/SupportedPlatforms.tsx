@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sectionHeading } from "@/lib/orbit/public-copy";
 
 const platforms = [
   { id: "instagram", name: "Instagram", services: "Followers, Likes, Views" },
@@ -14,6 +15,7 @@ const platforms = [
 ] as const;
 
 export function SupportedPlatforms() {
+  const copy = sectionHeading("platforms");
   return (
     <section className="platforms" id="platforms">
       <svg className="platforms-waves" viewBox="0 0 1440 720" preserveAspectRatio="none" aria-hidden>
@@ -62,15 +64,12 @@ export function SupportedPlatforms() {
       <div className="platforms-inner">
         <p className="platforms-badge">
           <GridIcon />
-          Supported Platforms
+          {copy.badge}
         </p>
         <h2 className="platforms-title">
-          All Major <span className="grad">Social Media Platforms</span>
+          {copy.title} {copy.titleAccent ? <span className="grad">{copy.titleAccent}</span> : null}
         </h2>
-        <p className="platforms-lede">
-          One panel for all your social media marketing needs. Get real and high-quality services across
-          the world&apos;s leading platforms.
-        </p>
+        <p className="platforms-lede">{copy.lede}</p>
 
         <div className="platforms-grid">
           {platforms.map((p) => (

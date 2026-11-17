@@ -11,6 +11,7 @@ export async function requireCustomer(): Promise<CustomerUser | null> {
   const user = await getUserById(parsed.userId);
   if (!user || user.role !== "CUSTOMER") return null;
   if ((user.sessionVersion ?? 0) !== parsed.version) return null;
+  if (user.suspended) return null;
   const wallet = await getAccountByKey(user.apiKey);
   if (wallet) user.balance = wallet.balance;
   return user;

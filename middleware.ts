@@ -5,6 +5,9 @@ import { CUSTOMER_COOKIE_NAME, verifyCustomerSessionTokenEdge } from "@/lib/cust
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+  const pass = () => NextResponse.next({ request: { headers: requestHeaders } });
 
   if (pathname.startsWith("/dashboard")) {
     const token = request.cookies.get(CUSTOMER_COOKIE_NAME)?.value;
@@ -14,16 +17,16 @@ export async function middleware(request: NextRequest) {
       signin.searchParams.set("next", pathname);
       return NextResponse.redirect(signin);
     }
-    return NextResponse.next();
+    return pass();
   }
 
   if (!pathname.startsWith("/orbit") && !pathname.startsWith("/api/orbit")) {
-    return NextResponse.next();
+    return pass();
   }
 
   const publicPaths = ["/orbit/login", "/api/orbit/auth/login"];
   if (publicPaths.includes(pathname)) {
-    return NextResponse.next();
+    return pass();
   }
 
   const token = request.cookies.get(ORBIT_COOKIE_NAME)?.value;
@@ -37,9 +40,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
-  return NextResponse.next();
+  return pass();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/dashboard", "/orbit/:path*", "/api/orbit/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|brand/|media/).*)"],
 };

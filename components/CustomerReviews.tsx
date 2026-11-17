@@ -1,3 +1,5 @@
+import { sectionHeading } from "@/lib/orbit/public-copy";
+
 const reviews = [
   {
     name: "Amit Verma",
@@ -52,17 +54,18 @@ const reviews = [
 const looped = [...reviews, ...reviews];
 
 export function CustomerReviews() {
+  const copy = sectionHeading("reviews");
   return (
     <section className="reviews" id="reviews">
       <div className="reviews-inner">
         <p className="reviews-badge">
           <StarIcon />
-          Customer Reviews
+          {copy.badge}
         </p>
         <h2 className="reviews-title">
-          What Our <span className="grad">Customers Say</span>
+          {copy.title} {copy.titleAccent ? <span className="grad">{copy.titleAccent}</span> : null}
         </h2>
-        <p className="reviews-lede">Real feedback from our global users who trust TrustifySMM.</p>
+        <p className="reviews-lede">{copy.lede}</p>
 
         <div className="reviews-marquee" aria-label="Customer reviews auto scroll">
           <div className="reviews-track">

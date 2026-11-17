@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SignInPageContent } from "@/components/SignInPageContent";
 import { metadataForPath } from "@/lib/orbit/page-meta";
 
@@ -39,7 +39,7 @@ export default function SignInPage() {
 
   return (
     <main className="page">
-      <Header />
+      <SiteHeader />
       <section className="auth-signup">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
         <div className="auth-signup-inner">

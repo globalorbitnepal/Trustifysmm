@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Header } from "@/components/Header";
-import { getSiteConfigSync } from "@/lib/orbit/site-config-sync";
+import { SiteHeader } from "@/components/SiteHeader";
+import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import { SocialOrbit } from "@/components/SocialOrbit";
 import { WhyChoose } from "@/components/WhyChoose";
 import { SupportedPlatforms } from "@/components/SupportedPlatforms";
@@ -11,10 +11,12 @@ import { CustomerReviews } from "@/components/CustomerReviews";
 import { Footer } from "@/components/Footer";
 
 export default function HomePage() {
-  const site = getSiteConfigSync();
+  const site = liveSiteConfig();
+  const enabled = (id: string) => site.sections?.[id] !== false;
   return (
     <main className="page">
-      <Header />
+      <SiteHeader />
+      {enabled("hero") ? (
       <section className="hero-band">
         <div className="hero">
           <div className="hero-copy">
@@ -31,18 +33,24 @@ export default function HomePage() {
             </h1>
             <p className="lede">{site.home.lede}</p>
             <div className="hero-actions">
-              <Link className="btn btn-primary btn-lg" href="/signup">
+              <Link className="btn btn-primary btn-lg" href={site.home.primaryCtaHref || "/signup"}>
                 <Rocket />
                 {site.home.primaryCta}
                 <Arrow />
               </Link>
-              <Link className="btn btn-ghost btn-lg" href="/#services">
+              <Link className="btn btn-ghost btn-lg" href={site.home.secondaryCtaHref || "/#services"}>
                 <Play />
                 {site.home.secondaryCta}
               </Link>
             </div>
           </div>
-          <SocialOrbit />
+          {site.home.heroImage ? (
+            <div className="hero-media" aria-hidden>
+              <img src={site.home.heroImage} alt={site.home.heroImageAlt || "Homepage hero"} style={{ width: "100%", maxWidth: 420, borderRadius: 24 }} />
+            </div>
+          ) : (
+            <SocialOrbit />
+          )}
         </div>
         <svg className="ribbons" viewBox="0 0 1440 520" preserveAspectRatio="none" aria-hidden>
           <defs>
@@ -60,17 +68,26 @@ export default function HomePage() {
           <path d="M-60 360C180 290 360 470 600 410C860 340 900 200 1140 230C1300 252 1400 360 1560 300" fill="none" stroke="url(#ribbon)" strokeWidth="8" strokeLinecap="round" opacity="0.55" />
         </svg>
       </section>
+      ) : null}
       <div className="section-bridge" aria-hidden />
-      <WhyChoose />
+      {enabled("why") ? <WhyChoose /> : null}
       <div className="section-bridge" aria-hidden />
-      <SupportedPlatforms />
+      {enabled("platforms") ? <SupportedPlatforms /> : null}
       <div className="section-bridge" aria-hidden />
-      <HowItWorks />
+      {enabled("how") ? <HowItWorks /> : null}
       <div className="section-bridge" aria-hidden />
-      <PopularServices />
+      {enabled("services") ? <PopularServices /> : null}
       <div className="section-bridge" aria-hidden />
-      <PaymentMethods />
-      <CustomerReviews />
+      {enabled("payments") ? <PaymentMethods /> : null}
+      {enabled("reviews") ? <CustomerReviews /> : null}
+      {site.customBlocks.filter((block) => block.enabled).map((block) => (
+        <section key={block.id} className="section" style={{ padding: "72px 24px" }}>
+          <div style={{ maxWidth: 860, margin: "0 auto" }}>
+            <h2>{block.heading}</h2>
+            <p>{block.text}</p>
+          </div>
+        </section>
+      ))}
       <Footer />
     </main>
   );

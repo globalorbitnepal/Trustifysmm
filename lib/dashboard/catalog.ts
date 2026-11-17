@@ -1,8 +1,9 @@
-import pricingData from "@/data/service-pricing.json";
-import type { PricingService, ServicePricingData } from "@/data/service-pricing-types";
-import { applyOrbitPricing } from "@/lib/orbit/pricing-display";
+import type { PricingService } from "@/data/service-pricing-types";
+import { livePricingData } from "@/lib/orbit/live-catalog";
 
-const catalog = applyOrbitPricing(pricingData as ServicePricingData);
+function catalog() {
+  return livePricingData();
+}
 
 export function money(value: number) {
   return Math.round(value * 10000) / 10000;
@@ -27,15 +28,15 @@ export function validTargetUrl(link: string) {
 }
 
 export function listPlatforms() {
-  return catalog.platforms.map((id) => ({
+  return catalog().platforms.map((id) => ({
     id,
-    label: catalog.platformLabel[id] || id,
+    label: catalog().platformLabel[id] || id,
   }));
 }
 
 export function listGroups(platform?: string) {
   const groups = new Set<string>();
-  for (const service of catalog.services) {
+  for (const service of catalog().services) {
     if (platform && service.platform !== platform) continue;
     groups.add(service.group);
   }
@@ -43,14 +44,14 @@ export function listGroups(platform?: string) {
 }
 
 export function findService(id: number) {
-  return catalog.services.find((service) => service.id === id) ?? null;
+  return catalog().services.find((service) => service.id === id) ?? null;
 }
 
 export function searchServices(input: { platform?: string; group?: string; q?: string; limit?: number }) {
   const q = input.q?.trim().toLowerCase() ?? "";
   const limit = Math.min(Math.max(input.limit ?? 30, 1), 60);
   const rows: PricingService[] = [];
-  for (const service of catalog.services) {
+  for (const service of catalog().services) {
     if (input.platform && service.platform !== input.platform) continue;
     if (input.group && service.group !== input.group) continue;
     if (q) {
@@ -68,7 +69,7 @@ export function publicService(service: PricingService) {
     id: service.id,
     name: service.name,
     platform: service.platform,
-    platformLabel: catalog.platformLabel[service.platform] || service.platform,
+    platformLabel: catalog().platformLabel[service.platform] || service.platform,
     group: service.group,
     description: service.description,
     ratePer1000: service.ratePer1000,

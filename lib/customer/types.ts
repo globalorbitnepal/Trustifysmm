@@ -15,6 +15,7 @@ export type CustomerUser = {
   username?: string | null;
   timezone?: string | null;
   sessionVersion?: number;
+  suspended?: boolean;
   createdAt: string;
   updatedAt: string;
 };

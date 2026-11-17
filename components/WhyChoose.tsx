@@ -1,4 +1,5 @@
-import { getSiteConfigSync } from "@/lib/orbit/site-config-sync";
+import { liveSiteConfig } from "@/lib/orbit/live-catalog";
+import { sectionHeading } from "@/lib/orbit/public-copy";
 
 const defaultFeatures = [
   {
@@ -30,7 +31,8 @@ const defaultFeatures = [
 const statIcons = [<UsersIcon key="u" />, <CartIcon key="c" />, <ChartIcon key="ch" />, <TrophyIcon key="t" />];
 
 export function WhyChoose() {
-  const site = getSiteConfigSync();
+  const site = liveSiteConfig();
+  const copy = sectionHeading("why");
   const features = defaultFeatures.map((item, i) => {
     const edited = site.whyFeatures[i];
     return edited
@@ -47,15 +49,12 @@ export function WhyChoose() {
       <div className="why-inner">
         <p className="why-badge">
           <BoltIcon />
-          Why Choose TrustifySMM
+          {copy.badge}
         </p>
         <h2 className="why-title">
-          Everything You Need in One <span className="grad">SMM Panel</span>
+          {copy.title} {copy.titleAccent ? <span className="grad">{copy.titleAccent}</span> : null}
         </h2>
-        <p className="why-lede">
-          Fast, secure and affordable social media marketing services to grow your brand,
-          audience and business.
-        </p>
+        <p className="why-lede">{copy.lede}</p>
 
         <div className="why-grid">
           {features.map((item) => (

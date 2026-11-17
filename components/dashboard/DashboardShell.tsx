@@ -80,6 +80,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [menu, setMenu] = useState(false);
   const [search, setSearch] = useState(false);
   const [query, setQuery] = useState("");
+  const [light, setLight] = useState(false);
+
+  useEffect(() => {
+    const next = localStorage.getItem("trustify-dash-theme") === "light";
+    setLight(next);
+    document.documentElement.toggleAttribute("data-dash", false);
+    if (next) document.documentElement.setAttribute("data-dash", "light");
+    else document.documentElement.removeAttribute("data-dash");
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -113,6 +122,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       .slice(0, 8);
   }, [query]);
 
+  function toggleTheme() {
+    const next = !light;
+    setLight(next);
+    localStorage.setItem("trustify-dash-theme", next ? "light" : "dark");
+    if (next) document.documentElement.setAttribute("data-dash", "light");
+    else document.documentElement.removeAttribute("data-dash");
+  }
+
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/signin");
@@ -122,11 +139,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const name = user?.name?.trim() || user?.email.split("@")[0] || "Customer";
 
   return (
-    <div className={`cp ${collapsed ? "is-collapsed" : ""}`}>
+    <div className={`cp ${collapsed ? "is-collapsed" : ""} ${light ? "is-light" : ""}`}>
       <aside className={`cp-side ${open ? "is-open" : ""}`}>
         <div className="cp-brand">
           <Link href="/dashboard" aria-label="TrustifySMM customer panel">
-            <img src="/brand/logo-premium.png" alt="TrustifySMM" width={1024} height={341} />
+            <img className="cp-logo cp-logo-dark" src="/brand/logo-premium.png" alt="TrustifySMM" width={1024} height={341} />
+            <img className="cp-logo cp-logo-light" src="/brand/logo-official-clean.png" alt="" width={1024} height={341} />
           </Link>
           <span>Customer panel</span>
         </div>
@@ -170,6 +188,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="cp-top-actions">
+            <button type="button" className="cp-icon-btn" aria-label={light ? "Switch to dark mode" : "Switch to light mode"} aria-pressed={light} onClick={toggleTheme}>
+              <Icon name={light ? "moon" : "sun"} />
+            </button>
             <button type="button" className="cp-icon-btn" aria-label="Search" onClick={() => setSearch(true)}>
               <Icon name="search" />
             </button>
@@ -253,6 +274,8 @@ function Icon({ name }: { name: string }) {
       {name === "out" && <path {...common} d="M10 7V5a2 2 0 0 1 2-2h7v18h-7a2 2 0 0 1-2-2v-2M4 12h10M7 9l-3 3 3 3" />}
       {name === "menu" && <path {...common} d="M4 7h16M4 12h16M4 17h16" />}
       {name === "search" && <path {...common} d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-3.5-3.5" />}
+      {name === "sun" && <path {...common} d="M12 4V2M12 22v-2M4.9 4.9 3.5 3.5M20.5 20.5l-1.4-1.4M4 12H2M22 12h-2M4.9 19.1 3.5 20.5M20.5 3.5l-1.4 1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />}
+      {name === "moon" && <path {...common} d="M20 14.5A8 8 0 0 1 9.5 4 7 7 0 1 0 20 14.5z" />}
     </svg>
   );
 }

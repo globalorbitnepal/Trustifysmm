@@ -14,7 +14,7 @@ export type DemoOrder = {
   link: string;
   quantity: number;
   charge: number;
-  status: "Pending" | "Processing" | "In progress" | "Completed" | "Partial" | "Canceled";
+  status: "Pending" | "Processing" | "In progress" | "Completed" | "Partial" | "Canceled" | "Refunded";
   remains: number;
   start_count: number;
   currency: "USD";

@@ -9,10 +9,10 @@ import pricingData from "@/data/service-pricing.json";
 import { applyOrbitPricing } from "@/lib/orbit/pricing-display";
 import { PlatformFilterIcon } from "@/components/PlatformFilterIcon";
 
-export function ServicesPricingCatalog() {
+export function ServicesPricingCatalog({ data: initial }: { data?: ServicePricingData }) {
   const data = useMemo(
-    () => applyOrbitPricing(pricingData as ServicePricingData),
-    [],
+    () => initial ?? applyOrbitPricing(pricingData as ServicePricingData),
+    [initial],
   );
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState<string>("all");

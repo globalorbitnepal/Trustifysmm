@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { popularServices } from "@/data/services";
 import { ServiceCatalogGrid } from "@/components/ServiceCatalogGrid";
+import { sectionHeading } from "@/lib/orbit/public-copy";
 
 export function PopularServices() {
+  const copy = sectionHeading("services");
   return (
     <section className="popular" id="services-list">
       <svg className="popular-waves" viewBox="0 0 1440 700" preserveAspectRatio="none" aria-hidden>
@@ -47,14 +49,12 @@ export function PopularServices() {
       <div className="popular-inner">
         <p className="popular-badge">
           <StarIcon />
-          Popular Services
+          {copy.badge}
         </p>
         <h2 className="popular-title">
-          Most Popular <span className="grad">SMM Services</span>
+          {copy.title} {copy.titleAccent ? <span className="grad">{copy.titleAccent}</span> : null}
         </h2>
-        <p className="popular-lede">
-          Grow faster with our most in-demand social media services, trusted by thousands of users.
-        </p>
+        <p className="popular-lede">{copy.lede}</p>
 
         <ServiceCatalogGrid services={popularServices} />
 

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
+import { SiteHeader } from "@/components/SiteHeader";
 import { PricingCatalog } from "@/components/PricingCatalog";
 import { servicesFaq } from "@/data/services-faq";
 import { metadataForPath } from "@/lib/orbit/page-meta";
+import { livePricingData, liveSiteConfig } from "@/lib/orbit/live-catalog";
+import { pageHero } from "@/lib/orbit/public-copy";
 
 const pricingMetadata: Metadata = {
   title: "SMM Panel Pricing — Service Rates per 1K | TrustifySMM",
@@ -34,9 +36,20 @@ const pageDescription =
   "Premium pricing cards for every SMM service. Compare rates per 1,000 units, min/max orders and delivery times.";
 
 export default function PricingPage() {
+  const hero = pageHero("/pricing", {
+    badge: "Pricing",
+    title: "Rate",
+    titleAccent: "Deck — Compare Instantly",
+    lede: "A pricing-first layout: glass platform rail, category accordions, and horizontal rate strips with bold per-1K numbers. Same catalog as Services — built for faster decisions.",
+    ctaPrimary: "Create Account",
+    ctaPrimaryHref: "/signup",
+    ctaSecondary: "Full table catalog",
+    ctaSecondaryHref: "/services",
+  });
+  const banner = liveSiteConfig().pricing.bannerNote;
   return (
     <main className="page">
-      <Header />
+      <SiteHeader />
       <section className="pricing-page" id="pricing">
         <script
           type="application/ld+json"
@@ -54,27 +67,30 @@ export default function PricingPage() {
         <div className="services-page-inner pricing-page-inner">
           <p className="services-page-badge">
             <StarIcon />
-            Pricing
+            {hero.badge}
           </p>
           <h1 className="pricing-page-title services-page-title">
-            Rate <span className="grad">Deck</span> — Compare Instantly
+            {hero.title} {hero.titleAccent ? <span className="grad">{hero.titleAccent}</span> : null}
           </h1>
-          <p className="services-page-lede">
-            A pricing-first layout: glass platform rail, category accordions, and horizontal rate
-            strips with bold per-1K numbers. Same catalog as Services — built for faster decisions.
-          </p>
+          <p className="services-page-lede">{hero.lede}</p>
+          {banner ? <p className="services-page-lede">{banner}</p> : null}
+          {hero.heroImage ? <img src={hero.heroImage} alt={hero.heroImageAlt || ""} style={{ maxWidth: 420, width: "100%", borderRadius: 20, marginBottom: 16 }} /> : null}
 
           <div className="pricing-page-links">
-            <Link className="btn btn-primary btn-lg" href="/signup">
-              Create Account
-              <Arrow />
-            </Link>
-            <Link className="btn btn-ghost btn-lg" href="/services">
-              Full table catalog
-            </Link>
+            {hero.ctaPrimary ? (
+              <Link className="btn btn-primary btn-lg" href={hero.ctaPrimaryHref || "/signup"}>
+                {hero.ctaPrimary}
+                <Arrow />
+              </Link>
+            ) : null}
+            {hero.ctaSecondary ? (
+              <Link className="btn btn-ghost btn-lg" href={hero.ctaSecondaryHref || "/services"}>
+                {hero.ctaSecondary}
+              </Link>
+            ) : null}
           </div>
 
-          <PricingCatalog />
+          <PricingCatalog data={livePricingData()} />
         </div>
       </section>
 

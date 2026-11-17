@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
-import { OrbitDashboard } from "@/components/orbit/OrbitDashboard";
+import { DashboardScreen } from "@/components/orbit/screens-business";
 
-export const metadata: Metadata = {
-  title: "Orbit Dashboard | TrustifySMM",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = { title: "Orbit Control Center | TrustifySMM", robots: { index: false, follow: false } };
 
 export default function OrbitPage() {
-  return <OrbitDashboard />;
+  return <DashboardScreen />;
 }
