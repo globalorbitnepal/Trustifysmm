@@ -1843,29 +1843,39 @@ button {
   transform: scale(0.98);
 }
 
+.platform-brand-icon,
 .services-pricing-platform-icon,
 .price-deck-rail-icon {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  object-fit: contain;
-  display: block;
 }
 
+.platform-brand-wrap,
 .services-pricing-platform-icon-wrap {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  color: rgba(224, 216, 255, 0.9);
+  border-radius: 8px;
+  color: #fff;
+  background: var(--brand-hex, rgba(255, 255, 255, 0.12));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
+.platform-brand-wrap.is-mono,
+.services-pricing-platform-icon-wrap.is-mono {
+  background: transparent;
+  box-shadow: none;
+  color: rgba(224, 216, 255, 0.95);
+}
+
+.platform-brand-svg,
 .services-pricing-platform-svg {
-  width: 22px;
-  height: 22px;
+  width: 14px;
+  height: 14px;
   display: block;
-  border-radius: 6px;
 }
 
 .services-pricing-platform-label {
@@ -1880,8 +1890,10 @@ button {
   box-shadow: 0 6px 20px rgba(112, 40, 232, 0.22);
 }
 
+.services-pricing-platform.is-active .platform-brand-wrap,
 .services-pricing-platform.is-active .services-pricing-platform-icon-wrap {
   color: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
 .services-pricing-sections {

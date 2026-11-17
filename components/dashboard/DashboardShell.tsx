@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { DashboardBrandLockup } from "@/components/dashboard/DashboardBrandLockup";
 
 type SessionUser = {
   name: string | null;
@@ -142,9 +143,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     <div className={`cp ${collapsed ? "is-collapsed" : ""} ${light ? "is-light" : ""}`}>
       <aside className={`cp-side ${open ? "is-open" : ""}`}>
         <div className="cp-brand">
-          <Link href="/dashboard" aria-label="TrustifySMM customer panel">
-            <img className="cp-logo" src="/brand/logo-header-clear.png" alt="TrustifySMM" width={1024} height={341} />
-          </Link>
+          <DashboardBrandLockup theme={light ? "light" : "dark"} />
           <div className="cp-user-card">
             <Avatar user={user} />
             <div>
@@ -187,6 +186,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <button type="button" className="cp-icon-btn" aria-label="Toggle sidebar" onClick={() => (window.innerWidth < 980 ? setOpen(true) : setCollapsed((v) => !v))}>
               <Icon name="menu" />
             </button>
+            <DashboardBrandLockup theme={light ? "light" : "dark"} compact className="cp-top-mark" />
             <div>
               <p className="cp-crumb">Dashboard / {title}</p>
               <h1>{title}</h1>
