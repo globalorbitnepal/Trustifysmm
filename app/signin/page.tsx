@@ -1,19 +1,51 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { SignInPageContent } from "@/components/SignInPageContent";
+import { metadataForPath } from "@/lib/orbit/page-meta";
+
+const signinMetadata: Metadata = {
+  title: "Sign In | TrustifySMM SMM Panel",
+  description:
+    "Sign in to your TrustifySMM reseller panel — manage orders, Banker crypto balance, API keys and tickets. Secure access for agencies and shops.",
+  keywords: [
+    "trustifysmm login",
+    "smm panel sign in",
+    "smm panel dashboard",
+    "trustifysmm panel access",
+  ],
+  alternates: { canonical: "/signin" },
+  openGraph: {
+    title: "Sign In to TrustifySMM",
+    description: "Premium panel access for orders, balance, API and support.",
+    url: "/signin",
+    type: "website",
+  },
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  return metadataForPath("/signin", signinMetadata);
+}
 
 export default function SignInPage() {
+  const pageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "TrustifySMM Panel Sign In",
+    description: signinMetadata.description,
+    url: "https://trustifysmm.com/signin",
+  };
+
   return (
     <main className="page">
       <Header />
-      <section className="page-pad">
-        <h1 className="headline">Sign In</h1>
-        <p className="lede">Account access will connect to the TrustifySMM panel next.</p>
-        <p style={{ marginTop: 24 }}>
-          <Link className="btn btn-primary" href="/">
-            Back to home
-          </Link>
-        </p>
+      <section className="auth-signup">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
+        <div className="auth-signup-inner">
+          <SignInPageContent />
+        </div>
       </section>
+      <Footer />
     </main>
   );
 }
