@@ -985,6 +985,31 @@ table.ob-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .ob.is-collapsed .ob-link { justify-content: center; padding: 0; }
 .ob.is-collapsed .ob-links { padding-left: 0; }
 
+.ob-platform-editor {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ob-platform-editor li {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+.ob-platform-editor code {
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--bg);
+}
+
 @media (max-width: 1320px) {
   .ob-stat-grid--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ob-dash-mid, .ob-dash-low { grid-template-columns: 1fr; }

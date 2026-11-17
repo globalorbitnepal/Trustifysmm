@@ -3,6 +3,7 @@ import path from "node:path";
 import pricingData from "@/data/service-pricing.json";
 import type { PricingService, ServicePricingData } from "@/data/service-pricing-types";
 import { readServiceAdminSync } from "@/lib/orbit/service-admin";
+import { catalogPlatformRows, mergePlatformLabels, sortPlatformIds } from "@/lib/catalog-platform-order";
 import { mergeSiteConfig } from "@/lib/orbit/site-config-sync";
 import type { OrbitSiteConfig } from "@/lib/orbit/types";
 
@@ -67,13 +68,18 @@ export function livePricingData(): ServicePricingData {
     services.push({ ...service, ratePer1000: priceFor(service, overrides, markup) });
   }
 
-  const platforms = [...new Set(services.map((service) => service.platform))];
+  const site = liveSiteConfig();
+  const platformIds = sortPlatformIds(
+    [...new Set(services.map((service) => service.platform))],
+    site.pricing.platformOrder,
+  );
   const groups = [...new Set(services.map((service) => service.group))].sort((a, b) => a.localeCompare(b));
   const data: ServicePricingData = {
     ...base,
     services,
     groups,
-    platforms,
+    platforms: platformIds,
+    platformLabel: mergePlatformLabels(base.platformLabel, site.pricing.platformLabels),
     serviceCount: services.length,
   };
   cache = { stamp: mark, data };

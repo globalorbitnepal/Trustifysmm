@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/customer/guard";
 import { findService } from "@/lib/dashboard/catalog";
+import { mapPlatformCounts } from "@/lib/dashboard/platform-label";
 import { listNotifications } from "@/lib/customer/panel-store";
 import { listOrdersByAccount } from "@/lib/smm-api/demo-store";
 
@@ -64,7 +65,7 @@ export async function GET(request: Request) {
       orders: daysKeys.map((day) => ({ day, value: ordersByDay[day] })),
       spend: daysKeys.map((day) => ({ day, value: spendByDay[day] })),
       statuses: statusCounts,
-      platforms,
+      platforms: mapPlatformCounts(platforms),
     },
   });
 }

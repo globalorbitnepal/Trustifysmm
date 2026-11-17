@@ -23,9 +23,9 @@ export type ServicePricingData = {
 export const PRICING_PLATFORM_ORDER = [
   "all",
   "instagram",
-  "tiktok",
-  "youtube",
   "facebook",
+  "youtube",
+  "tiktok",
   "telegram",
   "x",
   "threads",

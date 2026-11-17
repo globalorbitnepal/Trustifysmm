@@ -156,6 +156,10 @@ export type OrbitSiteConfig = {
   pricing: {
     globalMarkupPercent: number;
     bannerNote: string;
+    /** Dashboard & public catalog tab order (without "all"; "other" is always last live). */
+    platformOrder?: string[];
+    /** Override display names e.g. other → "Other Services". */
+    platformLabels?: Record<string, string>;
   };
   banker: {
     payCurrency: string;

@@ -7,6 +7,7 @@ import { ORBIT_PAGES, pageBySlug } from "@/lib/orbit/page-registry";
 import { defaultPageExtras } from "@/lib/orbit/page-defaults";
 import { useOrbit } from "@/components/orbit/use-orbit";
 import { CmsSectionHead, ImageUrlField } from "@/components/orbit/cms-fields";
+import { CatalogPlatformsEditor } from "@/components/orbit/catalog-platforms-editor";
 import { ServicesScreen } from "@/components/orbit/services-screen";
 import type { ComponentProps } from "react";
 import { OrbitIcon } from "@/components/orbit/orbit-icons";
@@ -289,7 +290,7 @@ export function PageEditorScreen({ slug }: { slug: string }) {
   const def = pageBySlug(slug);
   const { data, error, reload } = useOrbit<OrbitSiteConfig>("/api/orbit/config");
   const [config, setConfig] = useState<OrbitSiteConfig | null>(null);
-  const [tab, setTab] = useState<"content" | "seo" | "sections" | "page" | "catalog" | "global">(slug === "services" ? "catalog" : "content");
+  const [tab, setTab] = useState<"content" | "seo" | "sections" | "page" | "catalog" | "platforms" | "global">(slug === "services" ? "catalog" : "content");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const path = def?.path ?? "/";
@@ -413,6 +414,7 @@ export function PageEditorScreen({ slug }: { slug: string }) {
 
       <div className="ob-chart-tabs">
         {slug === "services" ? <button type="button" className={tab === "catalog" ? "is-on" : ""} onClick={() => setTab("catalog")}>All services & categories</button> : null}
+        {slug === "services" ? <button type="button" className={tab === "platforms" ? "is-on" : ""} onClick={() => setTab("platforms")}>Platforms &amp; labels</button> : null}
         <button type="button" className={tab === "content" ? "is-on" : ""} onClick={() => setTab("content")}>Page content</button>
         <button type="button" className={tab === "seo" ? "is-on" : ""} onClick={() => setTab("seo")}>SEO &amp; social</button>
         {extrasTab ? <button type="button" className={tab === "page" ? "is-on" : ""} onClick={() => setTab("page")}>{pageTabLabel(slug)}</button> : null}
@@ -428,6 +430,8 @@ export function PageEditorScreen({ slug }: { slug: string }) {
           <ServicesScreen />
         </>
       ) : null}
+
+      {tab === "platforms" && slug === "services" ? <CatalogPlatformsEditor config={config} setConfig={setConfig} /> : null}
 
       {tab === "content" ? (
         <article className="ob-card ob-form">

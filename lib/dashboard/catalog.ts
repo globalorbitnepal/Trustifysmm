@@ -1,5 +1,6 @@
 import type { PricingService } from "@/data/service-pricing-types";
-import { livePricingData } from "@/lib/orbit/live-catalog";
+import { catalogPlatformRows } from "@/lib/catalog-platform-order";
+import { livePricingData, liveSiteConfig } from "@/lib/orbit/live-catalog";
 
 function catalog() {
   return livePricingData();
@@ -28,10 +29,12 @@ export function validTargetUrl(link: string) {
 }
 
 export function listPlatforms() {
-  return catalog().platforms.map((id) => ({
-    id,
-    label: catalog().platformLabel[id] || id,
-  }));
+  const data = catalog();
+  const site = liveSiteConfig();
+  return catalogPlatformRows(data, {
+    order: site.pricing.platformOrder,
+    labels: site.pricing.platformLabels,
+  });
 }
 
 export function listGroups(platform?: string) {

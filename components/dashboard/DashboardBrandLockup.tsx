@@ -15,7 +15,14 @@ export function DashboardBrandLockup({ compact = false, theme = "dark", classNam
       aria-label="TrustifySMM customer panel"
     >
       <span className="cp-brand-mark" aria-hidden>
-        <img src="/brand/logo-mark-transparent.png" alt="" width={80} height={80} decoding="async" />
+        <img
+          src="/brand/icon-trustify-t.png"
+          alt=""
+          width={512}
+          height={512}
+          decoding="async"
+          draggable={false}
+        />
       </span>
       {compact ? null : (
         <span className="cp-brand-copy">

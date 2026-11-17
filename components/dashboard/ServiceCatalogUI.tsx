@@ -70,19 +70,19 @@ export function ServiceCatalogUI({
     <div className="cp-catalog">
       {!favoritesOnly && showPlatforms ? (
         <>
-          <div className="cp-plat-rail" role="tablist" aria-label="Filter by platform">
-            <button type="button" className={`cp-plat-tile ${platform === "" ? "is-on" : ""}`} onClick={() => onPlatform("")}>
-              <PlatformFilterIcon platform="all" className="cp-plat-icon" />
+          <div className="cp-plat-grid-premium" role="tablist" aria-label="Filter by platform">
+            <button type="button" className={`cp-plat-card ${platform === "" ? "is-on" : ""}`} onClick={() => onPlatform("")}>
+              <PlatformFilterIcon platform="all" className="cp-plat-mark" variant="glass" />
               <span>All</span>
             </button>
             {catalog.platforms.map((item) => (
               <button
                 key={item.id}
                 type="button"
-                className={`cp-plat-tile ${platform === item.id ? "is-on" : ""}`}
+                className={`cp-plat-card ${platform === item.id ? "is-on" : ""}`}
                 onClick={() => onPlatform(item.id)}
               >
-                <PlatformFilterIcon platform={item.id} className="cp-plat-icon" />
+                <PlatformFilterIcon platform={item.id} className="cp-plat-mark" variant="glass" />
                 <span>{item.label}</span>
               </button>
             ))}
@@ -156,7 +156,7 @@ export function ServiceCatalogUI({
           {filtered.map((service) => (
             <article key={service.id} className="cp-service-card">
               <div className="cp-service-card-mark">
-                <PlatformFilterIcon platform={service.platform} className="cp-plat-icon cp-plat-icon--card" />
+                <PlatformFilterIcon platform={service.platform} className="cp-plat-mark cp-plat-mark--card" variant="glass" />
               </div>
               <div className="cp-service-card-body">
                 <h3>{service.name}</h3>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { PlatformFilterIcon } from "@/components/PlatformFilterIcon";
 
 type Overview = {
   balance: number;
@@ -17,6 +18,15 @@ type Overview = {
     platforms: Record<string, number>;
   };
 };
+
+const QUICK = [
+  { href: "/dashboard/new-order", label: "Place New Order", icon: "plus" as const },
+  { href: "/dashboard/add-funds", label: "Add Funds", icon: "wallet" as const },
+  { href: "/dashboard/orders", label: "Track Orders", icon: "box" as const },
+  { href: "/dashboard/tickets", label: "Support Ticket", icon: "ticket" as const },
+  { href: "/dashboard/services", label: "Browse Services", icon: "layers" as const },
+  { href: "/dashboard/transactions", label: "Transactions", icon: "swap" as const },
+];
 
 export function OverviewView({ name }: { name?: string }) {
   const [data, setData] = useState<Overview | null>(null);
@@ -35,56 +45,63 @@ export function OverviewView({ name }: { name?: string }) {
   }, [range]);
 
   return (
-    <div className="cp-grid">
-      <section className="cp-card cp-welcome">
-        <p className="cp-kicker">TrustifySMM</p>
-        <h2>Welcome back, {name || "there"}</h2>
-        <p>Manage your social media growth from one powerful dashboard.</p>
-        <Link className="cp-btn" href="/dashboard/new-order">New Order</Link>
+    <div className="cp-home">
+      <section className="cp-card cp-hero-glass">
+        <div className="cp-hero-glass-bg" aria-hidden />
+        <div className="cp-hero-glass-body">
+          <p className="cp-kicker">Customer panel</p>
+          <h2>Welcome back, {name || "there"}</h2>
+          <p>Grow on every major platform — orders, wallet and support in one premium workspace.</p>
+          <div className="cp-hero-actions">
+            <Link className="cp-btn" href="/dashboard/new-order">New order</Link>
+            <Link className="cp-btn-ghost cp-hero-ghost" href="/dashboard/add-funds">Add funds</Link>
+          </div>
+        </div>
+        <div className="cp-hero-orbit" aria-hidden>
+          {["instagram", "youtube", "tiktok", "telegram"].map((p) => (
+            <PlatformFilterIcon key={p} platform={p} variant="glass" className="cp-hero-orbit-icon" />
+          ))}
+        </div>
       </section>
       {error ? <p className="cp-error">{error}</p> : null}
       {!data ? <Skeleton rows={4} /> : (
         <>
-          <section className="cp-grid cp-stats">
-            <Stat label="Available balance" value={`$${data.balance.toFixed(2)}`} hint={data.currency} href="/dashboard/add-funds" cta="Add funds" />
+          <section className="cp-grid cp-stats cp-stats-glass">
+            <Stat label="Available balance" value={`$${data.balance.toFixed(2)}`} hint={data.currency} href="/dashboard/add-funds" cta="Add funds" accent />
             <Stat label="Total orders" value={String(data.totalOrders)} hint="All orders on this account" />
-            <Stat label="Active orders" value={String(data.activeOrders)} hint="Pending, processing, in progress" />
-            <Stat label="Completed orders" value={String(data.completedOrders)} hint="Successfully completed" />
+            <Stat label="Active orders" value={String(data.activeOrders)} hint="Pending · processing · in progress" />
+            <Stat label="Completed" value={String(data.completedOrders)} hint="Successfully delivered" />
           </section>
-          <section className="cp-grid cp-actions">
-            {[
-              ["/dashboard/new-order", "Place New Order"],
-              ["/dashboard/add-funds", "Add Funds"],
-              ["/dashboard/orders", "Track Orders"],
-              ["/dashboard/tickets", "Create Support Ticket"],
-              ["/dashboard/services", "Browse Services"],
-              ["/dashboard/transactions", "View Transactions"],
-            ].map(([href, label]) => (
-              <Link key={href} className="cp-card" href={href}>{label}</Link>
+          <section className="cp-grid cp-actions cp-actions-glass">
+            {QUICK.map((item) => (
+              <Link key={item.href} className="cp-card cp-action-tile" href={item.href}>
+                <QuickIcon name={item.icon} />
+                <span>{item.label}</span>
+              </Link>
             ))}
           </section>
           <section className="cp-grid cp-split">
-            <article className="cp-card">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+            <article className="cp-card cp-glass-panel">
+              <div className="cp-panel-head">
                 <h3>Orders over time</h3>
-                <select value={range} onChange={(e) => setRange(e.target.value)} aria-label="Date range">
+                <select className="cp-range" value={range} onChange={(e) => setRange(e.target.value)} aria-label="Date range">
                   <option value="7">Last 7 days</option>
                   <option value="30">Last 30 days</option>
                   <option value="90">Last 90 days</option>
                 </select>
               </div>
               <Bars points={data.series.orders} />
-              <h3>Spending</h3>
+              <h3 className="cp-subhead">Spending</h3>
               <Bars points={data.series.spend} money />
             </article>
-            <article className="cp-card">
-              <h3>Status and platforms</h3>
+            <article className="cp-card cp-glass-panel">
+              <h3>Status &amp; platforms</h3>
               <Breakdown title="Order status" data={data.series.statuses} />
               <Breakdown title="Platform usage" data={data.series.platforms} />
               {data.totalOrders === 0 ? <Empty title="No orders yet" copy="Your charts fill in after the first order." href="/dashboard/new-order" cta="Place an order" /> : null}
             </article>
           </section>
-          <article className="cp-card">
+          <article className="cp-card cp-glass-panel">
             <h3>Recent orders</h3>
             {data.recent.length === 0 ? <Empty title="No orders yet" copy="Services you buy will show up here." href="/dashboard/services" cta="Browse services" /> : (
               <div className="cp-table-wrap">
@@ -110,9 +127,9 @@ export function OverviewView({ name }: { name?: string }) {
   );
 }
 
-export function Stat({ label, value, hint, href, cta }: { label: string; value: string; hint: string; href?: string; cta?: string }) {
+export function Stat({ label, value, hint, href, cta, accent }: { label: string; value: string; hint: string; href?: string; cta?: string; accent?: boolean }) {
   return (
-    <article className="cp-card cp-stat">
+    <article className={`cp-card cp-stat cp-stat-glass${accent ? " is-accent" : ""}`}>
       <span>{label}</span>
       <strong>{value}</strong>
       <span>{hint}</span>
@@ -166,14 +183,41 @@ function Bars({ points, money }: { points: { day: string; value: number }[]; mon
 }
 
 function Breakdown({ title, data }: { title: string; data: Record<string, number> }) {
-  const entries = Object.entries(data);
+  const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, ...entries.map(([, v]) => v));
   return (
-    <div>
+    <div className="cp-breakdown">
       <p className="cp-label">{title}</p>
-      {entries.length === 0 ? <p className="cp-note">Nothing to chart yet.</p> : entries.map(([key, value]) => (
-        <p key={key} className="cp-meta">{key}: {value}</p>
-      ))}
+      {entries.length === 0 ? <p className="cp-note">Nothing to chart yet.</p> : (
+        <ul className="cp-breakdown-list">
+          {entries.map(([key, value]) => (
+            <li key={key}>
+              <span className="cp-breakdown-label">{key}</span>
+              <span className="cp-breakdown-bar"><i style={{ width: `${(value / max) * 100}%` }} /></span>
+              <strong>{value}</strong>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
+  );
+}
+
+function QuickIcon({ name }: { name: (typeof QUICK)[number]["icon"] }) {
+  const paths: Record<string, string> = {
+    plus: "M12 5v14M5 12h14",
+    wallet: "M4 8h16v11H4V8Zm0-3h10a3 3 0 013 3",
+    box: "M4 7l8-4 8 4v10l-8 4-8-4V7Z",
+    ticket: "M5 9h14v3a3 3 0 01-3 3h-1v5l-3-2-3 2v-5H8a3 3 0 01-3-3V9Z",
+    layers: "M12 4 4 8l8 4 8-4-8-4Zm0 8-8 4 8 4 8-4-8-4Z",
+    swap: "M7 7h12M17 17H5M17 7l3-3M7 17l-3 3",
+  };
+  return (
+    <span className="cp-action-ico" aria-hidden>
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d={paths[name]} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
   );
 }
 

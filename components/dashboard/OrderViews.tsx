@@ -119,14 +119,14 @@ export function NewOrderView() {
         {error ? <p className="cp-error">{error}</p> : null}
         {!catalog ? <Skeleton /> : (
           <>
-            <div className="cp-plat-rail cp-plat-rail--compact" role="tablist" aria-label="Platforms">
-              <button type="button" className={`cp-plat-tile ${platform === "" ? "is-on" : ""}`} onClick={() => { setPlatform(""); setGroup(""); setService(null); }}>
-                <PlatformFilterIcon platform="all" className="cp-plat-icon" />
+            <div className="cp-plat-grid-premium" role="tablist" aria-label="Platforms">
+              <button type="button" className={`cp-plat-card ${platform === "" ? "is-on" : ""}`} onClick={() => { setPlatform(""); setGroup(""); setService(null); }}>
+                <PlatformFilterIcon platform="all" className="cp-plat-mark" variant="glass" />
                 <span>All</span>
               </button>
               {(allPlatforms.length ? allPlatforms : catalog.platforms).map((item) => (
-                <button key={item.id} type="button" className={`cp-plat-tile ${platform === item.id ? "is-on" : ""}`} onClick={() => { setPlatform(item.id); setGroup(""); setService(null); }}>
-                  <PlatformFilterIcon platform={item.id} className="cp-plat-icon" />
+                <button key={item.id} type="button" className={`cp-plat-card ${platform === item.id ? "is-on" : ""}`} onClick={() => { setPlatform(item.id); setGroup(""); setService(null); }}>
+                  <PlatformFilterIcon platform={item.id} className="cp-plat-mark" variant="glass" />
                   <span>{item.label}</span>
                 </button>
               ))}

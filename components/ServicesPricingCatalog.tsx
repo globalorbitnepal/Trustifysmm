@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
 import type { ServicePricingData } from "@/data/service-pricing-types";
-import { PRICING_PLATFORM_ORDER } from "@/data/service-pricing-types";
 import { filterPricingServices, formatRatePer1000, groupPricingServices, groupsForPlatform } from "@/data/pricing-utils";
 import pricingData from "@/data/service-pricing.json";
 import { applyOrbitPricing } from "@/lib/orbit/pricing-display";
@@ -27,6 +26,11 @@ export function ServicesPricingCatalog({ data: initial }: { data?: ServicePricin
   );
 
   const sections = useMemo(() => groupPricingServices(filtered), [filtered]);
+
+  const platformTabs = useMemo(
+    () => ["all", ...data.platforms].map((id) => ({ id, label: id === "all" ? "All" : (data.platformLabel[id] ?? id) })),
+    [data],
+  );
 
   return (
     <div className="services-pricing">
@@ -61,7 +65,7 @@ export function ServicesPricingCatalog({ data: initial }: { data?: ServicePricin
         </div>
 
         <div className="services-pricing-platforms" role="tablist" aria-label="Platforms">
-          {PRICING_PLATFORM_ORDER.map((id) => (
+          {platformTabs.map(({ id, label }) => (
             <button
               key={id}
               type="button"
@@ -73,10 +77,8 @@ export function ServicesPricingCatalog({ data: initial }: { data?: ServicePricin
                 setGroup("all");
               }}
             >
-              <PlatformFilterIcon platform={id} />
-              <span className="services-pricing-platform-label">
-                {id === "all" ? "All" : data.platformLabel[id] ?? id}
-              </span>
+              <PlatformFilterIcon platform={id} variant="tile" />
+              <span className="services-pricing-platform-label">{label}</span>
             </button>
           ))}
         </div>
