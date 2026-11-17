@@ -59,7 +59,9 @@ function LinkColumn({
             {item.href.startsWith("mailto:") ? (
               <a href={item.href}>{item.label}</a>
             ) : (
-              <Link href={item.href}>{item.label}</Link>
+              <Link href={item.href} prefetch={!item.href.includes("#")}>
+                {item.label}
+              </Link>
             )}
           </li>
         ))}

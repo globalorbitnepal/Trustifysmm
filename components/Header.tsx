@@ -16,6 +16,10 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   return (
     <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
       <div className="site-header-inner">
@@ -33,28 +37,31 @@ export function Header() {
         </button>
 
         <nav className={`nav-links${open ? " open" : ""}`}>
-          <Link href="/" className={pathname === "/" ? "is-active" : ""} onClick={() => setOpen(false)}>
+          <Link href="/" prefetch className={pathname === "/" ? "is-active" : ""} onClick={() => setOpen(false)}>
             Home
           </Link>
           <Link
             href="/services"
+            prefetch
             className={pathname === "/services" ? "is-active" : ""}
             onClick={() => setOpen(false)}
           >
             Services
           </Link>
-          <Link href="/pricing" onClick={() => setOpen(false)}>
+          <Link href="/pricing" prefetch className={pathname === "/pricing" ? "is-active" : ""} onClick={() => setOpen(false)}>
             Pricing
           </Link>
           <Link
             href="/api"
-            className={pathname === "/api" || pathname.startsWith("/api/") ? "is-active" : ""}
+            prefetch
+            className={pathname === "/api" ? "is-active" : ""}
             onClick={() => setOpen(false)}
           >
             API
           </Link>
           <Link
             href="/blogs"
+            prefetch
             className={pathname === "/blogs" || pathname.startsWith("/blogs/") ? "is-active" : ""}
             onClick={() => setOpen(false)}
           >
@@ -62,6 +69,7 @@ export function Header() {
           </Link>
           <Link
             href="/support"
+            prefetch
             className={pathname === "/support" ? "is-active" : ""}
             onClick={() => setOpen(false)}
           >
@@ -70,11 +78,11 @@ export function Header() {
         </nav>
 
         <div className={`nav-cta${open ? " open" : ""}`}>
-          <Link className="btn btn-ghost" href="/signin" onClick={() => setOpen(false)}>
+          <Link className="btn btn-ghost" href="/signin" prefetch onClick={() => setOpen(false)}>
             <UserIcon />
             Sign In
           </Link>
-          <Link className="btn btn-primary" href="/signup" onClick={() => setOpen(false)}>
+          <Link className="btn btn-primary" href="/signup" prefetch onClick={() => setOpen(false)}>
             <UserIcon />
             Sign Up
           </Link>
