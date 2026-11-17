@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { PlatformFilterIcon } from "@/components/PlatformFilterIcon";
+import { DashboardHeroPlatforms } from "@/components/dashboard/DashboardHeroPlatforms";
 
 type Overview = {
   balance: number;
@@ -57,11 +57,7 @@ export function OverviewView({ name }: { name?: string }) {
             <Link className="cp-btn-ghost cp-hero-ghost" href="/dashboard/add-funds">Add Funds</Link>
           </div>
         </div>
-        <div className="cp-hero-orbit" aria-hidden>
-          {["instagram", "youtube", "tiktok", "telegram"].map((p) => (
-            <PlatformFilterIcon key={p} platform={p} variant="tile" className="cp-hero-orbit-icon" />
-          ))}
-        </div>
+        <DashboardHeroPlatforms />
       </section>
       {error ? <p className="cp-error">{error}</p> : null}
       {!data ? <Skeleton rows={4} /> : (
