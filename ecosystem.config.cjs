@@ -4,7 +4,7 @@ module.exports = {
       name: "trustifysmm",
       cwd: "/srv/apps/trustifysmm",
       script: "npm",
-      args: "start",
+      args: "run start -- --port 3036",
       interpreter: "none",
       instances: 1,
       exec_mode: "fork",
