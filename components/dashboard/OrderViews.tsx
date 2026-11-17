@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Empty, Skeleton } from "@/components/dashboard/OverviewView";
+import { PlatformFilterIcon } from "@/components/PlatformFilterIcon";
+import { ServiceCatalogUI } from "@/components/dashboard/ServiceCatalogUI";
 
 type Service = {
   id: number;
@@ -25,11 +27,11 @@ export function NewOrderView() {
   const [platform, setPlatform] = useState("");
   const [group, setGroup] = useState("");
   const [q, setQ] = useState("");
+  const [allPlatforms, setAllPlatforms] = useState<{ id: string; label: string }[]>([]);
   const [service, setService] = useState<Service | null>(null);
   const [link, setLink] = useState("");
   const [qty, setQty] = useState("");
   const [balance, setBalance] = useState(0);
-  const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [placed, setPlaced] = useState<{ id: number; charge: number } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,11 +43,28 @@ export function NewOrderView() {
     if (q) params.set("q", q);
     const handle = setTimeout(() => {
       void fetch(`/api/dashboard/catalog?${params}`).then(async (res) => {
-        if (res.ok) setCatalog((await res.json()) as Catalog);
+        if (res.ok) {
+          const next = (await res.json()) as Catalog;
+          setCatalog(next);
+          if (!platform && !group && !q) setAllPlatforms(next.platforms);
+        }
       });
     }, 200);
     return () => clearTimeout(handle);
   }, [platform, group, q]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const id = new URLSearchParams(window.location.search).get("service");
+    if (!id || !catalog) return;
+    const picked = catalog.services.find((item) => item.id === Number(id));
+    if (picked) {
+      setService(picked);
+      setQty(String(picked.min));
+      setPlatform(picked.platform);
+      setGroup(picked.group);
+    }
+  }, [catalog]);
 
   useEffect(() => {
     void fetch("/api/dashboard/session").then(async (res) => {
@@ -96,68 +115,80 @@ export function NewOrderView() {
   return (
     <div className="cp-grid cp-split">
       <section className="cp-card">
-        <div className="cp-steps">
-          {["Platform", "Category", "Service", "Details", "Confirm"].map((label, i) => (
-            <span key={label} className={step === i + 1 ? "is-on" : ""}>{i + 1}. {label}</span>
-          ))}
-        </div>
+        <p className="cp-kicker">New order</p>
         {error ? <p className="cp-error">{error}</p> : null}
         {!catalog ? <Skeleton /> : (
           <>
-            <div className="cp-platforms">
-              {catalog.platforms.map((item) => (
-                <button key={item.id} type="button" className={`cp-chip ${platform === item.id ? "is-on" : ""}`} onClick={() => { setPlatform(item.id); setGroup(""); setService(null); setStep(2); }}>
-                  {item.label}
+            <div className="cp-plat-rail cp-plat-rail--compact" role="tablist" aria-label="Platforms">
+              <button type="button" className={`cp-plat-tile ${platform === "" ? "is-on" : ""}`} onClick={() => { setPlatform(""); setGroup(""); setService(null); }}>
+                <PlatformFilterIcon platform="all" className="cp-plat-icon" />
+                <span>All</span>
+              </button>
+              {(allPlatforms.length ? allPlatforms : catalog.platforms).map((item) => (
+                <button key={item.id} type="button" className={`cp-plat-tile ${platform === item.id ? "is-on" : ""}`} onClick={() => { setPlatform(item.id); setGroup(""); setService(null); }}>
+                  <PlatformFilterIcon platform={item.id} className="cp-plat-icon" />
+                  <span>{item.label}</span>
                 </button>
               ))}
             </div>
-            {step >= 2 ? (
-              <div className="cp-chips" style={{ marginTop: 12 }}>
-                {catalog.groups.map((item) => (
-                  <button key={item} type="button" className={`cp-chip ${group === item ? "is-on" : ""}`} onClick={() => { setGroup(item); setStep(3); }}>
-                    {item}
-                  </button>
+            <label className="cp-field">
+              <span>Category</span>
+              <select value={group} onChange={(event) => { setGroup(event.target.value); setService(null); }}>
+                <option value="">All categories</option>
+                {catalog.groups.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </label>
+            <label className="cp-field">
+              <span>Search</span>
+              <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Service name or ID" />
+            </label>
+            <label className="cp-field">
+              <span>Service</span>
+              <select
+                value={service?.id ?? ""}
+                onChange={(event) => {
+                  const next = catalog.services.find((item) => item.id === Number(event.target.value)) ?? null;
+                  setService(next);
+                  if (next) setQty(String(next.min));
+                }}
+              >
+                <option value="">Choose a service</option>
+                {catalog.services.slice(0, 80).map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.id} — {item.name} — ${item.ratePer1000}/1k
+                  </option>
                 ))}
-              </div>
-            ) : null}
-            {step >= 3 ? (
-              <>
-                <label className="cp-field" style={{ marginTop: 14 }}>
-                  <span>Search services</span>
-                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name or service ID" />
-                </label>
-                {catalog.services.map((item) => (
-                  <button key={item.id} type="button" className={`cp-service ${service?.id === item.id ? "is-on" : ""}`} onClick={() => { setService(item); setQty(String(item.min)); setStep(4); }}>
-                    <strong>{item.name}</strong>
-                    <small> #{item.id} · ${item.ratePer1000}/1k · {item.min}–{item.max} · {item.status}</small>
-                    <div className="cp-meta">{item.description}</div>
-                    {item.avgTime ? <div className="cp-meta">Estimated: {item.avgTime}</div> : null}
-                  </button>
-                ))}
-              </>
-            ) : null}
+              </select>
+            </label>
+            <label className="cp-field">
+              <span>Link</span>
+              <input value={link} onChange={(event) => setLink(event.target.value)} placeholder="https://" />
+            </label>
+            <label className="cp-field">
+              <span>Quantity {service ? `· min ${service.min} · max ${service.max}` : ""}</span>
+              <input value={qty} onChange={(event) => setQty(event.target.value)} inputMode="numeric" />
+            </label>
+            <div className="cp-charge">
+              <span>Charge</span>
+              <strong>${charge.toFixed(4)}</strong>
+              <em>Wallet ${balance.toFixed(2)}</em>
+            </div>
+            <button className="cp-btn cp-btn-wide" type="button" disabled={busy || !service} onClick={() => void place()}>{busy ? "Placing…" : "Place order"}</button>
           </>
         )}
       </section>
-      <aside className="cp-card">
-        <h3>Order details</h3>
-        {!service ? <p>Select a service to continue.</p> : (
-          <>
-            <label className="cp-field"><span>Service URL</span><input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://" /></label>
-            <label className="cp-field"><span>Quantity ({service.min}–{service.max})</span><input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="numeric" /></label>
-            <p>Estimated cost ${charge.toFixed(4)}</p>
-            <p>Wallet ${balance.toFixed(2)}</p>
-            <button className="cp-btn" type="button" disabled={busy} onClick={() => setStep(5)}>Review order</button>
-            {step === 5 ? (
-              <div style={{ marginTop: 16 }}>
-                <p>{service.platformLabel}</p>
-                <p>{service.name}</p>
-                <p>{link || "URL missing"}</p>
-                <p>Qty {quantity || 0} · ${charge.toFixed(4)}</p>
-                <button className="cp-btn" type="button" disabled={busy} onClick={() => void place()}>{busy ? "Placing…" : "Confirm & Place Order"}</button>
-              </div>
-            ) : null}
-          </>
+      <aside className="cp-card cp-details">
+        <h3>Service details</h3>
+        {!service ? <p>Pick a platform, category and service. Price, limits and timing show here before you pay.</p> : (
+          <dl className="cp-spec">
+            <div><dt>Service</dt><dd>#{service.id}</dd></div>
+            <div><dt>Rate</dt><dd>${service.ratePer1000} / 1,000</dd></div>
+            <div><dt>Start time</dt><dd>{service.avgTime || "Shown after the provider accepts"}</dd></div>
+            <div><dt>Average time</dt><dd>{service.avgTime || "—"}</dd></div>
+            <div><dt>Min / max</dt><dd>{service.min.toLocaleString()} – {service.max.toLocaleString()}</dd></div>
+            <div><dt>Status</dt><dd>{service.status}</dd></div>
+            <div className="cp-spec-wide"><dt>Description</dt><dd>{service.description || "No extra description on this service."}</dd></div>
+          </dl>
         )}
       </aside>
     </div>
@@ -165,7 +196,7 @@ export function NewOrderView() {
 }
 
 export function MassOrderView() {
-  const [rows, setRows] = useState([{ serviceId: "", link: "", quantity: "" }]);
+  const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [balance, setBalance] = useState(0);
   const [result, setResult] = useState<string>("");
@@ -176,15 +207,20 @@ export function MassOrderView() {
     });
   }, []);
   async function submit() {
+    const rows = text.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
+      const [serviceId, link, quantity] = line.split("|");
+      return { serviceId: Number(serviceId), link: (link || "").trim(), quantity: Number(quantity) };
+    });
+    if (!rows.length || rows.some((row) => !row.serviceId || !row.link || !row.quantity)) {
+      setError("Each line must be service_id|link|quantity");
+      return;
+    }
     setBusy(true);
     setError("");
     const res = await fetch("/api/dashboard/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        idempotencyKey: crypto.randomUUID(),
-        rows: rows.map((row) => ({ serviceId: Number(row.serviceId), link: row.link, quantity: Number(row.quantity) })),
-      }),
+      body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), rows }),
     });
     const data = (await res.json()) as { error?: string; orders?: { id: number }[]; balance?: number };
     setBusy(false);
@@ -196,23 +232,27 @@ export function MassOrderView() {
     if (typeof data.balance === "number") setBalance(data.balance);
   }
   return (
-    <section className="cp-card">
-      <p>Wallet ${balance.toFixed(2)}. Each row is priced on the server. Nothing is charged unless every row is valid.</p>
-      {error ? <p className="cp-error">{error}</p> : null}
-      {result ? <p className="cp-ok">Placed {result}</p> : null}
-      {rows.map((row, index) => (
-        <div key={index} className="cp-grid" style={{ gridTemplateColumns: "140px 1fr 140px auto", marginBottom: 8 }}>
-          <input placeholder="Service ID" value={row.serviceId} onChange={(e) => setRows(rows.map((item, i) => i === index ? { ...item, serviceId: e.target.value } : item))} />
-          <input placeholder="https:// target" value={row.link} onChange={(e) => setRows(rows.map((item, i) => i === index ? { ...item, link: e.target.value } : item))} />
-          <input placeholder="Quantity" value={row.quantity} onChange={(e) => setRows(rows.map((item, i) => i === index ? { ...item, quantity: e.target.value } : item))} />
-          <button type="button" className="cp-btn-ghost" onClick={() => setRows(rows.filter((_, i) => i !== index))}>Remove</button>
-        </div>
-      ))}
-      <div className="cp-row-actions">
-        <button type="button" className="cp-btn-ghost" onClick={() => setRows([...rows, { serviceId: "", link: "", quantity: "" }])}>Add row</button>
-        <button type="button" className="cp-btn" disabled={busy} onClick={() => void submit()}>Confirm all orders</button>
-      </div>
-    </section>
+    <div className="cp-grid cp-split">
+      <section className="cp-card">
+        <p className="cp-kicker">Mass order</p>
+        <p>One order per line: <code>service_id|link|quantity</code></p>
+        <p className="cp-note">Wallet ${balance.toFixed(2)}. Every line is priced on the server. Nothing is charged unless the whole batch is valid.</p>
+        {error ? <p className="cp-error">{error}</p> : null}
+        {result ? <p className="cp-ok">Placed {result}</p> : null}
+        <textarea className="cp-mass" value={text} onChange={(event) => setText(event.target.value)} rows={12} placeholder={"2410|https://instagram.com/p/example|1000"} />
+        <button className="cp-btn cp-btn-wide" type="button" disabled={busy} onClick={() => void submit()}>{busy ? "Placing…" : "Submit"}</button>
+      </section>
+      <aside className="cp-card">
+        <h3>How mass order works</h3>
+        <p>Use the service ID from Services, then the profile or post link, then the quantity.</p>
+        <p>Example for 1,000 on three links with service 2410:</p>
+        <ul className="cp-example">
+          <li>2410|https://instagram.com/p/one|1000</li>
+          <li>2410|https://instagram.com/p/two|1000</li>
+          <li>2410|https://instagram.com/p/three|1000</li>
+        </ul>
+      </aside>
+    </div>
   );
 }
 
@@ -250,12 +290,15 @@ export function OrdersView({ history = false }: { history?: boolean }) {
   }, [query]);
   return (
     <section className="cp-card">
-      <div className="cp-grid" style={{ gridTemplateColumns: "1.4fr .8fr .7fr .7fr" }}>
+      <div className="cp-status-tabs" role="tablist" aria-label="Order status">
+        {["", "Pending", "Processing", "In progress", "Completed", "Partial", "Canceled"].map((item) => (
+          <button key={item || "all"} type="button" className={status === item ? "is-on" : ""} onClick={() => { setPage(1); setStatus(item); }}>
+            {item === "" ? "All" : item === "Canceled" ? "Cancelled" : item}
+          </button>
+        ))}
+      </div>
+      <div className="cp-grid" style={{ gridTemplateColumns: "1.4fr .7fr .7fr", marginBottom: 12 }}>
         <input placeholder="Search order, URL, service" value={q} onChange={(e) => { setPage(1); setQ(e.target.value); }} />
-        <select value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }} aria-label="Status">
-          <option value="">All statuses</option>
-          {["Pending", "Processing", "In progress", "Completed", "Partial", "Canceled", "Failed"].map((item) => <option key={item} value={item}>{item === "Canceled" ? "Cancelled" : item}</option>)}
-        </select>
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" />
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
       </div>
@@ -333,47 +376,47 @@ export function OrderDetailView({ id }: { id: string }) {
 
 export function ServicesView({ favoritesOnly = false }: { favoritesOnly?: boolean }) {
   const [platform, setPlatform] = useState("");
+  const [group, setGroup] = useState("");
   const [q, setQ] = useState("");
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   useEffect(() => {
     const params = new URLSearchParams();
     if (favoritesOnly) params.set("favorites", "1");
     if (platform) params.set("platform", platform);
+    if (group) params.set("group", group);
     if (q) params.set("q", q);
-    void fetch(`/api/dashboard/catalog?${params}`).then(async (res) => {
-      if (res.ok) setCatalog((await res.json()) as Catalog);
-    });
-  }, [platform, q, favoritesOnly]);
+    const handle = setTimeout(() => {
+      void fetch(`/api/dashboard/catalog?${params}`).then(async (res) => {
+        if (res.ok) setCatalog((await res.json()) as Catalog);
+      });
+    }, 180);
+    return () => clearTimeout(handle);
+  }, [platform, group, q, favoritesOnly]);
   async function fav(serviceId: number) {
     const res = await fetch("/api/dashboard/favorites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ serviceId }) });
     if (!res.ok || !catalog) return;
     const data = (await res.json()) as { ids: number[] };
-    setCatalog({ ...catalog, favoriteIds: data.ids, services: favoritesOnly ? catalog.services.filter((service) => data.ids.includes(service.id)) : catalog.services });
+    setCatalog({
+      ...catalog,
+      favoriteIds: data.ids,
+      services: favoritesOnly ? catalog.services.filter((service) => data.ids.includes(service.id)) : catalog.services,
+    });
   }
-  if (!catalog) return <Skeleton />;
   return (
-    <section className="cp-card">
-      {!favoritesOnly ? (
-        <>
-          <div className="cp-platforms">
-            <button type="button" className={`cp-chip ${platform === "" ? "is-on" : ""}`} onClick={() => setPlatform("")}>All</button>
-            {catalog.platforms.map((item) => (
-              <button key={item.id} type="button" className={`cp-chip ${platform === item.id ? "is-on" : ""}`} onClick={() => setPlatform(item.id)}>{item.label}</button>
-            ))}
-          </div>
-          <label className="cp-field"><span>Search</span><input value={q} onChange={(e) => setQ(e.target.value)} /></label>
-        </>
-      ) : null}
-      {catalog.services.length === 0 ? <Empty title={favoritesOnly ? "No favorites" : "No services"} copy={favoritesOnly ? "Save services from the catalog." : "Try another platform or search."} href="/dashboard/services" cta="Browse services" /> : catalog.services.map((service) => (
-        <article key={service.id} className="cp-service">
-          <strong>{service.name}</strong>
-          <div className="cp-meta">#{service.id} · {service.platformLabel} · {service.group} · ${service.ratePer1000}/1k · {service.min}–{service.max}</div>
-          <div className="cp-row-actions">
-            <Link href={`/dashboard/new-order`}>Order</Link>
-            <button type="button" className="cp-btn-ghost" onClick={() => void fav(service.id)}>{catalog.favoriteIds.includes(service.id) ? "Unfavorite" : "Favorite"}</button>
-          </div>
-        </article>
-      ))}
+    <section className="cp-card cp-card--catalog">
+      <p className="cp-kicker">{favoritesOnly ? "Favorites" : "Services catalog"}</p>
+      <ServiceCatalogUI
+        catalog={catalog}
+        platform={platform}
+        group={group}
+        query={q}
+        onPlatform={(id) => { setPlatform(id); setGroup(""); }}
+        onGroup={setGroup}
+        onQuery={setQ}
+        favoritesOnly={favoritesOnly}
+        onFavorite={(id) => void fav(id)}
+        showPlatforms={!favoritesOnly}
+      />
     </section>
   );
 }

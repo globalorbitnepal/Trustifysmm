@@ -1,5 +1,6 @@
 import { blogsIndexFaq } from "@/data/blogs-index-faq";
 import { servicesFaq } from "@/data/services-faq";
+import { supportChannels, supportFaqCategories, supportQuickLinks } from "@/data/support-faq";
 import type { PageExtras } from "@/lib/orbit/types";
 
 const servicesItems = servicesFaq.map((item) => ({ q: item.q, a: item.a }));
@@ -56,6 +57,21 @@ export const defaultPageExtras: Record<string, PageExtras> = {
       { value: "Help articles", label: "Long-form answers" },
       { value: "Order ID", label: "Required for tickets" },
     ],
+    faq: {
+      badge: "Help articles",
+      title: "Frequently asked",
+      titleAccent: "questions",
+      lede: "Professional answers for buyers, agencies and API resellers. Expand any question for step-by-step guidance.",
+      items: [],
+    },
+    supportCategories: supportFaqCategories.map((category) => ({
+      id: category.id,
+      title: category.title,
+      description: category.description,
+      items: category.items.map((item) => ({ q: item.q, a: item.a })),
+    })),
+    supportChannels: supportChannels.map((channel) => ({ ...channel })),
+    supportQuickLinks: supportQuickLinks.map((link) => ({ ...link })),
   },
   "/terms": {
     body: [

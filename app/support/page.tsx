@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SupportPageContent } from "@/components/SupportPageContent";
-import { supportFaqCategories } from "@/data/support-faq";
 import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
 import { pageExtras } from "@/lib/orbit/page-extras";
@@ -35,9 +34,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function SupportPage() {
-  const allFaq = supportFaqCategories.flatMap((c) => c.items);
+  const extras = pageExtras("/support");
+  const topics = extras.supportCategories ?? [];
+  const allFaq = topics.flatMap((category) => category.items);
   const contact = liveSiteConfig().contact;
-  const supportStats = pageExtras("/support").stats ?? [];
+  const supportStats = extras.stats ?? [];
   const hero = pageHero("/support", {
     badge: "Help Center",
     title: "Premium",
@@ -123,7 +124,17 @@ export default function SupportPage() {
             ) : null}
           </div>
 
-          <SupportPageContent email={contact.email} phone={contact.phone} whatsapp={contact.whatsapp} />
+          <SupportPageContent
+            email={contact.email}
+            phone={contact.phone}
+            whatsapp={contact.whatsapp}
+            categories={topics}
+            channels={extras.supportChannels}
+            quickLinks={extras.supportQuickLinks}
+            faqTitle={extras.faq?.title}
+            faqAccent={extras.faq?.titleAccent}
+            faqLede={extras.faq?.lede}
+          />
         </div>
       </section>
       <Footer />

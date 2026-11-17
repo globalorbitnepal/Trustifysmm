@@ -107,12 +107,12 @@ export function AddFundsView() {
           <Empty title="Crypto gateway unavailable" copy="Deposits open when NOWPAYMENTS_API_KEY and NOWPAYMENTS_IPN_SECRET are set on the server. No balance is added until that confirmation exists." />
         ) : (
           <>
-            <label className="cp-field">
-              <span>Cryptocurrency</span>
-              <select value={coin} onChange={(e) => setCoin(e.target.value)}>
-                {currencies.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </label>
+            <p className="cp-label">Pay with</p>
+            <div className="cp-plat-grid">
+              {currencies.map((item) => (
+                <button key={item} type="button" className={`cp-plat ${coin === item ? "is-on" : ""}`} onClick={() => setCoin(item)}>{item.toUpperCase()}</button>
+              ))}
+            </div>
             <label className="cp-field"><span>Amount (USD)</span><input value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
             {error ? <p className="cp-error">{error}</p> : null}
             <button className="cp-btn" type="button" onClick={() => void createInvoice()}>Generate deposit</button>

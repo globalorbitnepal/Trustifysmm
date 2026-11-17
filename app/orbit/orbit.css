@@ -75,15 +75,57 @@ html[data-orbit="dark"] .ob-side,
   background: transparent;
 }
 .ob-brand-img,
-.ob-brand-svg {
-  width: 196px;
-  max-width: 100%;
-  height: auto;
-  display: block;
-  object-fit: contain;
+.ob-brand-svg,
+.ob-brand-lockup {
+  width: 100%;
+  max-width: 210px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: transparent;
 }
-.ob-brand-svg { filter: drop-shadow(0 6px 14px rgba(109, 61, 240, 0.12)); }
+.ob-brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  background: linear-gradient(145deg, #7c3aed 0%, #a855f7 55%, #22d3ee 140%);
+  box-shadow: 0 8px 16px rgba(109, 61, 240, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.ob-brand-copy { display: flex; flex-direction: column; min-width: 0; line-height: 1.05; }
+.ob-brand-copy strong {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #16133a;
+}
+.ob-brand-copy strong span { color: #6d3df0; }
+.ob-brand-copy small {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #7b84a8;
+}
+.ob-brand-live {
+  width: 8px;
+  height: 8px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
+  flex: none;
+}
+.ob-brand-lockup.is-dark .ob-brand-copy strong { color: #f4f6ff; }
+.ob-brand-lockup.is-dark .ob-brand-copy strong span { color: #c4b5fd; }
+.ob-brand-lockup.is-dark .ob-brand-copy small { color: #a5b0d4; }
+.ob-brand-lockup.is-compact { width: 40px; justify-content: center; }
 .ob-side-badge {
   display: inline-flex;
   align-items: center;
@@ -270,21 +312,50 @@ html[data-orbit="dark"] .ob-top,
 .ob-burger:hover { background: var(--surface); }
 .ob-burger svg { width: 20px; height: 20px; }
 
-.ob-search-wrap { position: relative; flex: 1; max-width: 390px; }
+.ob-search-wrap { position: relative; flex: 1; max-width: 460px; }
 .ob-search {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 0 15px;
-  height: 40px;
+  gap: 10px;
+  padding: 0 8px 0 16px;
+  height: 44px;
   width: 100%;
   border-radius: 999px;
-  border: 1px solid transparent;
-  background: var(--surface);
+  border: 1px solid rgba(109, 61, 240, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 246, 252, 0.88));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 8px 20px rgba(52, 42, 118, 0.05);
 }
-.ob-search:focus-within { border-color: rgba(109, 61, 240, 0.35); background: var(--card); }
-.ob-search input { border: 0; background: transparent; flex: 1; color: var(--text); font: inherit; font-size: 13px; outline: none; min-height: 0; padding: 0; }
-.ob-search svg { width: 15px; height: 15px; color: var(--dim); flex: none; }
+.ob-search:focus-within {
+  border-color: rgba(109, 61, 240, 0.45);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(109, 61, 240, 0.12);
+}
+html[data-orbit="dark"] .ob-search,
+.ob.is-dark .ob-search {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+.ob-search input { border: 0; background: transparent; flex: 1; color: var(--text); font: inherit; font-size: 13.5px; font-weight: 600; outline: none; min-height: 0; padding: 0; }
+.ob-search input::placeholder { color: #8b93b3; font-weight: 600; }
+.ob-search svg { width: 16px; height: 16px; color: #6d3df0; flex: none; }
+.ob-search-kbd {
+  flex: none;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(109, 61, 240, 0.16);
+  background: rgba(109, 61, 240, 0.08);
+  color: #5b4b9a;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+}
+html[data-orbit="dark"] .ob-search-kbd,
+.ob.is-dark .ob-search-kbd { color: #ddd6fe; border-color: rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.06); }
 .ob-search-pop {
   position: absolute;
   top: calc(100% + 8px);
@@ -520,25 +591,57 @@ html[data-orbit="dark"] .ob-hero-meta,
 .ob-online-dot { display: inline-flex; align-items: center; gap: 6px; }
 .ob-online-dot i { width: 9px; height: 9px; border-radius: 999px; display: inline-block; }
 
+.ob-hero {
+  position: relative;
+  border-radius: 24px;
+  min-height: 196px;
+  padding: 28px 32px;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.95), transparent 34%),
+    linear-gradient(105deg, #f5f3ff 0%, #ddd6fe 34%, #7c3aed 68%, #312e81 100%);
+  box-shadow: 0 18px 40px rgba(76, 29, 149, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+  align-items: center;
+  overflow: hidden;
+}
 .ob-hero-visual {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 52%;
+  position: relative;
+  height: 176px;
   pointer-events: none;
-  mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
 }
-.ob-hero-visual img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: right center;
-  display: block;
-  image-rendering: -webkit-optimize-contrast;
+.ob-hero-stage { position: relative; width: 100%; height: 100%; }
+.ob-hero-rings { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ob-hero-float {
+  position: absolute;
+  filter: drop-shadow(0 10px 16px rgba(49, 46, 129, 0.28));
 }
-.ob-hero-art-svg { width: 100%; height: 100%; display: block; }
+.ob-hero-core {
+  position: absolute;
+  width: 34%;
+  left: 33%;
+  top: 16%;
+  filter: drop-shadow(0 16px 24px rgba(49, 46, 129, 0.35));
+}
+.ob-hero-chip {
+  position: absolute;
+  right: 4%;
+  bottom: 6%;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 10px 36px 10px 14px;
+  border-radius: 16px;
+  background: rgba(49, 16, 110, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(30, 10, 70, 0.28);
+}
+.ob-hero-chip strong { font-size: 12px; font-weight: 700; }
+.ob-hero-chip span { font-size: 13.5px; font-weight: 800; }
+.ob-hero-visual img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
 /* ---------- 5 KPI CARDS ---------- */
 .ob-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }

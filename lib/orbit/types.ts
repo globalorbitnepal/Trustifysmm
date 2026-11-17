@@ -88,11 +88,32 @@ export type AuthPageCopy = {
   cardLede: string;
 };
 
+export type SupportTopic = {
+  id: string;
+  title: string;
+  description: string;
+  items: FaqEntry[];
+};
+
+export type SupportChannel = {
+  id: string;
+  title: string;
+  detail: string;
+  sla: string;
+  href: string;
+  action: string;
+};
+
+export type SupportQuickLink = { href: string; label: string; desc: string };
+
 export type PageExtras = {
   faq?: PageFaqSection;
   stats?: PageStat[];
   body?: PageBodyBlock[];
   auth?: AuthPageCopy;
+  supportCategories?: SupportTopic[];
+  supportChannels?: SupportChannel[];
+  supportQuickLinks?: SupportQuickLink[];
 };
 
 export type OrbitSiteConfig = {

@@ -269,9 +269,10 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
                     setSearch("");
                   }
                 }}
-                placeholder="Search anything...  (Ctrl + K)"
+                placeholder="Search modules"
                 aria-label="Search modules"
               />
+              <kbd className="ob-search-kbd">Ctrl K</kbd>
             </label>
             {search.trim() ? (
               <div className="ob-search-pop" role="listbox">

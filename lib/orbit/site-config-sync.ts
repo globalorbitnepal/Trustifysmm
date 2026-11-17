@@ -150,7 +150,10 @@ function mergePageExtras(raw?: Record<string, PageExtras>): Record<string, PageE
           : undefined,
       stats: incoming.stats?.length ? incoming.stats : base.stats,
       body: incoming.body?.length ? incoming.body : base.body,
-      auth: base.auth || incoming.auth ? { ...(base.auth ?? incoming.auth!), ...incoming.auth } : undefined,
+      auth: base.auth || incoming.auth ? { ...(base.auth ?? incoming.auth!), ...incoming.auth, perks: incoming.auth?.perks?.length ? incoming.auth.perks : base.auth?.perks ?? [], trust: incoming.auth?.trust?.length ? incoming.auth.trust : base.auth?.trust ?? [] } : undefined,
+      supportCategories: incoming.supportCategories?.length ? incoming.supportCategories : base.supportCategories,
+      supportChannels: incoming.supportChannels?.length ? incoming.supportChannels : base.supportChannels,
+      supportQuickLinks: incoming.supportQuickLinks?.length ? incoming.supportQuickLinks : base.supportQuickLinks,
     };
   }
   return out;

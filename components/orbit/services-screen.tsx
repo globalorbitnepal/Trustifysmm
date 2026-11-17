@@ -14,6 +14,10 @@ type ServiceRow = {
   margin: number | null;
   min?: string;
   max?: string;
+  avgTime?: string;
+  description?: string;
+  refill?: boolean;
+  featured?: boolean;
   custom: boolean;
   overridden?: boolean;
 };
@@ -23,7 +27,7 @@ type ServicesPayload = {
   page: number;
   pages: number;
   globalMarkupPercent: number;
-  categories: { id: string; name: string; platform: string; active: boolean; services: number }[];
+  categories: { id: string; name: string; platform: string; description: string; active: boolean; services: number }[];
   platforms: { id: string; label: string }[];
 };
 
@@ -36,12 +40,17 @@ const EMPTY = {
   minOrder: "10",
   maxOrder: "100000",
   description: "",
+  avgTime: "",
 };
 
 export function ServicesScreen() {
   const [q, setQ] = useState("");
+  const [platform, setPlatform] = useState("");
+  const [group, setGroup] = useState("");
   const [page, setPage] = useState(1);
-  const { data, error, reload } = useOrbit<ServicesPayload>(`/api/orbit/services?q=${encodeURIComponent(q)}&page=${page}`);
+  const { data, error, reload } = useOrbit<ServicesPayload>(
+    `/api/orbit/services?q=${encodeURIComponent(q)}&platform=${encodeURIComponent(platform)}&group=${encodeURIComponent(group)}&page=${page}`,
+  );
   const [openId, setOpenId] = useState<number | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -49,6 +58,8 @@ export function ServicesScreen() {
   const [bulk, setBulk] = useState({ percent: "", platform: "", group: "" });
   const [created, setCreated] = useState({ ...EMPTY });
   const [showCreate, setShowCreate] = useState(false);
+  const [newCategory, setNewCategory] = useState({ name: "", platform: "instagram", description: "" });
+  const [categoryDraft, setCategoryDraft] = useState<Record<string, { name: string; platform: string; description: string }>>({});
 
   useEffect(() => {
     if (data && !markup) setMarkup(String(data.globalMarkupPercent ?? 0));
@@ -76,6 +87,10 @@ export function ServicesScreen() {
       costPer1000: row.cost === null ? "" : String(row.cost),
       minOrder: row.min ?? "",
       maxOrder: row.max ?? "",
+      avgTime: row.avgTime ?? "",
+      description: row.description ?? "",
+      refill: row.refill ? "1" : "",
+      featured: row.featured ? "1" : "",
     });
   }
 
@@ -90,6 +105,10 @@ export function ServicesScreen() {
       costPer1000: draft.costPer1000 === "" ? undefined : Number(draft.costPer1000),
       minOrder: draft.minOrder,
       maxOrder: draft.maxOrder,
+      avgTime: draft.avgTime,
+      description: draft.description,
+      refill: draft.refill === "1",
+      featured: draft.featured === "1",
     }, `Service #${row.id} saved.`);
     setOpenId(null);
   }
@@ -98,6 +117,16 @@ export function ServicesScreen() {
     <>
       <div className="ob-toolbar ob-toolbar--sticky">
         <input placeholder="Search ID, name, category, platform" value={q} onChange={(event) => { setQ(event.target.value); setPage(1); }} />
+        <select value={platform} onChange={(event) => { setPlatform(event.target.value); setGroup(""); setPage(1); }} aria-label="Platform">
+          <option value="">All platforms</option>
+          {(data?.platforms ?? []).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+        </select>
+        <select value={group} onChange={(event) => { setGroup(event.target.value); setPage(1); }} aria-label="Category">
+          <option value="">All categories</option>
+          {(data?.categories ?? []).filter((category) => !platform || category.platform === platform || category.platform === "other").map((category) => (
+            <option key={category.id} value={category.name}>{category.name} ({category.services})</option>
+          ))}
+        </select>
         <input placeholder="Global markup %" value={markup} onChange={(event) => setMarkup(event.target.value)} />
         <button className="ob-btn" type="button" onClick={() => act({ action: "markup", percent: Number(markup) }, "Global markup saved.")}>Save markup</button>
         <button className="ob-btn primary" type="button" onClick={() => setShowCreate((value) => !value)}>{showCreate ? "Close" : "+ New service"}</button>
@@ -123,6 +152,7 @@ export function ServicesScreen() {
           <label>Cost / 1K<input value={created.costPer1000} onChange={(event) => setCreated({ ...created, costPer1000: event.target.value })} /></label>
           <label>Min<input value={created.minOrder} onChange={(event) => setCreated({ ...created, minOrder: event.target.value })} /></label>
           <label>Max<input value={created.maxOrder} onChange={(event) => setCreated({ ...created, maxOrder: event.target.value })} /></label>
+          <label>Average time<input value={created.avgTime} onChange={(event) => setCreated({ ...created, avgTime: event.target.value })} placeholder="0-1 hour" /></label>
           <label>Description<textarea value={created.description} onChange={(event) => setCreated({ ...created, description: event.target.value })} /></label>
           <button
             className="ob-btn primary"
@@ -197,6 +227,10 @@ export function ServicesScreen() {
                         <label>Cost / 1K<input value={draft.costPer1000} onChange={(event) => setDraft({ ...draft, costPer1000: event.target.value })} /></label>
                         <label>Min order<input value={draft.minOrder} onChange={(event) => setDraft({ ...draft, minOrder: event.target.value })} /></label>
                         <label>Max order<input value={draft.maxOrder} onChange={(event) => setDraft({ ...draft, maxOrder: event.target.value })} /></label>
+                        <label>Average time<input value={draft.avgTime} onChange={(event) => setDraft({ ...draft, avgTime: event.target.value })} /></label>
+                        <label>Description<textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></label>
+                        <label><input type="checkbox" checked={draft.refill === "1"} onChange={(event) => setDraft({ ...draft, refill: event.target.checked ? "1" : "" })} /> Refill</label>
+                        <label><input type="checkbox" checked={draft.featured === "1"} onChange={(event) => setDraft({ ...draft, featured: event.target.checked ? "1" : "" })} /> Featured</label>
                         <div className="ob-toolbar">
                           <button className="ob-btn primary" type="button" onClick={() => saveEdit(row)}>Save service</button>
                           <button className="ob-btn" type="button" onClick={() => setOpenId(null)}>Cancel</button>
@@ -219,27 +253,76 @@ export function ServicesScreen() {
       </div>
 
       <article className="ob-card" id="categories">
-        <h3 style={{ marginTop: 0 }}>Categories</h3>
+        <h3 style={{ marginTop: 0 }}>All categories</h3>
+        <p className="ob-muted">Same groups the public Services page uses. Rename, hide, or add a new category — it publishes with the catalog.</p>
+        <div className="ob-form">
+          <label>New category<input value={newCategory.name} onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })} placeholder="Instagram Followers" /></label>
+          <label>Platform
+            <select value={newCategory.platform} onChange={(event) => setNewCategory({ ...newCategory, platform: event.target.value })}>
+              {(data?.platforms ?? []).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+            </select>
+          </label>
+          <label>Description<input value={newCategory.description} onChange={(event) => setNewCategory({ ...newCategory, description: event.target.value })} /></label>
+          <button
+            className="ob-btn primary"
+            type="button"
+            onClick={async () => {
+              await act({ action: "category", name: newCategory.name, platform: newCategory.platform, description: newCategory.description, active: true }, "Category created.");
+              setNewCategory({ name: "", platform: newCategory.platform, description: "" });
+            }}
+          >
+            Add category
+          </button>
+        </div>
         <div className="ob-table-wrap">
           <table className="ob-table">
-            <thead><tr><th>Category</th><th>Platform</th><th>Services</th><th>Visibility</th></tr></thead>
+            <thead><tr><th>Category</th><th>Platform</th><th>Services</th><th></th></tr></thead>
             <tbody>
-              {data?.categories.map((category) => (
-                <tr key={category.id}>
-                  <td>{category.name}</td>
-                  <td>{category.platform}</td>
-                  <td>{category.services}</td>
-                  <td>
-                    <button
-                      className="ob-btn"
-                      type="button"
-                      onClick={() => act({ action: "category", id: category.id, name: category.name, platform: category.platform, active: !category.active }, category.active ? "Category hidden." : "Category visible.")}
-                    >
-                      {category.active ? "Hide" : "Show"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {data?.categories.map((category) => {
+                const draftRow = categoryDraft[category.id] ?? { name: category.name, platform: category.platform, description: category.description || "" };
+                return (
+                  <tr key={category.id}>
+                    <td>
+                      <input value={draftRow.name} onChange={(event) => setCategoryDraft({ ...categoryDraft, [category.id]: { ...draftRow, name: event.target.value } })} />
+                    </td>
+                    <td>
+                      <select value={draftRow.platform} onChange={(event) => setCategoryDraft({ ...categoryDraft, [category.id]: { ...draftRow, platform: event.target.value } })}>
+                        {(data?.platforms ?? []).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                      </select>
+                    </td>
+                    <td>{category.services}</td>
+                    <td>
+                      <div className="ob-toolbar">
+                        <button
+                          className="ob-btn primary"
+                          type="button"
+                          onClick={() => act({
+                            action: "category",
+                            id: category.id,
+                            name: draftRow.name,
+                            previousName: category.name,
+                            platform: draftRow.platform,
+                            description: draftRow.description,
+                            active: category.active,
+                          }, "Category saved.")}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="ob-btn"
+                          type="button"
+                          onClick={() => act({ action: "category", id: category.id, name: draftRow.name, previousName: category.name, platform: draftRow.platform, active: !category.active }, category.active ? "Category hidden on the site." : "Category visible.")}
+                        >
+                          {category.active ? "Hide" : "Show"}
+                        </button>
+                        {!category.id.startsWith("group:") ? (
+                          <button className="ob-btn warn" type="button" onClick={() => act({ action: "delete-category", id: category.id }, "Category deleted.")}>Delete</button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

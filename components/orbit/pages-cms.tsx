@@ -7,6 +7,7 @@ import { ORBIT_PAGES, pageBySlug } from "@/lib/orbit/page-registry";
 import { defaultPageExtras } from "@/lib/orbit/page-defaults";
 import { useOrbit } from "@/components/orbit/use-orbit";
 import { CmsSectionHead, ImageUrlField } from "@/components/orbit/cms-fields";
+import { ServicesScreen } from "@/components/orbit/services-screen";
 import type { ComponentProps } from "react";
 import { OrbitIcon } from "@/components/orbit/orbit-icons";
 
@@ -39,8 +40,8 @@ export function PagesHubScreen() {
             <span className="ob-crumb-sep">/</span>
             <span>Publish</span>
           </p>
-          <h2>Section-by-section website editor</h2>
-          <p>Match the live site: hero, copy, images, CTAs, and SEO per page. Use Media library URLs, then Publish now on each editor.</p>
+          <h2>Every public page, full edit</h2>
+          <p>Homepage, services catalog, pricing, API, blogs, support articles, terms, privacy, sign in and sign up. Change the words and images here, then Publish now — the live site updates immediately.</p>
         </div>
         <aside className="ob-page-intro-side" aria-label="Publish status">
           <span>Live sync</span>
@@ -82,7 +83,7 @@ export function PagesHubScreen() {
 const pageTabLabels: Record<string, string> = {
   services: "Catalog & FAQ",
   pricing: "Rate deck & FAQ",
-  support: "Support stats",
+  support: "Help center",
   terms: "Legal sections",
   privacy: "Policy sections",
   signin: "Sign-in copy",
@@ -100,8 +101,11 @@ function renderExtrasTab(path: string, extras: PageExtras, patch: (next: PageExt
   const stats = extras.stats ?? [];
   const body = extras.body ?? [];
   const auth = extras.auth;
+  const topics = extras.supportCategories ?? [];
+  const channels = extras.supportChannels ?? [];
+  const quickLinks = extras.supportQuickLinks ?? [];
 
-  if (!faq && !stats.length && !body.length && !auth) return null;
+  if (!faq && !stats.length && !body.length && !auth && !topics.length) return null;
 
   return (
     <>
@@ -206,6 +210,77 @@ function renderExtrasTab(path: string, extras: PageExtras, patch: (next: PageExt
           <p className="ob-muted">{path} · changes publish instantly with the main Publish now button.</p>
         </article>
       ) : null}
+
+      {topics.length ? (
+        <article className="ob-card ob-form">
+          <CmsSectionHead icon="support" title="Help topics and answers" hint="Every category and question on the live support page." />
+          {topics.map((topic, topicIndex) => (
+            <div key={topic.id} className="ob-form ob-cms-block">
+              <label>Topic title<input value={topic.title} onChange={(event) => {
+                const supportCategories = topics.map((row, i) => (i === topicIndex ? { ...row, title: event.target.value } : row));
+                patch({ supportCategories });
+              }} /></label>
+              <label>Topic description<textarea value={topic.description} onChange={(event) => {
+                const supportCategories = topics.map((row, i) => (i === topicIndex ? { ...row, description: event.target.value } : row));
+                patch({ supportCategories });
+              }} /></label>
+              {topic.items.map((item, itemIndex) => (
+                <div key={`${topic.id}-${itemIndex}`} className="ob-form">
+                  <label>Question<input value={item.q} onChange={(event) => {
+                    const items = topic.items.map((row, i) => (i === itemIndex ? { ...row, q: event.target.value } : row));
+                    const supportCategories = topics.map((row, i) => (i === topicIndex ? { ...row, items } : row));
+                    patch({ supportCategories });
+                  }} /></label>
+                  <label>Answer<textarea value={item.a} onChange={(event) => {
+                    const items = topic.items.map((row, i) => (i === itemIndex ? { ...row, a: event.target.value } : row));
+                    const supportCategories = topics.map((row, i) => (i === topicIndex ? { ...row, items } : row));
+                    patch({ supportCategories });
+                  }} /></label>
+                  <button className="ob-btn ghost" type="button" onClick={() => {
+                    const items = topic.items.filter((_, i) => i !== itemIndex);
+                    patch({ supportCategories: topics.map((row, i) => (i === topicIndex ? { ...row, items } : row)) });
+                  }}>Remove question</button>
+                </div>
+              ))}
+              <button className="ob-btn ghost" type="button" onClick={() => {
+                const items = [...topic.items, { q: "New question", a: "" }];
+                patch({ supportCategories: topics.map((row, i) => (i === topicIndex ? { ...row, items } : row)) });
+              }}>Add question</button>
+              <button className="ob-btn warn" type="button" onClick={() => patch({ supportCategories: topics.filter((_, i) => i !== topicIndex) })}>Remove topic</button>
+            </div>
+          ))}
+          <button className="ob-btn ghost" type="button" onClick={() => patch({ supportCategories: [...topics, { id: `topic-${Date.now()}`, title: "New topic", description: "", items: [{ q: "New question", a: "" }] }] })}>Add topic</button>
+        </article>
+      ) : null}
+
+      {channels.length ? (
+        <article className="ob-card ob-form">
+          <CmsSectionHead icon="support" title="Contact cards" />
+          {channels.map((channel, index) => (
+            <div key={channel.id} className="ob-form ob-cms-block">
+              <label>Title<input value={channel.title} onChange={(event) => patch({ supportChannels: channels.map((row, i) => (i === index ? { ...row, title: event.target.value } : row)) })} /></label>
+              <label>Detail<textarea value={channel.detail} onChange={(event) => patch({ supportChannels: channels.map((row, i) => (i === index ? { ...row, detail: event.target.value } : row)) })} /></label>
+              <label>Reply note<input value={channel.sla} onChange={(event) => patch({ supportChannels: channels.map((row, i) => (i === index ? { ...row, sla: event.target.value } : row)) })} /></label>
+              <label>Button text<input value={channel.action} onChange={(event) => patch({ supportChannels: channels.map((row, i) => (i === index ? { ...row, action: event.target.value } : row)) })} /></label>
+              <label>Link<input value={channel.href} onChange={(event) => patch({ supportChannels: channels.map((row, i) => (i === index ? { ...row, href: event.target.value } : row)) })} /></label>
+            </div>
+          ))}
+        </article>
+      ) : null}
+
+      {quickLinks.length ? (
+        <article className="ob-card ob-form">
+          <CmsSectionHead icon="pages" title="Quick links" />
+          {quickLinks.map((link, index) => (
+            <div key={`${link.href}-${index}`} className="ob-toolbar">
+              <input value={link.label} onChange={(event) => patch({ supportQuickLinks: quickLinks.map((row, i) => (i === index ? { ...row, label: event.target.value } : row)) })} />
+              <input value={link.desc} onChange={(event) => patch({ supportQuickLinks: quickLinks.map((row, i) => (i === index ? { ...row, desc: event.target.value } : row)) })} />
+              <input value={link.href} onChange={(event) => patch({ supportQuickLinks: quickLinks.map((row, i) => (i === index ? { ...row, href: event.target.value } : row)) })} />
+            </div>
+          ))}
+          <button className="ob-btn ghost" type="button" onClick={() => patch({ supportQuickLinks: [...quickLinks, { href: "/", label: "New link", desc: "" }] })}>Add link</button>
+        </article>
+      ) : null}
     </>
   );
 }
@@ -214,7 +289,7 @@ export function PageEditorScreen({ slug }: { slug: string }) {
   const def = pageBySlug(slug);
   const { data, error, reload } = useOrbit<OrbitSiteConfig>("/api/orbit/config");
   const [config, setConfig] = useState<OrbitSiteConfig | null>(null);
-  const [tab, setTab] = useState<"content" | "seo" | "sections" | "page" | "global">("content");
+  const [tab, setTab] = useState<"content" | "seo" | "sections" | "page" | "catalog" | "global">(slug === "services" ? "catalog" : "content");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const path = def?.path ?? "/";
@@ -337,6 +412,7 @@ export function PageEditorScreen({ slug }: { slug: string }) {
       </div>
 
       <div className="ob-chart-tabs">
+        {slug === "services" ? <button type="button" className={tab === "catalog" ? "is-on" : ""} onClick={() => setTab("catalog")}>All services & categories</button> : null}
         <button type="button" className={tab === "content" ? "is-on" : ""} onClick={() => setTab("content")}>Page content</button>
         <button type="button" className={tab === "seo" ? "is-on" : ""} onClick={() => setTab("seo")}>SEO &amp; social</button>
         {extrasTab ? <button type="button" className={tab === "page" ? "is-on" : ""} onClick={() => setTab("page")}>{pageTabLabel(slug)}</button> : null}
@@ -345,6 +421,13 @@ export function PageEditorScreen({ slug }: { slug: string }) {
           {slug === "support" ? "Contact & header" : slug === "pricing" ? "Header / pricing" : "Header / footer"}
         </button>
       </div>
+
+      {tab === "catalog" && slug === "services" ? (
+        <>
+          <p className="ob-muted">This is the live /services catalog. Search, filter, edit every service, or create a new category and service. Publish is instant — no separate save.</p>
+          <ServicesScreen />
+        </>
+      ) : null}
 
       {tab === "content" ? (
         <article className="ob-card ob-form">

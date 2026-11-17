@@ -74,10 +74,17 @@ export function baseService(id: number) {
   return base.services.find((service) => service.id === id) ?? null;
 }
 
-export async function saveCategory(input: Omit<ServiceCategory, "id"> & { id?: string }) {
+export async function saveCategory(input: Omit<ServiceCategory, "id"> & { id?: string; previousName?: string }) {
   const admin = await readAdmin();
   const name = input.name.trim();
   if (name.length < 2) return { error: "Category name is required." as const };
+  const previous = (input.previousName || (input.id?.startsWith("group:") ? input.id.slice(6) : "")).trim();
+  if (previous && previous.toLowerCase() !== name.toLowerCase()) {
+    admin.groupAlias[previous] = name;
+    for (const service of admin.custom) {
+      if (service.group === previous) service.group = name;
+    }
+  }
   if (input.id && !input.id.startsWith("group:")) {
     const row = admin.categories.find((category) => category.id === input.id);
     if (!row) return { error: "Category not found." as const };

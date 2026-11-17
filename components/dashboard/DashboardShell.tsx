@@ -143,10 +143,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <aside className={`cp-side ${open ? "is-open" : ""}`}>
         <div className="cp-brand">
           <Link href="/dashboard" aria-label="TrustifySMM customer panel">
-            <img className="cp-logo cp-logo-dark" src="/brand/logo-premium.png" alt="TrustifySMM" width={1024} height={341} />
-            <img className="cp-logo cp-logo-light" src="/brand/logo-official-clean.png" alt="" width={1024} height={341} />
+            <img className="cp-logo" src="/brand/logo-header-clear.png" alt="TrustifySMM" width={1024} height={341} />
           </Link>
-          <span>Customer panel</span>
+          <div className="cp-user-card">
+            <Avatar user={user} />
+            <div>
+              <strong>${(user?.balance ?? 0).toFixed(2)}</strong>
+              <span>{name}</span>
+            </div>
+          </div>
         </div>
         <nav>
           {NAV.map((group) => (

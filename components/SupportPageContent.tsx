@@ -3,19 +3,32 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
-  supportChannels,
-  supportFaqCategories,
-  supportQuickLinks,
+  supportChannels as fallbackChannels,
+  supportFaqCategories as fallbackCategories,
+  supportQuickLinks as fallbackLinks,
 } from "@/data/support-faq";
+import type { SupportChannel, SupportQuickLink, SupportTopic } from "@/lib/orbit/types";
 
 export function SupportPageContent({
   email = "support@trustifysmm.com",
   phone = "",
   whatsapp = "",
+  categories = fallbackCategories as unknown as SupportTopic[],
+  channels = fallbackChannels as unknown as SupportChannel[],
+  quickLinks = fallbackLinks as unknown as SupportQuickLink[],
+  faqTitle = "Frequently asked",
+  faqAccent = "questions",
+  faqLede = "Professional answers for buyers, agencies and API resellers. Expand any question for step-by-step guidance.",
 }: {
   email?: string;
   phone?: string;
   whatsapp?: string;
+  categories?: SupportTopic[];
+  channels?: SupportChannel[];
+  quickLinks?: SupportQuickLink[];
+  faqTitle?: string;
+  faqAccent?: string;
+  faqLede?: string;
 }) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -23,7 +36,7 @@ export function SupportPageContent({
   const q = query.trim().toLowerCase();
 
   const filteredCategories = useMemo(() => {
-    return supportFaqCategories
+    return categories
       .map((cat) => {
         if (activeCategory !== "all" && cat.id !== activeCategory) return null;
         const items = cat.items.filter(
@@ -35,10 +48,10 @@ export function SupportPageContent({
         if (items.length === 0) return null;
         return { ...cat, items };
       })
-      .filter(Boolean) as typeof supportFaqCategories;
-  }, [q, activeCategory]);
+      .filter(Boolean) as SupportTopic[];
+  }, [q, activeCategory, categories]);
 
-  const totalFaqs = supportFaqCategories.reduce((n, c) => n + c.items.length, 0);
+  const totalFaqs = categories.reduce((n, c) => n + c.items.length, 0);
 
   return (
     <div className="support-layout">
@@ -52,7 +65,7 @@ export function SupportPageContent({
           All FAQs
           <span>{totalFaqs}</span>
         </button>
-        {supportFaqCategories.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat.id}
             type="button"
@@ -104,7 +117,7 @@ export function SupportPageContent({
               <a className="btn btn-primary support-channel-btn" href={whatsapp.startsWith("http") ? whatsapp : `https://wa.me/${whatsapp.replace(/[^\d]/g, "")}`}>Open WhatsApp</a>
             </article>
           ) : null}
-          {supportChannels.filter((ch) => ch.id !== "email").map((ch) => (
+          {channels.filter((ch) => ch.id !== "email").map((ch) => (
             <article key={ch.id} className="support-channel-card">
               <h2>{ch.title}</h2>
               <p>{ch.detail}</p>
@@ -119,7 +132,7 @@ export function SupportPageContent({
         <div className="support-quicklinks">
           <h2 className="support-section-title">Quick links</h2>
           <div className="support-quicklinks-grid">
-            {supportQuickLinks.map((link) => (
+            {quickLinks.map((link) => (
               <Link key={link.href} href={link.href} className="support-quicklink">
                 <strong>{link.label}</strong>
                 <span>{link.desc}</span>
@@ -130,12 +143,9 @@ export function SupportPageContent({
 
         <div className="support-faq" id="support-faq">
           <h2 className="support-section-title">
-            Frequently asked <span className="grad">questions</span>
+            {faqTitle} {faqAccent ? <span className="grad">{faqAccent}</span> : null}
           </h2>
-          <p className="support-faq-lede">
-            Professional answers for buyers, agencies and API resellers. Expand any question for step-by-step
-            guidance.
-          </p>
+          <p className="support-faq-lede">{faqLede}</p>
 
           {filteredCategories.length === 0 ? (
             <p className="support-empty">No matches — try another keyword or pick a topic on the left.</p>

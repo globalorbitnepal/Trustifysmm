@@ -22,15 +22,18 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const q = (url.searchParams.get("q") || "").toLowerCase();
+  const platformFilter = url.searchParams.get("platform") || "";
+  const groupFilter = url.searchParams.get("group") || "";
   const page = Math.max(1, Number(url.searchParams.get("page") || 1));
-  const pageSize = 40;
+  const pageSize = 50;
   const catalog = livePricingData();
   const admin = readServiceAdminSync();
   const overrides = await readPricingOverrides();
   const config = await readSiteConfig();
   let rows = catalog.services.map((service) => {
     const custom = admin.custom.find((row) => row.id === service.id);
-    const patch = admin.patches[String(service.id)] as (Partial<PricingService> & { costPer1000?: number }) | undefined;
+    const patch = admin.patches[String(service.id)] as (Partial<PricingService> & { costPer1000?: number; refill?: boolean; featured?: boolean }) | undefined;
+    const source = baseService(service.id);
     const cost = custom?.costPer1000 ?? patch?.costPer1000;
     return {
       id: service.id,
@@ -38,16 +41,21 @@ export async function GET(request: Request) {
       platform: service.platform,
       group: service.group,
       rate: service.ratePer1000,
-      editRate: overrides.overrides[String(service.id)] ?? custom?.ratePer1000 ?? baseService(service.id)?.ratePer1000 ?? service.ratePer1000,
+      editRate: overrides.overrides[String(service.id)] ?? custom?.ratePer1000 ?? source?.ratePer1000 ?? service.ratePer1000,
       cost: cost ?? null,
       margin: cost !== undefined ? Math.round((service.ratePer1000 - cost) * 10000) / 10000 : null,
       min: service.minOrder,
       max: service.maxOrder,
+      avgTime: custom?.avgTime ?? patch?.avgTime ?? source?.avgTime ?? "",
+      description: custom?.description ?? patch?.description ?? source?.description ?? "",
+      refill: Boolean(custom?.refill ?? patch?.refill),
+      featured: Boolean(custom?.featured ?? patch?.featured),
       custom: Boolean(custom),
       overridden: overrides.overrides[String(service.id)] !== undefined,
-      featured: Boolean(custom?.featured),
     };
   });
+  if (platformFilter) rows = rows.filter((row) => row.platform === platformFilter);
+  if (groupFilter) rows = rows.filter((row) => row.group === groupFilter);
   if (q) rows = rows.filter((row) => `${row.id} ${row.name} ${row.group} ${row.platform}`.toLowerCase().includes(q));
   const total = rows.length;
   return NextResponse.json({
@@ -77,9 +85,12 @@ export async function POST(request: Request) {
       description: String(body.description || ""),
       active: body.active !== false,
       order: Number(body.order || 0),
+      previousName: body.previousName ? String(body.previousName) : undefined,
     });
     if ("error" in saved) return NextResponse.json(saved, { status: 400 });
     await recordAdminAction("category.save", String(body.name || ""));
+    revalidatePath("/services");
+    revalidatePath("/pricing");
     return NextResponse.json(saved);
   }
   if (action === "delete-category") {
