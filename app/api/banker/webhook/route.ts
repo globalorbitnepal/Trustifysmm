@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (process.env.NOWPAYMENTS_IPN_SECRET && !verifyNowPayments(raw, signature)) {
+  if (!process.env.NOWPAYMENTS_IPN_SECRET?.trim()) {
+    return NextResponse.json({ error: "Webhook secret is not configured." }, { status: 503 });
+  }
+  if (!verifyNowPayments(raw, signature)) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 

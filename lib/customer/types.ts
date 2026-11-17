@@ -10,9 +10,16 @@ export type CustomerUser = {
   googleId: string | null;
   role: CustomerRole;
   apiKey: string;
+  apiKeyRevoked?: boolean;
   balance: number;
+  username?: string | null;
+  timezone?: string | null;
+  sessionVersion?: number;
   createdAt: string;
   updatedAt: string;
 };
 
-export type PublicCustomer = Pick<CustomerUser, "id" | "email" | "name" | "image" | "role" | "apiKey" | "balance">;
+export type PublicCustomer = Pick<
+  CustomerUser,
+  "id" | "email" | "name" | "image" | "role" | "apiKey" | "balance" | "username" | "timezone" | "createdAt"
+> & { apiKeyRevoked: boolean };

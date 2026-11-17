@@ -5,6 +5,7 @@ export type DemoAccount = {
   email: string;
   balance: number;
   currency: "USD";
+  revoked?: boolean;
 };
 
 export type DemoOrder = {
@@ -18,16 +19,22 @@ export type DemoOrder = {
   start_count: number;
   currency: "USD";
   createdAt: string;
+  accountKey?: string;
+  updatedAt?: string;
 };
 
 export type BankerInvoice = {
   id: string;
   apiKey: string;
   amountUsd: number;
-  status: "pending" | "paid" | "expired";
+  status: "pending" | "confirming" | "paid" | "expired" | "failed";
   provider: "demo" | "nowpayments";
   payUrl?: string;
   address?: string;
   createdAt: string;
   paidAt?: string;
+  payCurrency?: string;
+  payAmount?: string;
+  txHash?: string;
+  expiresAt?: string;
 };

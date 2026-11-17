@@ -4,7 +4,7 @@ import type { CustomerUser } from "@/lib/customer/types";
 import { toPublicUser } from "@/lib/customer/user-store";
 
 export function jsonWithSession(user: CustomerUser, remember = true) {
-  const token = createCustomerSessionToken(user.id);
+  const token = createCustomerSessionToken(user.id, user.sessionVersion ?? 0);
   if (!token) {
     return NextResponse.json({ error: "SESSION_SECRET is not configured on the server." }, { status: 503 });
   }

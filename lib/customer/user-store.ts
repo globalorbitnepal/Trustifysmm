@@ -48,6 +48,11 @@ export async function getUserByEmail(email: string) {
   return store.users.find((u) => u.email === e) ?? null;
 }
 
+export async function getUserByApiKey(apiKey: string) {
+  const store = await loadStore();
+  return store.users.find((user) => user.apiKey === apiKey) ?? null;
+}
+
 export async function getUserByGoogleId(googleId: string) {
   const store = await loadStore();
   return store.users.find((u) => u.googleId === googleId) ?? null;
@@ -192,6 +197,79 @@ export function toPublicUser(user: CustomerUser) {
     image: user.image,
     role: user.role,
     apiKey: user.apiKey,
+    apiKeyRevoked: Boolean(user.apiKeyRevoked),
     balance: user.balance,
+    username: user.username ?? null,
+    timezone: user.timezone ?? null,
+    createdAt: user.createdAt,
   };
+}
+
+export async function updateCustomerProfile(
+  userId: string,
+  input: { name?: string; username?: string; timezone?: string },
+): Promise<{ user?: CustomerUser; error?: string }> {
+  const user = await getUserById(userId);
+  if (!user) return { error: "Account not found." };
+  if (input.name !== undefined) {
+    const name = input.name.trim();
+    if (name.length < 2 || name.length > 80) return { error: "Name must be 2–80 characters." };
+    user.name = name;
+  }
+  if (input.username !== undefined) {
+    const username = input.username.trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,24}$/.test(username)) {
+      return { error: "Username must be 3–24 letters, numbers, or underscores." };
+    }
+    const store = await loadStore();
+    const taken = store.users.find((u) => u.username === username && u.id !== user.id);
+    if (taken) return { error: "That username is already taken." };
+    user.username = username;
+  }
+  if (input.timezone !== undefined) {
+    const timezone = input.timezone.trim();
+    if (timezone.length > 64) return { error: "Time zone is too long." };
+    user.timezone = timezone || null;
+  }
+  user.updatedAt = new Date().toISOString();
+  await persistUser(user);
+  return { user };
+}
+
+export async function changeCustomerPassword(
+  userId: string,
+  currentPassword: string,
+  nextPassword: string,
+): Promise<{ user?: CustomerUser; error?: string }> {
+  const user = await getUserById(userId);
+  if (!user) return { error: "Account not found." };
+  if (!user.passwordHash) {
+    return { error: "This account uses Google sign-in. Set a password from a linked email account first." };
+  }
+  if (!verifyPassword(currentPassword, user.passwordHash)) return { error: "Current password is incorrect." };
+  if (nextPassword.length < 8) return { error: "New password must be at least 8 characters." };
+  user.passwordHash = hashPassword(nextPassword);
+  user.sessionVersion = Date.now();
+  user.updatedAt = new Date().toISOString();
+  await persistUser(user);
+  return { user };
+}
+
+export async function bumpSessionVersion(userId: string) {
+  const user = await getUserById(userId);
+  if (!user) return null;
+  user.sessionVersion = Date.now();
+  user.updatedAt = new Date().toISOString();
+  await persistUser(user);
+  return user;
+}
+
+export async function replaceCustomerApiKey(userId: string, nextKey: string, revoked = false) {
+  const user = await getUserById(userId);
+  if (!user) return null;
+  user.apiKey = nextKey;
+  user.apiKeyRevoked = revoked;
+  user.updatedAt = new Date().toISOString();
+  await persistUser(user);
+  return user;
 }

@@ -41,7 +41,7 @@ export async function handleSmmApi(params: SmmApiParams): Promise<unknown> {
   if (!action) return { error: "action is required" };
 
   const account = await getAccountByKey(key);
-  if (!account) return { error: "Invalid API key" };
+  if (!account || account.revoked) return { error: "Invalid API key" };
 
   switch (action) {
     case "services":
@@ -78,6 +78,7 @@ export async function handleSmmApi(params: SmmApiParams): Promise<unknown> {
       const orderId = parseIntSafe(params.order);
       if (!Number.isFinite(orderId)) return { error: "order id is required" };
       const order = await getOrder(orderId);
+      if (order?.accountKey && order.accountKey !== key) return { error: "Incorrect order ID" };
       return orderPayload(order);
     }
 

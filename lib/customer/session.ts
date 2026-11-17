@@ -10,25 +10,42 @@ function sessionSecret() {
   return s;
 }
 
-export function createCustomerSessionToken(userId: string): string | null {
+export function createCustomerSessionToken(userId: string, sessionVersion = 0): string | null {
   const secret = sessionSecret();
   if (!secret) return null;
   const expiresAt = Date.now() + MAX_AGE_MS;
-  const payload = `${userId}.${expiresAt}`;
+  const version = Number.isFinite(sessionVersion) && sessionVersion > 0 ? Math.floor(sessionVersion) : 0;
+  const payload = `${userId}.${expiresAt}.${version}`;
   const sig = createHmac("sha256", secret).update(`customer:${payload}`).digest("hex");
   return `${payload}.${sig}`;
 }
 
-export function verifyCustomerSessionToken(token: string | undefined | null): string | null {
+export function parseCustomerSessionToken(
+  token: string | undefined | null,
+): { userId: string; version: number } | null {
   if (!token) return null;
   const secret = sessionSecret();
   if (!secret) return null;
   const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  const [userId, expiresRaw, signature] = parts;
+  let userId = "";
+  let expiresRaw = "";
+  let signature = "";
+  let version = 0;
+  let payload = "";
+  if (parts.length === 3) {
+    [userId, expiresRaw, signature] = parts;
+    payload = `${userId}.${expiresRaw}`;
+  } else if (parts.length === 4) {
+    const versionRaw = parts[2];
+    [userId, expiresRaw, , signature] = parts;
+    version = Number(versionRaw);
+    if (!Number.isFinite(version) || version < 0) return null;
+    payload = `${userId}.${expiresRaw}.${versionRaw}`;
+  } else {
+    return null;
+  }
   const expiresAt = Number(expiresRaw);
   if (!userId || !Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
-  const payload = `${userId}.${expiresRaw}`;
   const expected = createHmac("sha256", secret).update(`customer:${payload}`).digest("hex");
   try {
     const a = Buffer.from(signature, "hex");
@@ -37,5 +54,9 @@ export function verifyCustomerSessionToken(token: string | undefined | null): st
   } catch {
     return null;
   }
-  return userId;
+  return { userId, version };
+}
+
+export function verifyCustomerSessionToken(token: string | undefined | null): string | null {
+  return parseCustomerSessionToken(token)?.userId ?? null;
 }

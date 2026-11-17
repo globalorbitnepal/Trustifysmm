@@ -20,11 +20,21 @@ export async function verifyCustomerSessionTokenEdge(token: string | undefined |
   const secret = process.env.SESSION_SECRET?.trim() || process.env.ORBIT_PASSKEY?.trim();
   if (!secret) return null;
   const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  const [userId, expiresRaw, signature] = parts;
+  let userId = "";
+  let expiresRaw = "";
+  let signature = "";
+  let payload = "";
+  if (parts.length === 3) {
+    [userId, expiresRaw, signature] = parts;
+    payload = `${userId}.${expiresRaw}`;
+  } else if (parts.length === 4) {
+    [userId, expiresRaw, , signature] = parts;
+    payload = `${userId}.${expiresRaw}.${parts[2]}`;
+  } else {
+    return null;
+  }
   const expiresAt = Number(expiresRaw);
   if (!userId || !Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
-  const payload = `${userId}.${expiresRaw}`;
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
