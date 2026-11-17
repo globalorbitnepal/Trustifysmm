@@ -26,13 +26,13 @@ export function DashboardHeroPlatforms() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { platforms?: { id: string }[] } | null) => {
         if (!data?.platforms?.length) return;
-        const next = data.platforms.map((p) => p.id).filter((id) => id !== "other");
+        const next = data.platforms.map((p) => p.id).filter((id) => id !== "other").slice(0, 12);
         if (next.length) setIds(next);
       })
       .catch(() => undefined);
   }, []);
 
-  const platforms = [...ids, "other"];
+  const platforms = ids.filter((id) => id !== "other").slice(0, 12);
 
   return (
     <div className="cp-hero-orbit-wrap">

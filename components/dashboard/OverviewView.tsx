@@ -20,12 +20,12 @@ type Overview = {
 };
 
 const QUICK = [
-  { href: "/dashboard/new-order", label: "Place New Order", icon: "plus" as const },
-  { href: "/dashboard/add-funds", label: "Add Funds", icon: "wallet" as const },
-  { href: "/dashboard/orders", label: "Track Orders", icon: "box" as const },
-  { href: "/dashboard/tickets", label: "Support Ticket", icon: "ticket" as const },
-  { href: "/dashboard/services", label: "Browse Services", icon: "layers" as const },
-  { href: "/dashboard/transactions", label: "Transactions", icon: "swap" as const },
+  { href: "/dashboard/new-order", label: "Place New Order", hint: "Start a new campaign", icon: "plus" as const, tone: "violet" as const },
+  { href: "/dashboard/add-funds", label: "Add Funds", hint: "Top up wallet balance", icon: "wallet" as const, tone: "blue" as const },
+  { href: "/dashboard/orders", label: "Track Orders", hint: "Live status & history", icon: "box" as const, tone: "indigo" as const },
+  { href: "/dashboard/tickets", label: "Support Ticket", hint: "Priority help desk", icon: "ticket" as const, tone: "pink" as const },
+  { href: "/dashboard/services", label: "Browse Services", hint: "Catalog by platform", icon: "layers" as const, tone: "cyan" as const },
+  { href: "/dashboard/transactions", label: "Transactions", hint: "Payments & ledger", icon: "swap" as const, tone: "emerald" as const },
 ];
 
 export function OverviewView({ name }: { name?: string }) {
@@ -68,13 +68,27 @@ export function OverviewView({ name }: { name?: string }) {
             <Stat label="Active orders" value={String(data.activeOrders)} hint="Pending · processing · in progress" />
             <Stat label="Completed" value={String(data.completedOrders)} hint="Successfully delivered" />
           </section>
-          <section className="cp-grid cp-actions cp-actions-glass">
-            {QUICK.map((item) => (
-              <Link key={item.href} className="cp-card cp-action-tile" href={item.href}>
-                <QuickIcon name={item.icon} />
-                <span>{item.label}</span>
-              </Link>
-            ))}
+          <section className="cp-actions-section">
+            <header className="cp-section-head">
+              <h3>Quick actions</h3>
+              <p>Secure shortcuts to orders, wallet, and support.</p>
+            </header>
+            <div className="cp-grid cp-actions cp-actions-glass">
+              {QUICK.map((item) => (
+                <Link key={item.href} className="cp-card cp-action-tile" href={item.href}>
+                  <QuickIcon name={item.icon} tone={item.tone} />
+                  <span className="cp-action-copy">
+                    <strong>{item.label}</strong>
+                    <small>{item.hint}</small>
+                  </span>
+                  <span className="cp-action-chevron" aria-hidden>
+                    <svg viewBox="0 0 24 24" width={18} height={18} fill="none">
+                      <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </Link>
+              ))}
+            </div>
           </section>
           <section className="cp-grid cp-split">
             <article className="cp-card cp-glass-panel">
@@ -199,7 +213,13 @@ function Breakdown({ title, data }: { title: string; data: Record<string, number
   );
 }
 
-function QuickIcon({ name }: { name: (typeof QUICK)[number]["icon"] }) {
+function QuickIcon({
+  name,
+  tone,
+}: {
+  name: (typeof QUICK)[number]["icon"];
+  tone: (typeof QUICK)[number]["tone"];
+}) {
   const paths: Record<string, string> = {
     plus: "M12 5v14M5 12h14",
     wallet: "M4 8h16v11H4V8Zm0-3h10a3 3 0 013 3",
@@ -209,9 +229,9 @@ function QuickIcon({ name }: { name: (typeof QUICK)[number]["icon"] }) {
     swap: "M7 7h12M17 17H5M17 7l3-3M7 17l-3 3",
   };
   return (
-    <span className="cp-action-ico" aria-hidden>
+    <span className={`cp-action-ico cp-action-ico--${tone}`} aria-hidden>
       <svg viewBox="0 0 24 24" fill="none">
-        <path d={paths[name]} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={paths[name]} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );

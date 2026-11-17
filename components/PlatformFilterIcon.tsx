@@ -18,8 +18,8 @@ const GLASS_PLATFORMS = new Set<string>([
 type PlatformFilterIconProps = {
   platform: string;
   className?: string;
-  /** glass = UHD glass PNG · tile = flat brand SVG · hd = legacy banner PNGs */
-  variant?: "glass" | "hd" | "tile" | "glyph";
+  /** glass = UHD glass PNG · tile = flat brand SVG · bare = colored logo only · hd = legacy banner PNGs */
+  variant?: "glass" | "hd" | "tile" | "glyph" | "bare";
 };
 
 const TILE_SKIN: Record<string, { fill: string; className?: string }> = {
@@ -43,8 +43,11 @@ export function PlatformFilterIcon({
   if (platform === "all") {
     return (
       <span className={`platform-brand-wrap platform-brand-wrap--all ${className}`} aria-hidden>
-        <svg viewBox="0 0 24 24" fill="none" className="platform-brand-svg">
-          <path d="M4 6h7v7H4V6ZM13 4h7v9h-7V4ZM13 15h7v5h-7v-5ZM4 17h7v3H4v-3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <svg viewBox="0 0 24 24" className="platform-brand-svg" aria-hidden>
+          <path
+            fill="currentColor"
+            d="M3 4.5A1.5 1.5 0 0 1 4.5 3h6A1.5 1.5 0 0 1 12 4.5v6A1.5 1.5 0 0 1 10.5 12h-6A1.5 1.5 0 0 1 3 10.5v-6Zm9-1.5A1.5 1.5 0 0 1 13.5 3h6A1.5 1.5 0 0 1 21 4.5v6A1.5 1.5 0 0 1 19.5 12h-6A1.5 1.5 0 0 1 12 10.5v-6ZM3 13.5A1.5 1.5 0 0 1 4.5 12h6a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 10.5 21h-6A1.5 1.5 0 0 1 3 19.5v-6Zm9 0A1.5 1.5 0 0 1 13.5 12h6a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5v-6Z"
+          />
         </svg>
       </span>
     );
@@ -60,12 +63,17 @@ export function PlatformFilterIcon({
   const icon = getPlatformBrandIcon(platform);
   if (icon) {
     const mono = variant === "glyph";
+    const bare = variant === "bare";
     const skin = TILE_SKIN[platform];
-    const style: CSSProperties | undefined = mono ? undefined : { backgroundColor: `#${icon.hex}` };
-    const pathFill = mono ? "currentColor" : skin?.fill ?? "#ffffff";
+    const style: CSSProperties | undefined = bare || mono ? undefined : { backgroundColor: `#${icon.hex}` };
+    const pathFill = bare
+      ? (platform === "snapchat" ? "#000000" : `#${icon.hex}`)
+      : mono
+        ? "currentColor"
+        : skin?.fill ?? "#ffffff";
     return (
       <span
-        className={`platform-brand-wrap ${className}${mono ? " is-mono" : ""}${skin?.className ? ` ${skin.className}` : ""}`}
+        className={`platform-brand-wrap ${className}${mono ? " is-mono" : ""}${bare ? " is-bare" : ""}${skin?.className && !bare ? ` ${skin.className}` : ""}`}
         style={style}
         aria-hidden
       >
@@ -78,8 +86,11 @@ export function PlatformFilterIcon({
 
   return (
     <span className={`platform-brand-wrap platform-brand-wrap--other ${className}`} aria-hidden>
-      <svg viewBox="0 0 24 24" className="platform-brand-svg">
-        <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <svg viewBox="0 0 24 24" className="platform-brand-svg" aria-hidden>
+        <path
+          fill="currentColor"
+          d="M11 5.25a.75.75 0 0 1 .75.75V11h4.25a.75.75 0 0 1 0 1.5H11.75v4.25a.75.75 0 0 1-1.5 0v-4.25H6a.75.75 0 0 1 0-1.5h4.25V6a.75.75 0 0 1 .75-.75Z"
+        />
       </svg>
     </span>
   );

@@ -29,16 +29,27 @@ export function SocialOrbit() {
       </svg>
       <div className="orbit-stage">
         <img className="orbit-core" src="/brand/glass/glass-trustify-t.png" alt="" width={1024} height={1024} />
-        {icons.map((icon) => (
-          <img
+        {icons.map((icon, index) => (
+          <span
             key={icon.name}
-            className="orbit-icon"
-            src={icon.src}
-            alt=""
-            width={1024}
-            height={1024}
-            style={{ ...icon.style, zIndex: icon.z }}
-          />
+            className="orbit-float"
+            style={{
+              top: icon.style.top,
+              left: icon.style.left,
+              width: icon.style.width,
+              zIndex: icon.z,
+              animationDelay: `${index * 0.28}s`,
+            }}
+          >
+            <img
+              className="orbit-icon"
+              src={icon.src}
+              alt=""
+              width={1024}
+              height={1024}
+              style={{ transform: icon.style.transform }}
+            />
+          </span>
         ))}
       </div>
     </div>

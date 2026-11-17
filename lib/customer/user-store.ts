@@ -244,6 +244,21 @@ export async function updateCustomerProfile(
   return { user };
 }
 
+export async function setCustomerPassword(
+  userId: string,
+  nextPassword: string,
+): Promise<{ user?: CustomerUser; error?: string }> {
+  const user = await getUserById(userId);
+  if (!user) return { error: "Account not found." };
+  if (user.passwordHash) return { error: "Use change password with your current password." };
+  if (nextPassword.length < 8) return { error: "Password must be at least 8 characters." };
+  user.passwordHash = hashPassword(nextPassword);
+  user.sessionVersion = Date.now();
+  user.updatedAt = new Date().toISOString();
+  await persistCustomer(user);
+  return { user };
+}
+
 export async function changeCustomerPassword(
   userId: string,
   currentPassword: string,

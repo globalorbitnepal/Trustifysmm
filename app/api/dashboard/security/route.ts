@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonWithSession } from "@/lib/customer/auth-response";
 import { requireCustomer } from "@/lib/customer/guard";
 import { listLogins, recordAudit } from "@/lib/customer/panel-store";
-import { bumpSessionVersion, changeCustomerPassword } from "@/lib/customer/user-store";
+import { bumpSessionVersion, changeCustomerPassword, setCustomerPassword } from "@/lib/customer/user-store";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +31,16 @@ export async function POST(request: Request) {
     await recordAudit(user.id, "logout_other_sessions");
     next.balance = user.balance;
     return jsonWithSession(next, true);
+  }
+  if (body.action === "set-password") {
+    if (user.passwordHash) {
+      return NextResponse.json({ error: "Password already set. Use change password." }, { status: 400 });
+    }
+    const result = await setCustomerPassword(user.id, body.nextPassword || "");
+    if (result.error || !result.user) return NextResponse.json({ error: result.error }, { status: 400 });
+    await recordAudit(user.id, "password_set");
+    result.user.balance = user.balance;
+    return jsonWithSession(result.user, true);
   }
   if (body.action === "password") {
     const result = await changeCustomerPassword(user.id, body.currentPassword || "", body.nextPassword || "");

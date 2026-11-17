@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { PageEnter } from "@/components/PageEnter";
 import { SiteNavProgress } from "@/components/SiteNavProgress";
 import { TrafficBeacon } from "@/components/TrafficBeacon";
 import { readRedirectsSync } from "@/lib/orbit/redirects";
@@ -31,7 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className={jakarta.variable}>
         <SiteNavProgress />
         <TrafficBeacon />
-        {children}
+        <PageEnter>{children}</PageEnter>
       </body>
     </html>
   );

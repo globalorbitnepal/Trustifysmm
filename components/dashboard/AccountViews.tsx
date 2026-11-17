@@ -162,12 +162,28 @@ type User = { name: string | null; email: string; image: string | null; username
 
 export function ProfileView() {
   const [user, setUser] = useState<User | null>(null);
-  const [error, setError] = useState("");
+  const [hasPassword, setHasPassword] = useState<boolean | null>(null);
+  const [profileError, setProfileError] = useState("");
+  const [profileOk, setProfileOk] = useState("");
+  const [pwError, setPwError] = useState("");
+  const [pwOk, setPwOk] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+
   useEffect(() => {
-    void fetch("/api/dashboard/session").then(async (res) => { if (res.ok) setUser(((await res.json()) as { user: User }).user); });
+    void (async () => {
+      const [sessionRes, securityRes] = await Promise.all([
+        fetch("/api/dashboard/session"),
+        fetch("/api/dashboard/security"),
+      ]);
+      if (sessionRes.ok) setUser(((await sessionRes.json()) as { user: User }).user);
+      if (securityRes.ok) setHasPassword(Boolean(((await securityRes.json()) as { hasPassword: boolean }).hasPassword));
+    })();
   }, []);
+
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setProfileError("");
+    setProfileOk("");
     const form = new FormData(event.currentTarget);
     const res = await fetch("/api/dashboard/profile", {
       method: "PATCH",
@@ -175,24 +191,147 @@ export function ProfileView() {
       body: JSON.stringify({ name: form.get("name"), username: form.get("username"), timezone: form.get("timezone") }),
     });
     const data = (await res.json()) as { error?: string; user?: User };
-    if (!res.ok || !data.user) setError(data.error || "Profile was not saved.");
-    else { setUser(data.user); setError(""); }
+    if (!res.ok || !data.user) setProfileError(data.error || "Profile was not saved.");
+    else {
+      setUser(data.user);
+      setProfileOk("Profile saved.");
+    }
   }
-  if (!user) return <Skeleton />;
+
+  async function changePassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPwError("");
+    setPwOk("");
+    const form = new FormData(event.currentTarget);
+    const next = String(form.get("next") || "");
+    const confirm = String(form.get("confirm") || "");
+    if (next !== confirm) {
+      setPwError("New passwords do not match.");
+      return;
+    }
+    if (next.length < 8) {
+      setPwError("Password must be at least 8 characters.");
+      return;
+    }
+    setPwBusy(true);
+    const action = hasPassword ? "password" : "set-password";
+    const body = hasPassword
+      ? { action, currentPassword: form.get("current"), nextPassword: next }
+      : { action, nextPassword: next };
+    const res = await fetch("/api/dashboard/security", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = (await res.json()) as { error?: string };
+    setPwBusy(false);
+    if (!res.ok) setPwError(data.error || "Password could not be updated.");
+    else {
+      setHasPassword(true);
+      setPwOk(
+        action === "password"
+          ? "Password updated. Other sessions were signed out."
+          : "Panel password created. You can now sign in with email and password.",
+      );
+      event.currentTarget.reset();
+    }
+  }
+
+  if (!user || hasPassword === null) return <Skeleton rows={3} />;
+
+  const initial = (user.name || user.email).charAt(0).toUpperCase();
+
   return (
-    <section className="cp-card">
-      {user.image ? <img className="cp-avatar" src={user.image} alt="" /> : <span className="cp-avatar">{(user.name || user.email).charAt(0)}</span>}
-      <p>{user.email}</p>
-      <p>Registered {user.createdAt.slice(0, 10)}</p>
-      <p>Status active · customer</p>
-      {error ? <p className="cp-error">{error}</p> : null}
-      <form onSubmit={(event) => void save(event)}>
-        <label className="cp-field"><span>Full name</span><input name="name" defaultValue={user.name || ""} /></label>
-        <label className="cp-field"><span>Username</span><input name="username" defaultValue={user.username || ""} /></label>
-        <label className="cp-field"><span>Time zone</span><input name="timezone" defaultValue={user.timezone || "Asia/Kathmandu"} /></label>
-        <button className="cp-btn" type="submit">Save profile</button>
-      </form>
-    </section>
+    <div className="cp-account">
+      <section className="cp-card cp-account-hero">
+        <div className="cp-account-identity">
+          {user.image ? (
+            <img className="cp-account-avatar" src={user.image} alt="" width={72} height={72} />
+          ) : (
+            <span className="cp-account-avatar" aria-hidden>
+              {initial}
+            </span>
+          )}
+          <div>
+            <p className="cp-kicker">Account settings</p>
+            <h2 className="cp-account-name">{user.name || "Customer"}</h2>
+            <p className="cp-account-email">{user.email}</p>
+          </div>
+        </div>
+        <div className="cp-account-meta">
+          <span className="cp-funds-pill is-live">Active</span>
+          <span className="cp-funds-pill is-muted">Customer</span>
+          <span className="cp-funds-pill is-muted">Since {user.createdAt.slice(0, 10)}</span>
+        </div>
+      </section>
+
+      <div className="cp-account-grid">
+        <section className="cp-card cp-glass-panel cp-account-panel">
+          <header className="cp-funds-panel-head">
+            <h3>Profile details</h3>
+            <p>How your name appears across orders and support tickets.</p>
+          </header>
+          {profileError ? <p className="cp-error">{profileError}</p> : null}
+          {profileOk ? <p className="cp-ok">{profileOk}</p> : null}
+          <form onSubmit={(event) => void save(event)}>
+            <label className="cp-field">
+              <span>Full name</span>
+              <input name="name" defaultValue={user.name || ""} autoComplete="name" />
+            </label>
+            <label className="cp-field">
+              <span>Username</span>
+              <input name="username" defaultValue={user.username || ""} autoComplete="username" />
+            </label>
+            <label className="cp-field">
+              <span>Time zone</span>
+              <input name="timezone" defaultValue={user.timezone || "Asia/Kathmandu"} autoComplete="off" />
+            </label>
+            <button className="cp-btn cp-funds-submit" type="submit">
+              Save profile
+            </button>
+          </form>
+        </section>
+
+        <section className="cp-card cp-glass-panel cp-account-panel" id="password">
+          <header className="cp-funds-panel-head">
+            <h3>{hasPassword ? "Change password" : "Create panel password"}</h3>
+            <p>
+              {hasPassword
+                ? "Banker-grade security: updating your password signs out other sessions."
+                : "You signed in with Google. Set a password to also sign in with email on this panel."}
+            </p>
+          </header>
+          {pwError ? <p className="cp-error">{pwError}</p> : null}
+          {pwOk ? <p className="cp-ok">{pwOk}</p> : null}
+          <form onSubmit={(event) => void changePassword(event)}>
+            {hasPassword ? (
+              <label className="cp-field">
+                <span>Current password</span>
+                <input name="current" type="password" autoComplete="current-password" required />
+              </label>
+            ) : null}
+            <label className="cp-field">
+              <span>{hasPassword ? "New password" : "Password"}</span>
+              <input name="next" type="password" autoComplete="new-password" minLength={8} required placeholder="Minimum 8 characters" />
+            </label>
+            <label className="cp-field">
+              <span>Confirm password</span>
+              <input name="confirm" type="password" autoComplete="new-password" minLength={8} required />
+            </label>
+            <button className="cp-btn cp-funds-submit" type="submit" disabled={pwBusy}>
+              {pwBusy ? "Saving…" : hasPassword ? "Update password" : "Create password"}
+            </button>
+          </form>
+          <ul className="cp-funds-trust cp-account-trust">
+            <li>Never share your password or API key</li>
+            <li>Use a unique password for this panel</li>
+          </ul>
+          <Link className="cp-btn-ghost cp-funds-link" href="/dashboard/security">
+            Sessions &amp; security center →
+          </Link>
+        </section>
+      </div>
+    </div>
   );
 }
 
