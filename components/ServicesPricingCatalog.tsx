@@ -7,6 +7,7 @@ import { PRICING_PLATFORM_ORDER } from "@/data/service-pricing-types";
 import { filterPricingServices, formatRatePer1000, groupPricingServices, groupsForPlatform } from "@/data/pricing-utils";
 import pricingData from "@/data/service-pricing.json";
 import { applyOrbitPricing } from "@/lib/orbit/pricing-display";
+import { PlatformFilterIcon } from "@/components/PlatformFilterIcon";
 
 export function ServicesPricingCatalog() {
   const data = useMemo(
@@ -72,7 +73,10 @@ export function ServicesPricingCatalog() {
                 setGroup("all");
               }}
             >
-              {id === "all" ? "All" : data.platformLabel[id] ?? id}
+              <PlatformFilterIcon platform={id} />
+              <span className="services-pricing-platform-label">
+                {id === "all" ? "All" : data.platformLabel[id] ?? id}
+              </span>
             </button>
           ))}
         </div>

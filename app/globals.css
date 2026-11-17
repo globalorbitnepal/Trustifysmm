@@ -1824,7 +1824,10 @@ button {
 }
 
 .services-pricing-platform {
-  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 8px;
   border-radius: 999px;
   border: 1px solid rgba(220, 203, 255, 0.14);
   background: rgba(255, 255, 255, 0.03);
@@ -1833,13 +1836,52 @@ button {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.services-pricing-platform:active {
+  transform: scale(0.98);
+}
+
+.services-pricing-platform-icon,
+.price-deck-rail-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  object-fit: contain;
+  display: block;
+}
+
+.services-pricing-platform-icon-wrap {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(224, 216, 255, 0.9);
+}
+
+.services-pricing-platform-svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  border-radius: 6px;
+}
+
+.services-pricing-platform-label {
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .services-pricing-platform.is-active {
   color: #fff;
   border-color: rgba(168, 85, 247, 0.45);
   background: linear-gradient(135deg, rgba(40, 123, 255, 0.22), rgba(112, 40, 232, 0.28));
+  box-shadow: 0 6px 20px rgba(112, 40, 232, 0.22);
+}
+
+.services-pricing-platform.is-active .services-pricing-platform-icon-wrap {
+  color: #fff;
 }
 
 .services-pricing-sections {

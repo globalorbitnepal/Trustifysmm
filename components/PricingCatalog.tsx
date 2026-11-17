@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
-import { BrandGlassIcon, type BrandGlassId } from "@/components/BrandGlassIcon";
+import { PlatformFilterIcon } from "@/components/PlatformFilterIcon";
 import type { PricingService, ServicePricingData } from "@/data/service-pricing-types";
 import { PRICING_PLATFORM_ORDER } from "@/data/service-pricing-types";
 import {
@@ -13,18 +13,6 @@ import {
 } from "@/data/pricing-utils";
 import pricingData from "@/data/service-pricing.json";
 import { applyOrbitPricing } from "@/lib/orbit/pricing-display";
-
-const glassPlatforms = new Set<string>([
-  "instagram",
-  "youtube",
-  "tiktok",
-  "facebook",
-  "x",
-  "telegram",
-  "whatsapp",
-  "snapchat",
-  "threads",
-]);
 
 export function PricingCatalog() {
   const data = useMemo(
@@ -54,7 +42,7 @@ export function PricingCatalog() {
           className={`price-deck-rail-btn${platform === "all" ? " is-active" : ""}`}
           onClick={() => setPlatform("all")}
         >
-          <span className="price-deck-rail-dot" />
+          <PlatformFilterIcon platform="all" className="price-deck-rail-icon" />
           All rates
         </button>
         {PRICING_PLATFORM_ORDER.filter((id) => id !== "all").map((id) => (
@@ -64,11 +52,7 @@ export function PricingCatalog() {
             className={`price-deck-rail-btn${platform === id ? " is-active" : ""}`}
             onClick={() => setPlatform(id)}
           >
-            {glassPlatforms.has(id) ? (
-              <BrandGlassIcon id={id as BrandGlassId} className="price-deck-rail-icon" />
-            ) : (
-              <span className="price-deck-rail-dot" />
-            )}
+            <PlatformFilterIcon platform={id} className="price-deck-rail-icon" />
             {data.platformLabel[id] ?? id}
           </button>
         ))}
@@ -98,14 +82,7 @@ export function PricingCatalog() {
             <section key={chapter.platform} className="price-deck-chapter" id={`price-${chapter.platform}`}>
               <header className="price-deck-chapter-head">
                 <div className="price-deck-chapter-visual">
-                  {glassPlatforms.has(chapter.platform) ? (
-                    <BrandGlassIcon
-                      id={chapter.platform as BrandGlassId}
-                      className="price-deck-chapter-icon"
-                    />
-                  ) : (
-                    <span className="price-deck-chapter-fallback">{chapter.label.charAt(0)}</span>
-                  )}
+                  <PlatformFilterIcon platform={chapter.platform} className="price-deck-chapter-icon" />
                 </div>
                 <div className="price-deck-chapter-copy">
                   <h2>{chapter.label}</h2>
