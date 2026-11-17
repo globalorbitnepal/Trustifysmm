@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { OrbitHeroArt } from "@/components/orbit/OrbitHeroArt";
+import { PlatformBadge } from "@/components/orbit/PlatformBadge";
 import { OrbitIcon } from "@/components/orbit/orbit-icons";
 import { AreaChart, Donut, QuickAction, StatCard, StatusPill, timeAgo, usd } from "@/components/orbit/orbit-ui";
 import { send, useOrbit } from "@/components/orbit/use-orbit";
+import type { OrbitSiteConfig } from "@/lib/orbit/types";
 
 type Overview = {
   generatedAt: string;
@@ -57,6 +60,8 @@ export function DashboardScreen() {
   const [range, setRange] = useState("30");
   const { data, error, loading } = useOrbit<Overview>(`/api/orbit/overview?range=${range}`);
   const traffic = useOrbit<Traffic>(`/api/orbit/traffic?range=${range}`);
+  const site = useOrbit<OrbitSiteConfig>("/api/orbit/config");
+  const dash = site.data?.orbitDashboard;
 
   const statusSlices = useMemo(() => {
     const raw = (data?.statuses ?? []).slice(0, 5).map((row, index) => ({
@@ -129,9 +134,9 @@ export function DashboardScreen() {
       <section className="ob-hero">
         <div className="ob-hero-copy">
           <h2>
-            Welcome back, <span>Admin Owner</span> 👋
+            {dash?.welcomePrefix || "Welcome back,"} <span>{dash?.welcomeName || "Admin Owner"}</span> 👋
           </h2>
-          <p>Manage your entire TrustifySMM business from one powerful dashboard.</p>
+          <p>{dash?.welcomeLede || "Manage your entire TrustifySMM business from one powerful dashboard."}</p>
           <div className="ob-hero-meta">
             <span>📅 {loading ? "Syncing…" : dateStr}</span>
             <span>🕒 {timeStr}</span>
@@ -142,7 +147,7 @@ export function DashboardScreen() {
           </div>
         </div>
         <div className="ob-hero-visual" aria-hidden>
-          <img src="/brand/orbit-hero-art.png" alt="" />
+          {dash?.heroArt ? <img src={dash.heroArt} alt="" /> : <OrbitHeroArt className="ob-hero-art-svg" />}
         </div>
       </section>
       {error ? <p className="ob-error">{error}</p> : null}
@@ -231,7 +236,7 @@ export function DashboardScreen() {
           <div className="ob-plat-list">
             {platformRows.map((row) => (
               <div key={row.key} className="ob-plat-row">
-                {row.src ? <img src={row.src} alt="" className="ob-plat-ico" /> : <span className="ob-plat-dot" style={{ background: row.color }} />}
+                <PlatformBadge id={row.key} />
                 <div className="ob-plat-mid">
                   <div className="ob-plat-top">
                     <strong>{row.label}</strong>

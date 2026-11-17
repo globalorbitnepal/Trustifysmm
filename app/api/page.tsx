@@ -4,6 +4,7 @@ import { ApiDocumentation } from "@/components/ApiDocumentation";
 import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { metadataForPath } from "@/lib/orbit/page-meta";
+import { pageExtras } from "@/lib/orbit/page-extras";
 import { pageHero } from "@/lib/orbit/public-copy";
 
 const apiMetadata: Metadata = {
@@ -26,6 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function ApiPage() {
+  const apiBlocks = pageExtras("/api").body ?? [];
   const hero = pageHero("/api", {
     badge: "Developer API",
     title: "Panel",
@@ -65,6 +67,16 @@ export default function ApiPage() {
           </div>
 
           <ApiDocumentation />
+          {apiBlocks.length ? (
+            <section className="api-extra-sections">
+              {apiBlocks.map((block) => (
+                <article key={block.heading}>
+                  <h2>{block.heading}</h2>
+                  <p>{block.text}</p>
+                </article>
+              ))}
+            </section>
+          ) : null}
         </div>
       </section>
       <Footer />

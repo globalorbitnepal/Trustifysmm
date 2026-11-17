@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthDivider } from "@/components/AuthDivider";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import type { AuthPageCopy } from "@/lib/orbit/types";
 
 const PERKS = [
   {
@@ -63,7 +64,7 @@ const OAUTH_ERRORS: Record<string, string> = {
   session_unavailable: "Server session secret is missing. Set SESSION_SECRET.",
 };
 
-export function SignInPageContent() {
+export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
   const router = useRouter();
   const search = useSearchParams();
   const [email, setEmail] = useState("");
@@ -118,41 +119,39 @@ export function SignInPageContent() {
       <div className="auth-signup-copy">
         <p className="services-page-badge auth-signup-badge">
           <DoorIcon />
-          Panel access
+          {copy?.badge || "Panel access"}
         </p>
         <h1 className="auth-signup-title">
-          Sign in to <span className="grad">TrustifySMM</span>
+          {copy?.titlePrefix || "Sign in to"}{" "}
+          <span className="grad">{copy?.titleAccent || "TrustifySMM"}</span>
         </h1>
         <p className="auth-signup-lede">
-          Welcome back — manage orders, refill campaigns, top up via Banker and copy API keys from your reseller
-          dashboard.
+          {copy?.lede ||
+            "Welcome back — manage orders, refill campaigns, top up via Banker and copy API keys from your reseller dashboard."}
         </p>
 
         <ul className="auth-signup-perks">
-          {PERKS.map((p) => (
-            <li key={p.title} className={`auth-signup-perk auth-signup-perk--${p.tone}`}>
-              <span className="auth-signup-perk-icon">{p.icon}</span>
-              <div>
-                <strong>{p.title}</strong>
-                <span>{p.text}</span>
-              </div>
-            </li>
-          ))}
+          {(copy?.perks || PERKS).map((p, index) => {
+            const perk = PERKS[index] ?? PERKS[0];
+            return (
+              <li key={`${p.title}-${index}`} className={`auth-signup-perk auth-signup-perk--${perk.tone}`}>
+                <span className="auth-signup-perk-icon">{perk.icon}</span>
+                <div>
+                  <strong>{p.title}</strong>
+                  <span>{p.text}</span>
+                </div>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="auth-signup-trust" aria-label="Panel highlights">
-          <div>
-            <strong>1,900+</strong>
-            <span>Live services</span>
-          </div>
-          <div>
-            <strong>API</strong>
-            <span>v2 ready</span>
-          </div>
-          <div>
-            <strong>24/7</strong>
-            <span>Order engine</span>
-          </div>
+          {(copy?.trust || [{ value: "1,900+", label: "Live services" }, { value: "API", label: "v2 ready" }, { value: "24/7", label: "Order engine" }]).map((row) => (
+            <div key={row.label}>
+              <strong>{row.value}</strong>
+              <span>{row.label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -163,9 +162,9 @@ export function SignInPageContent() {
               <img src="/brand/glass/glass-trustify-t.png" alt="" width={72} height={72} />
             </div>
             <h2>
-              Welcome <span className="grad">back</span>
+              {copy?.cardTitle || "Welcome"} <span className="grad">{copy?.cardTitleAccent || "back"}</span>
             </h2>
-            <p>Use the email and password from your reseller account.</p>
+            <p>{copy?.cardLede || "Use the email and password from your reseller account."}</p>
           </div>
 
           <GoogleAuthButton mode="login" disabled={loading} />

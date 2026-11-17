@@ -6,6 +6,7 @@ import { SupportPageContent } from "@/components/SupportPageContent";
 import { supportFaqCategories } from "@/data/support-faq";
 import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
+import { pageExtras } from "@/lib/orbit/page-extras";
 import { pageHero } from "@/lib/orbit/public-copy";
 
 const supportMetadata: Metadata = {
@@ -36,6 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function SupportPage() {
   const allFaq = supportFaqCategories.flatMap((c) => c.items);
   const contact = liveSiteConfig().contact;
+  const supportStats = pageExtras("/support").stats ?? [];
   const hero = pageHero("/support", {
     badge: "Help Center",
     title: "Premium",
@@ -86,7 +88,7 @@ export default function SupportPage() {
           <div className="support-stats" aria-label="Support highlights">
             <a href={`mailto:${contact.email}`} className="support-stat support-stat--link">
               <strong>{contact.email}</strong>
-              <span>Email · 4–12h reply</span>
+              <span>{supportStats[0]?.label || "Email · 4–12h reply"}</span>
             </a>
             {contact.phone ? (
               <a href={`tel:${contact.phone.replace(/\s/g, "")}`} className="support-stat support-stat--link">
@@ -95,16 +97,16 @@ export default function SupportPage() {
               </a>
             ) : null}
             <div className="support-stat">
-              <strong>24/7</strong>
-              <span>Docs &amp; catalog online</span>
+              <strong>{supportStats[1]?.value || "24/7"}</strong>
+              <span>{supportStats[1]?.label || "Docs & catalog online"}</span>
             </div>
             <div className="support-stat">
               <strong>{allFaq.length}+</strong>
-              <span>Help articles</span>
+              <span>{supportStats[2]?.label || "Help articles"}</span>
             </div>
             <div className="support-stat">
-              <strong>Order ID</strong>
-              <span>Required for tickets</span>
+              <strong>{supportStats[3]?.value || "Order ID"}</strong>
+              <span>{supportStats[3]?.label || "Required for tickets"}</span>
             </div>
           </div>
 

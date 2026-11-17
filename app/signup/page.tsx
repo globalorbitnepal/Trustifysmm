@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SignUpPageContent } from "@/components/SignUpPageContent";
 import { metadataForPath } from "@/lib/orbit/page-meta";
+import { authCopy } from "@/lib/orbit/page-extras";
 
 const signupMetadata: Metadata = {
   title: "Create Free Account | TrustifySMM SMM Panel",
@@ -43,7 +44,7 @@ export default function SignUpPage() {
       <section className="auth-signup">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
         <div className="auth-signup-inner">
-          <SignUpPageContent />
+            <SignUpPageContent copy={authCopy("/signup")} />
         </div>
       </section>
       <Footer />

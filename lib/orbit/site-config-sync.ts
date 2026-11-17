@@ -1,5 +1,14 @@
 import siteConfigJson from "@/data/orbit/site-config.json";
-import type { OrbitSiteConfig } from "@/lib/orbit/types";
+import {
+  defaultCustomerReviews,
+  defaultHowPerks,
+  defaultHowSteps,
+  defaultPaymentCoins,
+  defaultPaymentPerks,
+  defaultPlatformCards,
+} from "@/lib/orbit/home-defaults";
+import { defaultPageExtras } from "@/lib/orbit/page-defaults";
+import type { OrbitSiteConfig, PageExtras } from "@/lib/orbit/types";
 import { ORBIT_PAGES } from "@/lib/orbit/page-registry";
 
 export const defaultSiteConfig: OrbitSiteConfig = {
@@ -68,8 +77,27 @@ export const defaultSiteConfig: OrbitSiteConfig = {
       },
     ]),
   ),
+  pageExtras: defaultPageExtras,
   whyFeatures: [],
   footerStats: [],
+  platformCards: defaultPlatformCards,
+  howSteps: defaultHowSteps,
+  howPerks: defaultHowPerks,
+  customerReviews: defaultCustomerReviews,
+  paymentCoins: defaultPaymentCoins,
+  paymentPerks: defaultPaymentPerks,
+  orbitDashboard: {
+    welcomePrefix: "Welcome back,",
+    welcomeName: "Admin Owner",
+    welcomeLede: "Manage your entire TrustifySMM business from one powerful dashboard.",
+    heroArt: "",
+  },
+    brand: {
+      publicLogo: "/brand/logo-header-clear.png",
+      orbitLogoLight: "/brand/orbit-logo-light.png",
+      orbitLogoDark: "/brand/orbit-logo-dark.png",
+      orbitHeroArt: "",
+    },
   pages: {},
   pricing: { globalMarkupPercent: 0, bannerNote: "" },
   banker: { payCurrency: "usdttrc20", demoAutoPay: false, upstreamApiUrl: "", notes: "" },
@@ -101,6 +129,33 @@ export const defaultSiteConfig: OrbitSiteConfig = {
   seo: { titleTemplate: "%s", description: "", disallow: [] },
 };
 
+function mergePageExtras(raw?: Record<string, PageExtras>): Record<string, PageExtras> {
+  const out: Record<string, PageExtras> = {};
+  const paths = new Set([...Object.keys(defaultPageExtras), ...Object.keys(raw ?? {})]);
+  for (const path of paths) {
+    const base = defaultPageExtras[path] ?? {};
+    const incoming = raw?.[path] ?? {};
+    out[path] = {
+      ...base,
+      ...incoming,
+      faq:
+        base.faq || incoming.faq
+          ? {
+              badge: incoming.faq?.badge ?? base.faq?.badge ?? "",
+              title: incoming.faq?.title ?? base.faq?.title ?? "",
+              titleAccent: incoming.faq?.titleAccent ?? base.faq?.titleAccent ?? "",
+              lede: incoming.faq?.lede ?? base.faq?.lede ?? "",
+              items: incoming.faq?.items?.length ? incoming.faq.items : base.faq?.items ?? [],
+            }
+          : undefined,
+      stats: incoming.stats?.length ? incoming.stats : base.stats,
+      body: incoming.body?.length ? incoming.body : base.body,
+      auth: base.auth || incoming.auth ? { ...(base.auth ?? incoming.auth!), ...incoming.auth } : undefined,
+    };
+  }
+  return out;
+}
+
 export function mergeSiteConfig(raw: OrbitSiteConfig): OrbitSiteConfig {
   const base = defaultSiteConfig;
   return {
@@ -116,6 +171,7 @@ export function mergeSiteConfig(raw: OrbitSiteConfig): OrbitSiteConfig {
       reviews: { ...base.sectionCopy.reviews, ...raw.sectionCopy?.reviews },
     },
     pageContent: { ...base.pageContent, ...raw.pageContent },
+    pageExtras: mergePageExtras(raw.pageExtras),
     pricing: { ...base.pricing, ...raw.pricing },
     banker: { ...base.banker, ...raw.banker },
     contact: { ...base.contact, ...raw.contact },
@@ -131,6 +187,14 @@ export function mergeSiteConfig(raw: OrbitSiteConfig): OrbitSiteConfig {
     seo: { ...base.seo, ...raw.seo, disallow: raw.seo?.disallow ?? base.seo.disallow },
     whyFeatures: raw.whyFeatures?.length ? raw.whyFeatures : base.whyFeatures,
     footerStats: raw.footerStats?.length ? raw.footerStats : base.footerStats,
+    platformCards: raw.platformCards?.length ? raw.platformCards : base.platformCards,
+    howSteps: raw.howSteps?.length ? raw.howSteps : base.howSteps,
+    howPerks: raw.howPerks?.length ? raw.howPerks : base.howPerks,
+    customerReviews: raw.customerReviews?.length ? raw.customerReviews : base.customerReviews,
+    paymentCoins: raw.paymentCoins?.length ? raw.paymentCoins : base.paymentCoins,
+    paymentPerks: raw.paymentPerks?.length ? raw.paymentPerks : base.paymentPerks,
+    orbitDashboard: { ...base.orbitDashboard, ...raw.orbitDashboard },
+    brand: { ...base.brand, ...raw.brand },
     pages: { ...base.pages, ...raw.pages },
   };
 }

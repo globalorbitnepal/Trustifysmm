@@ -3,22 +3,19 @@ import { PaymentWalletVisual } from "@/components/PaymentWalletVisual";
 import type { CryptoId } from "@/components/CryptoBrandIcon";
 import { PayCoinArt } from "@/components/PayCoinArt";
 
+import { liveSiteConfig } from "@/lib/orbit/live-catalog";
+import { defaultPaymentCoins, defaultPaymentPerks } from "@/lib/orbit/home-defaults";
 import { sectionHeading } from "@/lib/orbit/public-copy";
 
-const coins = [
-  { id: "btc", name: "Bitcoin", ticker: "BTC", tone: "violet" },
-  { id: "eth", name: "Ethereum", ticker: "ETH", tone: "blue" },
-  { id: "usdt", name: "Tether", ticker: "USDT", tone: "violet" },
-  { id: "sol", name: "Solana", ticker: "SOL", tone: "blue" },
-] as const;
-
-const perks = [
-  { label: "Instant Deposit", icon: <BoltIcon /> },
-  { label: "Secure Transactions", icon: <ShieldIcon /> },
-  { label: "Global Support", icon: <GlobeIcon /> },
-] as const;
+const perkIcons = [<BoltIcon key="1" />, <ShieldIcon key="2" />, <GlobeIcon key="3" />];
 
 export function PaymentMethods() {
+  const site = liveSiteConfig();
+  const coins = site.paymentCoins?.length ? site.paymentCoins : defaultPaymentCoins;
+  const perks = (site.paymentPerks?.length ? site.paymentPerks : defaultPaymentPerks).map((row, i) => ({
+    ...row,
+    icon: perkIcons[i] ?? perkIcons[0],
+  }));
   const copy = sectionHeading("payments");
   return (
     <section className="payments" id="payments">

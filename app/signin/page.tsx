@@ -4,6 +4,7 @@ import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SignInPageContent } from "@/components/SignInPageContent";
 import { metadataForPath } from "@/lib/orbit/page-meta";
+import { authCopy } from "@/lib/orbit/page-extras";
 
 const signinMetadata: Metadata = {
   title: "Sign In | TrustifySMM SMM Panel",
@@ -44,7 +45,7 @@ export default function SignInPage() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
         <div className="auth-signup-inner">
           <Suspense fallback={<div className="auth-signup-card" />}>
-            <SignInPageContent />
+            <SignInPageContent copy={authCopy("/signin")} />
           </Suspense>
         </div>
       </section>

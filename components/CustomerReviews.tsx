@@ -1,59 +1,11 @@
+import { liveSiteConfig } from "@/lib/orbit/live-catalog";
+import { defaultCustomerReviews } from "@/lib/orbit/home-defaults";
 import { sectionHeading } from "@/lib/orbit/public-copy";
 
-const reviews = [
-  {
-    name: "Amit Verma",
-    country: "India",
-    flag: "🇮🇳",
-    avatar: "/brand/reviews/review-amit-verma.jpg",
-    text: "Great SMM panel! Orders are fast, stable, and the support team is very helpful. Highly recommended.",
-    tone: "violet",
-  },
-  {
-    name: "Emily Johnson",
-    country: "United States",
-    flag: "🇺🇸",
-    avatar: "/brand/reviews/review-emily-johnson.jpg",
-    text: "I've been using TrustifySMM for a few months. The service quality is excellent and prices are very competitive.",
-    tone: "blue",
-  },
-  {
-    name: "Rafiq Ahmed",
-    country: "Bangladesh",
-    flag: "🇧🇩",
-    avatar: "/brand/reviews/review-rafiq-ahmed.jpg",
-    text: "Very reliable and easy to use. The dashboard is simple and I always get my orders on time.",
-    tone: "violet",
-  },
-  {
-    name: "Daniel Müller",
-    country: "Germany",
-    flag: "🇩🇪",
-    avatar: "/brand/reviews/review-daniel-muller.jpg",
-    text: "One of the best SMM panels I've used. Fast delivery, good support and a wide range of services.",
-    tone: "blue",
-  },
-  {
-    name: "Sophie Turner",
-    country: "United Kingdom",
-    flag: "🇬🇧",
-    avatar: "/brand/reviews/review-sophie-turner.jpg",
-    text: "Clean dashboard, quick top-ups and smooth order flow. Perfect for agency clients across Europe.",
-    tone: "violet",
-  },
-  {
-    name: "Hassan Khan",
-    country: "Pakistan",
-    flag: "🇵🇰",
-    avatar: "/brand/reviews/review-hassan-khan.jpg",
-    text: "TrustifySMM saves me hours every week. Pricing is fair and delivery is consistently on time.",
-    tone: "blue",
-  },
-] as const;
-
-const looped = [...reviews, ...reviews];
-
 export function CustomerReviews() {
+  const site = liveSiteConfig();
+  const reviews = site.customerReviews?.length ? site.customerReviews : defaultCustomerReviews;
+  const looped = [...reviews, ...reviews];
   const copy = sectionHeading("reviews");
   return (
     <section className="reviews" id="reviews">

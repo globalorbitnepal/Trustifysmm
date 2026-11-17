@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "assets:knockout": "node scripts/knockout.mjs",
     "assets:glass-clean": "node scripts/glass-clean.mjs",
+    "assets:orbit-brand": "node scripts/orbit-brand-assets.mjs",
     "assets:crypto-clean": "node scripts/crypto-clean.mjs",
     "data:import-pricing": "node scripts/import-honestsmm-pricing.mjs"
   },

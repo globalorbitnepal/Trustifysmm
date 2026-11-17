@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthDivider } from "@/components/AuthDivider";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import type { AuthPageCopy } from "@/lib/orbit/types";
 
 const PERKS = [
   {
@@ -52,7 +53,7 @@ const PERKS = [
   },
 ] as const;
 
-export function SignUpPageContent() {
+export function SignUpPageContent({ copy }: { copy?: AuthPageCopy }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -113,41 +114,39 @@ export function SignUpPageContent() {
       <div className="auth-signup-copy">
         <p className="services-page-badge auth-signup-badge">
           <SparkIcon />
-          Free panel account
+          {copy?.badge || "Free panel account"}
         </p>
         <h1 className="auth-signup-title">
-          Create your <span className="grad">TrustifySMM</span> account
+          {copy?.titlePrefix || "Create your"}{" "}
+          <span className="grad">{copy?.titleAccent || "TrustifySMM"}</span> account
         </h1>
         <p className="auth-signup-lede">
-          Join resellers and agencies using live catalog pricing, crypto top-ups and API automation — one premium
-          dashboard for every order.
+          {copy?.lede ||
+            "Join resellers and agencies using live catalog pricing, crypto top-ups and API automation — one premium dashboard for every order."}
         </p>
 
         <ul className="auth-signup-perks">
-          {PERKS.map((p) => (
-            <li key={p.title} className={`auth-signup-perk auth-signup-perk--${p.tone}`}>
-              <span className="auth-signup-perk-icon">{p.icon}</span>
-              <div>
-                <strong>{p.title}</strong>
-                <span>{p.text}</span>
-              </div>
-            </li>
-          ))}
+          {(copy?.perks || PERKS).map((p, index) => {
+            const perk = PERKS[index] ?? PERKS[0];
+            return (
+              <li key={`${p.title}-${index}`} className={`auth-signup-perk auth-signup-perk--${perk.tone}`}>
+                <span className="auth-signup-perk-icon">{perk.icon}</span>
+                <div>
+                  <strong>{p.title}</strong>
+                  <span>{p.text}</span>
+                </div>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="auth-signup-trust" aria-label="Account highlights">
-          <div>
-            <strong>Instant</strong>
-            <span>Catalog access</span>
-          </div>
-          <div>
-            <strong>$0</strong>
-            <span>Signup fee</span>
-          </div>
-          <div>
-            <strong>24/7</strong>
-            <span>Order engine</span>
-          </div>
+          {(copy?.trust || [{ value: "Instant", label: "Catalog access" }, { value: "$0", label: "Signup fee" }, { value: "24/7", label: "Order engine" }]).map((row) => (
+            <div key={row.label}>
+              <strong>{row.value}</strong>
+              <span>{row.label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -158,9 +157,9 @@ export function SignUpPageContent() {
               <img src="/brand/glass/glass-trustify-t.png" alt="" width={72} height={72} />
             </div>
             <h2>
-              Sign up <span className="grad">free</span>
+              {copy?.cardTitle || "Sign up"} <span className="grad">{copy?.cardTitleAccent || "free"}</span>
             </h2>
-            <p>Already reselling? Get your API key in minutes.</p>
+            <p>{copy?.cardLede || "Already reselling? Get your API key in minutes."}</p>
           </div>
 
           <GoogleAuthButton mode="signup" disabled={loading} />

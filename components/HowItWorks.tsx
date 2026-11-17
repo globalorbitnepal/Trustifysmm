@@ -1,44 +1,20 @@
+import { liveSiteConfig } from "@/lib/orbit/live-catalog";
+import { defaultHowPerks, defaultHowSteps } from "@/lib/orbit/home-defaults";
 import { sectionHeading } from "@/lib/orbit/public-copy";
 
-const steps = [
-  {
-    num: "01",
-    title: "Create Account",
-    text: "Sign up for a free account on TrustifySMM.",
-    tone: "violet",
-    icon: <UserAddIcon />,
-  },
-  {
-    num: "02",
-    title: "Add Balance",
-    text: "Top up your wallet with multiple secure payment options.",
-    tone: "blue",
-    icon: <CoinsIcon />,
-  },
-  {
-    num: "03",
-    title: "Place Order",
-    text: "Choose a service, enter the details and place your order.",
-    tone: "violet",
-    icon: <CartIcon />,
-  },
-  {
-    num: "04",
-    title: "Get Results",
-    text: "Your order will be processed instantly and delivered quickly.",
-    tone: "blue",
-    icon: <RocketIcon />,
-  },
-] as const;
-
-const perks = [
-  { label: "Fast Process", icon: <BoltIcon /> },
-  { label: "Secure Payments", icon: <ShieldIcon /> },
-  { label: "Fully Automated", icon: <LayersIcon /> },
-  { label: "Reliable Service", icon: <TrophyIcon /> },
-] as const;
+const stepIcons = [<UserAddIcon key="1" />, <CoinsIcon key="2" />, <CartIcon key="3" />, <RocketIcon key="4" />];
+const perkIcons = [<BoltIcon key="1" />, <ShieldIcon key="2" />, <LayersIcon key="3" />, <TrophyIcon key="4" />];
 
 export function HowItWorks() {
+  const site = liveSiteConfig();
+  const steps = (site.howSteps?.length ? site.howSteps : defaultHowSteps).map((row, i) => ({
+    ...row,
+    icon: stepIcons[i] ?? stepIcons[0],
+  }));
+  const perks = (site.howPerks?.length ? site.howPerks : defaultHowPerks).map((row, i) => ({
+    ...row,
+    icon: perkIcons[i] ?? perkIcons[0],
+  }));
   const copy = sectionHeading("how");
   return (
     <section className="how" id="how">

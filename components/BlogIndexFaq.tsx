@@ -1,16 +1,16 @@
-import { blogsIndexFaq } from "@/data/blogs-index-faq";
+import { pageExtras } from "@/lib/orbit/page-extras";
 
 export function BlogIndexFaq() {
+  const faq = pageExtras("/blogs").faq;
+  const items = faq?.items ?? [];
   return (
     <section className="blog-index-faq" id="blogs-faq" aria-labelledby="blogs-faq-title">
       <h2 id="blogs-faq-title" className="blog-index-faq-title">
-        Blog <span className="grad">FAQ</span>
+        {faq?.title || "Blog"} {faq?.titleAccent ? <span className="grad">{faq.titleAccent}</span> : null}
       </h2>
-      <p className="blog-index-faq-lede">
-        Common questions about our guides, images, SEO and how blogs connect to services and API documentation.
-      </p>
+      <p className="blog-index-faq-lede">{faq?.lede}</p>
       <div className="blog-post-faq-list">
-        {blogsIndexFaq.map((item) => (
+        {items.map((item) => (
           <details key={item.q} className="blog-post-faq-item">
             <summary>{item.q}</summary>
             <p>{item.a}</p>

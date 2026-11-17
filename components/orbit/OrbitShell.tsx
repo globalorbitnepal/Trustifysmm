@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { OrbitBrandLogoLink } from "@/components/orbit/OrbitBrandLogoLink";
 import { OrbitIcon } from "@/components/orbit/orbit-icons";
 import { usd } from "@/components/orbit/orbit-ui";
 import { ORBIT_PAGES } from "@/lib/orbit/page-registry";
@@ -15,6 +16,19 @@ type NavLink = {
   exact?: boolean;
 };
 type NavGroup = { title: string; icon: NavLink["icon"]; links: NavLink[] };
+
+const pageNavIcons: Record<string, NavLink["icon"]> = {
+  home: "pages",
+  services: "services",
+  pricing: "wallet",
+  api: "bolt",
+  blogs: "blog",
+  support: "support",
+  terms: "settings",
+  privacy: "settings",
+  signin: "customers",
+  signup: "userPlus",
+};
 
 const groups: NavGroup[] = [
   {
@@ -63,7 +77,7 @@ const groups: NavGroup[] = [
       ...ORBIT_PAGES.filter((page) => page.slug !== "home").map((page) => ({
         href: `/orbit/pages/${page.slug}`,
         label: page.label,
-        icon: "pages" as const,
+        icon: pageNavIcons[page.slug] ?? ("pages" as const),
         nested: true,
       })),
       { href: "/orbit/blog", label: "Blog CMS", icon: "blog" },
@@ -171,13 +185,7 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
     <div className={`ob${theme === "dark" ? " is-dark" : ""}${collapsed ? " is-collapsed" : ""}`}>
       <aside className="ob-side">
         <div className="ob-brand-wrap">
-          <Link href="/orbit" className="ob-lockup" aria-label="TrustifySMM Orbit">
-            <img
-              className="ob-brand-img"
-              src={theme === "dark" ? "/brand/orbit-logo-dark.png" : "/brand/orbit-logo-light.png"}
-              alt="TrustifySMM"
-            />
-          </Link>
+          <OrbitBrandLogoLink theme={theme} href="/orbit" compact={collapsed} />
           <div className="ob-side-badge">Orbit Control Center</div>
         </div>
 

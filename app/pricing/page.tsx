@@ -3,9 +3,9 @@ import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { PricingCatalog } from "@/components/PricingCatalog";
-import { servicesFaq } from "@/data/services-faq";
 import { metadataForPath } from "@/lib/orbit/page-meta";
 import { livePricingData, liveSiteConfig } from "@/lib/orbit/live-catalog";
+import { pageExtras } from "@/lib/orbit/page-extras";
 import { pageHero } from "@/lib/orbit/public-copy";
 
 const pricingMetadata: Metadata = {
@@ -47,6 +47,7 @@ export default function PricingPage() {
     ctaSecondaryHref: "/services",
   });
   const banner = liveSiteConfig().pricing.bannerNote;
+  const pricingFaq = pageExtras("/pricing").faq;
   return (
     <main className="page">
       <SiteHeader />
@@ -96,10 +97,12 @@ export default function PricingPage() {
 
       <section className="pricing-page-faq services-faq" aria-labelledby="pricing-faq-title">
         <h2 id="pricing-faq-title" className="services-faq-title">
-          Pricing <span className="grad">FAQ</span>
+          {pricingFaq?.title || "Pricing"}{" "}
+          {pricingFaq?.titleAccent ? <span className="grad">{pricingFaq.titleAccent}</span> : null}
         </h2>
+        {pricingFaq?.lede ? <p className="services-faq-lede">{pricingFaq.lede}</p> : null}
         <div className="services-faq-list">
-          {servicesFaq.slice(0, 4).map((item) => (
+          {(pricingFaq?.items ?? []).map((item) => (
             <details key={item.q} className="services-faq-item">
               <summary>{item.q}</summary>
               <p>{item.a}</p>

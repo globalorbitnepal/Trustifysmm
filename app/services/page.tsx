@@ -4,9 +4,9 @@ import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ServicesFaq } from "@/components/ServicesFaq";
 import { ServicesPricingCatalog } from "@/components/ServicesPricingCatalog";
-import { servicesFaq } from "@/data/services-faq";
 import { livePricingData } from "@/lib/orbit/live-catalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
+import { pageExtras } from "@/lib/orbit/page-extras";
 import { pageHero } from "@/lib/orbit/public-copy";
 
 const servicesMetadata: Metadata = {
@@ -49,7 +49,7 @@ export default function ServicesPage() {
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: servicesFaq.map((item) => ({
+    mainEntity: (pageExtras("/services").faq?.items ?? []).map((item) => ({
       "@type": "Question",
       name: item.q,
       acceptedAnswer: { "@type": "Answer", text: item.a },

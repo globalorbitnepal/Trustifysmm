@@ -1,20 +1,11 @@
 import Link from "next/link";
+import { liveSiteConfig } from "@/lib/orbit/live-catalog";
+import { defaultPlatformCards } from "@/lib/orbit/home-defaults";
 import { sectionHeading } from "@/lib/orbit/public-copy";
 
-const platforms = [
-  { id: "instagram", name: "Instagram", services: "Followers, Likes, Views" },
-  { id: "youtube", name: "YouTube", services: "Subscribers, Views, Likes" },
-  { id: "tiktok", name: "TikTok", services: "Followers, Likes, Views" },
-  { id: "facebook", name: "Facebook", services: "Followers, Likes, Shares" },
-  { id: "x", name: "X (Twitter)", services: "Followers, Likes, Retweets" },
-  { id: "telegram", name: "Telegram", services: "Members, Views, Reactions" },
-  { id: "whatsapp", name: "WhatsApp", services: "Channel & Group Growth" },
-  { id: "snapchat", name: "Snapchat", services: "Followers, Views, Engagement" },
-  { id: "threads", name: "Threads", services: "Followers, Likes, Replies" },
-  { id: "more", name: "More Platforms", services: "And Many More..." },
-] as const;
-
 export function SupportedPlatforms() {
+  const site = liveSiteConfig();
+  const platforms = site.platformCards?.length ? site.platformCards : defaultPlatformCards;
   const copy = sectionHeading("platforms");
   return (
     <section className="platforms" id="platforms">
@@ -75,7 +66,7 @@ export function SupportedPlatforms() {
           {platforms.map((p) => (
             <article key={p.id} className={`platform-card platform-card--${p.id}`}>
               <div className={`platform-mark platform-mark--${p.id}`}>
-                <PlatformLogo id={p.id} />
+                {p.iconUrl ? <img src={p.iconUrl} alt="" width={48} height={48} /> : <PlatformLogo id={p.id} />}
               </div>
               <h3>{p.name}</h3>
               <p>{p.services}</p>
@@ -94,7 +85,7 @@ export function SupportedPlatforms() {
   );
 }
 
-function PlatformLogo({ id }: { id: (typeof platforms)[number]["id"] }) {
+function PlatformLogo({ id }: { id: string }) {
   switch (id) {
     case "instagram":
       return (

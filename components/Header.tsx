@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 
 export function Header({
+  logoSrc = "/brand/logo-header-clear.png",
   links = [
     { href: "/", label: "Home" },
     { href: "/services", label: "Services" },
@@ -17,6 +18,7 @@ export function Header({
   signInLabel = "Sign In",
   signUpLabel = "Sign Up",
 }: {
+  logoSrc?: string;
   links?: { href: string; label: string }[];
   signInLabel?: string;
   signUpLabel?: string;
@@ -38,7 +40,7 @@ export function Header({
   return (
     <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
       <div className="site-header-inner">
-        <Logo />
+        <Logo src={logoSrc} />
 
         <button
           className="mobile-toggle"

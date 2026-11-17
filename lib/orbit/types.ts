@@ -34,6 +34,67 @@ export type SectionHeading = {
 
 export type SiteNavLink = { href: string; label: string };
 
+export type PlatformCard = { id: string; name: string; services: string; iconUrl?: string };
+export type HowStep = { num: string; title: string; text: string; tone: "violet" | "blue" };
+export type HowPerk = { label: string };
+export type CustomerReview = {
+  name: string;
+  country: string;
+  flag: string;
+  avatar: string;
+  text: string;
+  tone: "violet" | "blue";
+};
+export type PaymentCoin = { id: string; name: string; ticker: string; tone: "violet" | "blue" };
+export type PaymentPerk = { label: string };
+
+export type OrbitDashboardCopy = {
+  welcomePrefix: string;
+  welcomeName: string;
+  welcomeLede: string;
+  heroArt: string;
+};
+
+export type SiteBrandAssets = {
+  publicLogo: string;
+  orbitLogoLight: string;
+  orbitLogoDark: string;
+  orbitHeroArt: string;
+};
+
+export type FaqEntry = { q: string; a: string };
+
+export type PageFaqSection = {
+  badge: string;
+  title: string;
+  titleAccent: string;
+  lede: string;
+  items: FaqEntry[];
+};
+
+export type PageStat = { value: string; label: string };
+
+export type PageBodyBlock = { heading: string; text: string };
+
+export type AuthPageCopy = {
+  badge: string;
+  titlePrefix: string;
+  titleAccent: string;
+  lede: string;
+  perks: { title: string; text: string }[];
+  trust: PageStat[];
+  cardTitle: string;
+  cardTitleAccent: string;
+  cardLede: string;
+};
+
+export type PageExtras = {
+  faq?: PageFaqSection;
+  stats?: PageStat[];
+  body?: PageBodyBlock[];
+  auth?: AuthPageCopy;
+};
+
 export type OrbitSiteConfig = {
   updatedAt: string;
   home: {
@@ -59,8 +120,17 @@ export type OrbitSiteConfig = {
     reviews: SectionHeading;
   };
   pageContent: Record<string, PageHeroContent>;
+  pageExtras: Record<string, PageExtras>;
   whyFeatures: { title: string; text: string; tone: "violet" | "blue" }[];
   footerStats: { value: string; label: string }[];
+  platformCards: PlatformCard[];
+  howSteps: HowStep[];
+  howPerks: HowPerk[];
+  customerReviews: CustomerReview[];
+  paymentCoins: PaymentCoin[];
+  paymentPerks: PaymentPerk[];
+  orbitDashboard: OrbitDashboardCopy;
+  brand: SiteBrandAssets;
   pages: Record<string, SitePageMeta>;
   pricing: {
     globalMarkupPercent: number;
