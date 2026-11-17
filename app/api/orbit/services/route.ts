@@ -14,6 +14,7 @@ import {
   baseService,
 } from "@/lib/orbit/service-admin";
 import { livePricingData } from "@/lib/orbit/live-catalog";
+import type { PricingService } from "@/data/service-pricing-types";
 import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,8 @@ export async function GET(request: Request) {
   const config = await readSiteConfig();
   let rows = catalog.services.map((service) => {
     const custom = admin.custom.find((row) => row.id === service.id);
-    const cost = custom?.costPer1000;
+    const patch = admin.patches[String(service.id)] as (Partial<PricingService> & { costPer1000?: number }) | undefined;
+    const cost = custom?.costPer1000 ?? patch?.costPer1000;
     return {
       id: service.id,
       name: service.name,
@@ -98,6 +100,7 @@ export async function POST(request: Request) {
     if ("error" in saved) return NextResponse.json(saved, { status: 400 });
     await recordAdminAction("service.update", String(body.id));
     revalidatePath("/services");
+    revalidatePath("/pricing");
     return NextResponse.json(saved);
   }
   if (action === "duplicate") {

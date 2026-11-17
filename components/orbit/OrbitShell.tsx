@@ -164,12 +164,20 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
     <div className={`ob${theme === "dark" ? " is-dark" : ""}${collapsed ? " is-collapsed" : ""}`}>
       <header className="ob-top">
         <Link href="/orbit" className="ob-lockup" aria-label="Orbit master admin">
-          <img src="/brand/logo-mark-transparent.png" alt="" />
-          <div>
-            <strong>
-              Trustify<span>SMM</span>
-            </strong>
-            <small>Master Admin</small>
+          <svg className="ob-mark" viewBox="0 0 64 64" aria-hidden>
+            <defs>
+              <linearGradient id="orbitMark" x1="8" y1="4" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#2EE6FF" />
+                <stop offset="0.55" stopColor="#6D5EF7" />
+                <stop offset="1" stopColor="#7C3AED" />
+              </linearGradient>
+            </defs>
+            <path fill="url(#orbitMark)" d="M10 8h36c7 0 10 8 5 13L29 34l16 7c7 3 5 12-3 12H16c-9 0-14-9-8-16l9-8c2-2 1-5-1-7L14 14C10 8 12 8 10 8Z" />
+            <path d="M8 48c14 12 34 8 46-8" fill="none" stroke="#22D3EE" strokeWidth="4" strokeLinecap="round" />
+          </svg>
+          <div className="ob-wordblock">
+            <strong className="ob-word">Trustify<em>SMM</em></strong>
+            <small>Orbit · Master Admin</small>
           </div>
         </Link>
         <button className="ob-icon-btn" type="button" onClick={() => setCollapsed((value) => !value)} aria-label="Toggle sidebar">
@@ -193,7 +201,7 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
                   setSearch("");
                 }
               }}
-              placeholder="Search admin modules…  Ctrl + K"
+              placeholder="Search customers, orders, banker, pages…"
               aria-label="Search admin modules"
             />
           </label>
@@ -222,8 +230,9 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
             </svg>
             {header.openTickets ? <span className="ob-top-badge">{header.openTickets}</span> : null}
           </Link>
-          <span className="ob-chip ob-chip--wallet" title="Customer wallet liability">{usd(header.walletLiability)}</span>
-          <Link className="ob-btn primary ob-top-cta" href="/orbit/payments">+ Add Funds</Link>
+          <span className="ob-chip ob-chip--wallet" title="Customer wallets you manage">Liability {usd(header.walletLiability)}</span>
+          <Link className="ob-btn primary ob-top-cta" href="/orbit/payments">Add funds</Link>
+          <button className="ob-btn ghost ob-top-logout" type="button" onClick={logout}>Logout</button>
           <div className="ob-profile">
             <div className="ob-avatar">SA</div>
             <div className="ob-profile-copy">
@@ -231,12 +240,6 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
               <small>Master panel</small>
             </div>
           </div>
-          <button className="ob-icon-btn" type="button" onClick={logout} aria-label="Log out of Orbit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M10 7V5a2 2 0 0 1 2-2h7v18h-7a2 2 0 0 1-2-2v-2" />
-              <path d="M15 12H3m0 0 3-3m-3 3 3 3" />
-            </svg>
-          </button>
         </div>
       </header>
 

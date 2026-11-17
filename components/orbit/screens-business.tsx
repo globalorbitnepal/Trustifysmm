@@ -57,26 +57,34 @@ export function DashboardScreen() {
   return (
     <div className="ob-home">
       <section className="ob-hero">
-        <div>
+        <div className="ob-hero-copy">
+          <span className="ob-hero-tag">Orbit Control Center</span>
           <h2>Welcome back, Admin Owner 👋</h2>
           <p>Manage your entire TrustifySMM business from one powerful dashboard.</p>
           <div className="ob-hero-meta">
             <span className="ob-hero-pill">{loading ? "Loading live data…" : new Date().toLocaleString()}</span>
-            <span className="ob-hero-pill">{data?.gateway.live ? "● System Online" : "● Gateway setup needed"}</span>
+            <span className="ob-hero-pill">{data?.gateway.live ? "● System online" : "● Gateway setup needed"}</span>
+            <span className="ob-hero-pill">{traffic.data?.visits ?? 0} site visits in range</span>
           </div>
         </div>
-        <div className="ob-hero-art">
-          <img src="/brand/hero-orbit-cluster.png" alt="" />
-          <div className="ob-hero-cta-chip">Grow Faster With TrustifySMM</div>
+        <div className="ob-hero-art" aria-hidden>
+          <span className="ob-orb ob-orb--a" />
+          <span className="ob-orb ob-orb--b" />
+          <span className="ob-orb ob-orb--c" />
+          <div className="ob-hero-card">
+            <span>Live revenue</span>
+            <strong>{data ? usd(data.stats.revenue) : "—"}</strong>
+            <small>{ranges.find((row) => row.id === range)?.label}</small>
+          </div>
         </div>
       </section>
       {error ? <p className="ob-error">{error}</p> : null}
 
       <div className="ob-stat-grid ob-stat-grid--5">
-        <StatCard label="Total Customers" value={String(data?.stats.customers ?? "—")} hint={`${data?.stats.customersToday ?? 0} new today`} spark={customerSpark} icon={<OrbitIcon name="customers" />} />
-        <StatCard label="New Customers" value={String(data?.stats.customersInRange ?? data?.stats.customersToday ?? "—")} hint={`In selected range`} spark={customerSpark} icon={<OrbitIcon name="customers" />} />
-        <StatCard label="Total Orders" value={String(data?.stats.orders ?? "—")} hint={`${data?.stats.ordersToday ?? 0} today`} spark={orderSpark} icon={<OrbitIcon name="orders" />} />
-        <StatCard label="Orders in range" value={String(data?.stats.ordersInRange ?? data?.stats.ordersToday ?? "—")} hint="Paid catalog volume" spark={orderSpark} icon={<OrbitIcon name="activity" />} />
+        <StatCard label="Total Customers" value={String(data?.stats.customers ?? "—")} hint={`+${data?.stats.customersToday ?? 0} today`} spark={customerSpark} icon={<OrbitIcon name="customers" />} />
+        <StatCard label="New Customers" value={String(data?.stats.customersInRange ?? data?.stats.customersToday ?? "—")} hint="In selected range" spark={customerSpark} icon={<OrbitIcon name="customers" />} />
+        <StatCard label="Total Orders" value={String(data?.stats.orders ?? "—")} hint={`+${data?.stats.ordersToday ?? 0} today`} spark={orderSpark} icon={<OrbitIcon name="orders" />} />
+        <StatCard label="Orders in range" value={String(data?.stats.ordersInRange ?? data?.stats.ordersToday ?? "—")} hint="Tracked volume" spark={orderSpark} icon={<OrbitIcon name="activity" />} />
         <StatCard label="Active Orders" value={String(data?.stats.activeOrders ?? "—")} hint={`${data?.stats.completedOrders ?? 0} completed`} spark={orderSpark} icon={<OrbitIcon name="services" />} />
       </div>
 
@@ -86,8 +94,9 @@ export function DashboardScreen() {
             <div>
               <h3>Revenue Overview</h3>
               <strong className="ob-rev">{data ? usd(data.stats.revenue) : "—"}</strong>
+              <p className="ob-muted" style={{ margin: "2px 0 0" }}>{ranges.find((row) => row.id === range)?.label} · deposits {data ? usd(data.stats.deposits) : "—"}</p>
             </div>
-            <div className="ob-chart-tabs">
+            <div className="ob-chart-tabs ob-chart-tabs--wrap">
               {ranges.map((item) => (
                 <button key={item.id} className={range === item.id ? "is-on" : ""} type="button" onClick={() => setRange(item.id)}>
                   {item.label}
@@ -123,13 +132,13 @@ export function DashboardScreen() {
             <h3>Quick Actions</h3>
             <Link href="/orbit/orders">View all →</Link>
           </div>
-          <div className="ob-quick-grid">
-            <QuickAction href="/orbit/orders" label="Place / track order" icon={<OrbitIcon name="orders" />} />
-            <QuickAction href="/orbit/payments" label="Add funds" icon={<OrbitIcon name="banker" />} />
-            <QuickAction href="/orbit/support" label="Create ticket" icon={<OrbitIcon name="support" />} />
-            <QuickAction href="/orbit/services" label="Browse services" icon={<OrbitIcon name="services" />} />
-            <QuickAction href="#traffic" label="View analytics" icon={<OrbitIcon name="activity" />} />
-            <QuickAction href="/orbit/pages" label="Edit website" icon={<OrbitIcon name="pages" />} />
+          <div className="ob-quick-grid ob-quick-grid--3">
+            <QuickAction href="/orbit/orders" label="Track orders" icon={<OrbitIcon name="orders" />} />
+            <QuickAction href="/orbit/payments" label="Banker desk" icon={<OrbitIcon name="banker" />} />
+            <QuickAction href="/orbit/customers" label="Customers" icon={<OrbitIcon name="customers" />} />
+            <QuickAction href="/orbit/services" label="Services" icon={<OrbitIcon name="services" />} />
+            <QuickAction href="/orbit/support" label="Tickets" icon={<OrbitIcon name="support" />} />
+            <QuickAction href="/orbit/pages" label="Website" icon={<OrbitIcon name="pages" />} />
           </div>
         </article>
         <article className="ob-panel ob-card">

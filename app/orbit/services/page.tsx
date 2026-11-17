@@ -1,4 +1,4 @@
-import { ServicesScreen } from "@/components/orbit/screens-catalog";
+import { ServicesScreen } from "@/components/orbit/services-screen";
 
 export default function Page() {
   return <ServicesScreen />;
