@@ -13,7 +13,7 @@ import { CustomerReviews } from "@/components/CustomerReviews";
 import { Footer } from "@/components/Footer";
 
 const homeMetadata: Metadata = {
-  title: "TrustifySMM — Premium SMM Panel for Resellers & Agencies",
+  title: "TrustifySMM · SMM Panel",
   description:
     "Grow your social media faster with TrustifySMM. Reliable, affordable, automated SMM services for Instagram, YouTube, TikTok, Facebook and more — crypto Banker top-ups and a reseller API.",
   keywords: ["smm panel", "TrustifySMM", "buy instagram followers", "smm reseller panel", "crypto smm panel"],

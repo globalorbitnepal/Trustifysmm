@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://trustifysmm.com"),
   applicationName: "TrustifySMM",
   title: {
-    default: "TrustifySMM — Premium SMM Panel",
+    default: "TrustifySMM · SMM Panel",
     template: "%s",
   },
   description:

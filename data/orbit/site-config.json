@@ -24,7 +24,7 @@
     { "value": "24/7", "label": "Support" }
   ],
   "pages": {
-    "/": { "title": "TrustifySMM — Premium SMM Panel", "description": "Power your social media growth with reliable, affordable and automated services.", "keywords": "smm panel, trustifysmm" },
+    "/": { "title": "TrustifySMM · SMM Panel", "description": "Power your social media growth with reliable, affordable and automated services.", "keywords": "smm panel, trustifysmm" },
     "/services": { "title": "TrustifySMM · Services & Prices", "description": "Browse 1,900+ SMM services with live USD rates per 1000.", "keywords": "smm services, smm prices" },
     "/pricing": { "title": "SMM Rate Deck | TrustifySMM Pricing", "description": "Compare SMM rates per 1,000 with premium Rate Deck chapters.", "keywords": "smm pricing, rate deck" },
     "/api": { "title": "API Documentation & Banker | TrustifySMM Panel", "description": "Panel API, Banker crypto top-ups, PHP client download.", "keywords": "smm api, banker" },
