@@ -229,7 +229,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <div key={pathname} className="cp-content cp-content-enter">{children}</div>
+        <div className="cp-content">{children}</div>
       </div>
       {search ? (
         <div className="cp-modal" role="dialog" aria-label="Search dashboard">

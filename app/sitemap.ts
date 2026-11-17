@@ -4,7 +4,7 @@ import { publicManagedPosts } from "@/lib/orbit/blog-store";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  const pages = ["", "/services", "/pricing", "/api", "/blogs", "/support", "/terms", "/privacy"];
+  const pages = ["", "/services", "/pricing", "/api", "/platforms", "/how-it-works", "/reviews", "/blogs", "/support", "/terms", "/privacy"];
   const slugs = new Set([...getBlogSlugs(), ...publicManagedPosts().map((post) => post.slug)]);
   return [
     ...pages.map((page) => ({

@@ -423,14 +423,6 @@ html[data-dash="light"] .cp-btn,
 }
 .cp-menu a:hover, .cp-menu button:hover { background: var(--hover); color: var(--text); }
 .cp-content { padding: 28px; }
-.cp-content-enter { animation: cp-page-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both; }
-@keyframes cp-page-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .cp-content-enter { animation: none; }
-}
 .cp-home { display: grid; gap: 18px; }
 .cp-card { border-radius: 18px; padding: 20px; }
 .cp-hero-glass {

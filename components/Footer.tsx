@@ -7,9 +7,9 @@ import { Logo } from "./Logo";
 const exploreLinks = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
-  { href: "/#platforms", label: "Platforms" },
-  { href: "/#how", label: "How It Works" },
-  { href: "/#reviews", label: "Customer Reviews" },
+  { href: "/platforms", label: "Platforms" },
+  { href: "/how-it-works", label: "How It Works" },
+  { href: "/reviews", label: "Customer Reviews" },
 ] as const;
 
 const panelLinks = [

@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { liveSiteConfig } from "@/lib/orbit/live-catalog";
+import { metadataForPath } from "@/lib/orbit/page-meta";
 import { SocialOrbit } from "@/components/SocialOrbit";
 import { WhyChoose } from "@/components/WhyChoose";
 import { SupportedPlatforms } from "@/components/SupportedPlatforms";
@@ -10,6 +12,25 @@ import { PaymentMethods } from "@/components/PaymentMethods";
 import { CustomerReviews } from "@/components/CustomerReviews";
 import { Footer } from "@/components/Footer";
 
+const homeMetadata: Metadata = {
+  title: "TrustifySMM — Premium SMM Panel for Resellers & Agencies",
+  description:
+    "Grow your social media faster with TrustifySMM. Reliable, affordable, automated SMM services for Instagram, YouTube, TikTok, Facebook and more — crypto Banker top-ups and a reseller API.",
+  keywords: ["smm panel", "TrustifySMM", "buy instagram followers", "smm reseller panel", "crypto smm panel"],
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Grow Your Social Media Faster with TrustifySMM",
+    description:
+      "Premium SMM panel for resellers and agencies. Instant orders, crypto deposits, and services across every major platform.",
+    url: "/",
+    type: "website",
+  },
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  return metadataForPath("/", homeMetadata);
+}
+
 export default function HomePage() {
   const site = liveSiteConfig();
   const enabled = (id: string) => site.sections?.[id] !== false;
@@ -17,19 +38,25 @@ export default function HomePage() {
     <main className="page">
       <SiteHeader />
       {enabled("hero") ? (
-      <section className="hero-band">
+      <section className="hero-band" aria-labelledby="hero-title">
         <div className="hero">
           <div className="hero-copy">
             <p className="badge">
               <Bolt />
               {site.home.badge}
             </p>
-            <h1 className="headline">
-              {site.home.headlineLine1}
-              <br />
-              {site.home.headlineLine2}
-              <br />
-              {site.home.headlineLine3} <span className="grad">{site.home.headlineBrand}</span>
+            <h1 className="headline" id="hero-title">
+              <span className="headline-line">
+                <span>{site.home.headlineLine1}</span>
+              </span>
+              <span className="headline-line">
+                <span>{site.home.headlineLine2}</span>
+              </span>
+              <span className="headline-line">
+                <span>
+                  {site.home.headlineLine3} <span className="grad">{site.home.headlineBrand}</span>
+                </span>
+              </span>
             </h1>
             <p className="lede">{site.home.lede}</p>
             <div className="hero-actions">

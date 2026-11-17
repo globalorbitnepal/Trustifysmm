@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { PageEnter } from "@/components/PageEnter";
 import { SiteNavProgress } from "@/components/SiteNavProgress";
 import { TrafficBeacon } from "@/components/TrafficBeacon";
-import { readRedirectsSync } from "@/lib/orbit/redirects";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -21,18 +17,15 @@ export const metadata: Metadata = {
     "Power your social media growth with reliable, affordable and automated services across the platforms you love.",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const path = (await headers()).get("x-pathname");
-  if (path) {
-    const hit = readRedirectsSync().find((row) => row.from === path);
-    if (hit) redirect(hit.to);
-  }
+export const revalidate = 60;
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={jakarta.variable}>
         <SiteNavProgress />
         <TrafficBeacon />
-        <PageEnter>{children}</PageEnter>
+        {children}
       </body>
     </html>
   );
