@@ -479,7 +479,7 @@ export function AddFundsView() {
               </div>
               <div>
                 <dt>Fee</dt>
-                <dd className="cp-fee-plus">{quoting ? "…" : quote?.feeUsd != null ? `+ $${quote.feeUsd.toFixed(2)}` : "—"}</dd>
+                <dd className="cp-fee-plus">{quote?.feeUsd != null ? `+ $${quote.feeUsd.toFixed(2)}` : "…"}</dd>
               </div>
             </dl>
             <div className="cp-send-block">
@@ -493,7 +493,7 @@ export function AddFundsView() {
             <button
               className="cp-btn cp-deposit-submit"
               type="button"
-              disabled={busy || !selected || !amountValid}
+              disabled={busy || !selected || !amountValid || quote?.feeUsd == null}
               onClick={() => void createInvoice()}
             >
               {busy ? "Creating payment…" : "Continue to crypto checkout"}

@@ -869,31 +869,32 @@ html[data-dash="light"] .cp-banker-summary dl > div,
   z-index: 90;
   display: grid;
   place-items: center;
-  padding: 18px;
-  background: rgba(6, 8, 20, 0.82);
-  backdrop-filter: blur(6px);
+  padding: clamp(12px, 2vw, 40px);
+  background: rgba(8, 10, 24, 0.46);
+  backdrop-filter: blur(10px);
 }
 
 .cp-sheet-card {
-  width: min(480px, 100%);
-  max-height: min(92vh, 820px);
+  width: min(1100px, 86vw);
+  max-height: calc(100vh - 32px);
   height: auto;
-  overflow-y: auto;
-  padding: 22px 22px 26px;
-  border-radius: 24px;
+  overflow: auto;
+  padding: clamp(16px, 1.6vw, 28px);
+  border-radius: clamp(18px, 1.4vw, 28px);
   color: #f5f7ff;
   font-size: 15px;
   line-height: 1.45;
-  background: #14182e;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
-  backdrop-filter: none;
+  background: rgba(18, 20, 46, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(22px) saturate(1.35);
 }
 html[data-dash="light"] .cp-sheet-card,
 .cp.is-light .cp-sheet-card {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.78);
   color: #14182e;
-  border-color: rgba(20, 24, 46, 0.12);
+  border-color: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 28px 70px rgba(40, 24, 90, 0.18);
 }
 html[data-dash="light"] .cp-sheet .cp-deposit-exact,
 .cp.is-light .cp-sheet .cp-deposit-exact { color: #0e7490; }
@@ -913,11 +914,11 @@ html[data-dash="light"] .cp-sheet .cp-deposit-exact,
 
 .cp-sheet .cp-funds-qr { display: grid; justify-items: center; margin: 8px 0 14px; }
 .cp-sheet .cp-funds-qr img {
-  width: 196px;
-  height: 196px;
+  width: clamp(180px, 18vw, 248px);
+  height: clamp(180px, 18vw, 248px);
   border-radius: 18px;
   background: #fff;
-  padding: 10px;
+  padding: 12px;
 }
 
 .cp-send-kicker {
@@ -1015,34 +1016,23 @@ html[data-dash="light"] .cp-network,
 }
 
 @media (min-width: 768px) {
-  .cp-sheet { padding: 16px; }
-  .cp-sheet-card {
-    width: min(920px, calc(100vw - 32px));
-    max-height: calc(100vh - 32px);
-    overflow: hidden;
-    padding: 16px 18px 14px;
-  }
+  .cp-sheet-card { overflow: hidden; }
   .cp-sheet-body {
     display: grid;
-    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
-    gap: 16px 22px;
-    align-items: start;
+    grid-template-columns: minmax(300px, 0.92fr) minmax(0, 1.1fr);
+    gap: clamp(16px, 2vw, 32px);
+    align-items: center;
   }
-  .cp-sheet-coin { margin-bottom: 8px; padding: 8px 10px; }
-  .cp-sheet .cp-funds-qr { margin: 0 0 8px; }
-  .cp-sheet .cp-funds-qr img { width: 132px; height: 132px; }
-  .cp-sheet .cp-deposit-exact { font-size: 26px; margin: 0 0 8px; }
-  .cp-sheet .cp-lock-lines { margin-bottom: 10px; padding: 8px 12px; }
-  .cp-sheet .cp-timer { margin-bottom: 8px; }
-  .cp-sheet .cp-pay-stages { margin-bottom: 0; }
-  .cp-sheet-side .cp-deposit-copy { margin-bottom: 10px; }
-  .cp-sheet-side .cp-deposit-checkout-actions { margin-bottom: 8px; }
+  .cp-sheet .cp-funds-qr img { width: clamp(200px, 16vw, 260px); height: clamp(200px, 16vw, 260px); }
+}
+
+@media (min-width: 1800px) {
+  .cp-sheet-card { width: min(1320px, 68vw); }
+  .cp-sheet .cp-funds-qr img { width: 280px; height: 280px; }
 }
 
 @media (min-width: 768px) and (max-height: 760px) {
-  .cp-sheet .cp-funds-qr img { width: 108px; height: 108px; }
-  .cp-sheet .cp-deposit-exact { font-size: 22px; }
-  .cp-sheet-coin { margin-bottom: 4px; padding: 6px 8px; }
+  .cp-sheet .cp-funds-qr img { width: 176px; height: 176px; }
 }
 
 @media (max-width: 640px) {

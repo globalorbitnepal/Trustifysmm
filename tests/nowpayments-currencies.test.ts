@@ -43,6 +43,7 @@ describe("NOWPayments fee and minimum", () => {
   it("uses only the gap between the provider quotes as the customer fee", () => {
     const fee = feeFromQuotes(10, "0.22840295", "0.23237967");
     expect(fee?.feeUsd).toBe(0.17);
+    expect(feeFromQuotes(10, 0.26771257, 0.27342385)?.feeUsd).toBe(0.21);
     expect(feeFromQuotes(25, "25", "20")).toBeNull();
   });
 });

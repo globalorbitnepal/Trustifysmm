@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/customer/guard";
-import { estimateNowPayment, feeFromQuotes } from "@/lib/nowpayments/client";
+import { quoteCustomerFee } from "@/lib/nowpayments/client";
 import { findDepositOption } from "@/lib/nowpayments/currencies";
 import { loadNowPaymentsConfig } from "@/lib/nowpayments/config";
 import { rateLimit } from "@/lib/nowpayments/rate-limit";
@@ -40,23 +40,19 @@ export async function GET(request: Request) {
     );
   }
 
-  const gross = await estimateNowPayment(amount, option.code, true);
-  const base = await estimateNowPayment(amount, option.code, false);
-  if (!gross.ok || !gross.data.estimated_amount) {
-    return NextResponse.json({ error: "The provider could not quote this amount right now." }, { status: 502 });
+  const quoted = await quoteCustomerFee(amount, option.code);
+  if (!quoted.gross || !quoted.fee) {
+    return NextResponse.json({ error: "The provider fee quote did not come back. Try again." }, { status: 502 });
   }
-  const fee = base.ok && base.data.estimated_amount
-    ? feeFromQuotes(amount, base.data.estimated_amount, gross.data.estimated_amount)
-    : null;
 
   return NextResponse.json({
     currency: option.code,
     network: option.network,
     networkLabel: option.networkLabel,
     amountUsd: amount,
-    estimatedCrypto: String(gross.data.estimated_amount),
-    baseCrypto: base.ok && base.data.estimated_amount != null ? String(base.data.estimated_amount) : null,
-    feeCrypto: fee ? String(fee.feeCrypto) : null,
-    feeUsd: fee ? fee.feeUsd : null,
+    estimatedCrypto: quoted.gross,
+    baseCrypto: quoted.base,
+    feeCrypto: String(quoted.fee.feeCrypto),
+    feeUsd: quoted.fee.feeUsd,
   });
 }
