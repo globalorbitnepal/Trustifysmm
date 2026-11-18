@@ -1,7 +1,6 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { jsonWithSession } from "@/lib/customer/auth-response";
-import { CUSTOMER_COOKIE_NAME, sessionAgeMs, sessionCookieOptions, createCustomerSessionToken } from "@/lib/customer/session";
+import { CUSTOMER_COOKIE_NAME, sessionCookieOptions, createCustomerSessionToken } from "@/lib/customer/session";
 import { addNotification, listLogins, recordAudit } from "@/lib/customer/panel-store";
 import { requireCustomer } from "@/lib/customer/guard";
 import { rateLimitTotp } from "@/lib/customer/pending-login";
@@ -18,8 +17,6 @@ import { bumpSessionVersion, changeCustomerPassword, setCustomerPassword, toPubl
 import { verifyPassword } from "@/lib/customer/password";
 
 export const dynamic = "force-dynamic";
-
-const RECENT_MS = 15 * 60 * 1000;
 
 export async function GET() {
   const user = await requireCustomer();
@@ -147,13 +144,8 @@ function sessionJson(user: NonNullable<Awaited<ReturnType<typeof bumpSessionVers
 async function recentAuth(passwordHash: string | null, password: string) {
   if (passwordHash) {
     if (!password || !verifyPassword(password, passwordHash)) return "Enter your current password.";
-    return null;
   }
-  const token = (await cookies()).get(CUSTOMER_COOKIE_NAME)?.value;
-  const age = sessionAgeMs(token);
-  if (age == null || age > RECENT_MS) {
-    return "Sign out, sign in with Google, then open Security Settings within 15 minutes.";
-  }
+  /* A Google account is already signed in on this page. The 6-digit code still has to match before Authenticator turns on. */
   return null;
 }
 

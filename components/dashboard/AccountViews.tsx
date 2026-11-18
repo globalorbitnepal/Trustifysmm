@@ -333,6 +333,22 @@ export function ProfileView() {
   );
 }
 
+function AuthenticatorMark() {
+  return (
+    <span className="cp-auth-logo" aria-hidden>
+      <svg viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M6.957 1.3379A2.0133 2.0133 0 0 0 6 1.6074c-.967.5583-1.2985 1.7947-.7402 2.7617L8.498 9.9785H2.0215C.9049 9.9785 0 10.8835 0 12c0 1.1166.905 2.0215 2.0215 2.0215H8.498l-3.2382 5.6094c-.5583.967-.2268 2.2034.7402 2.7617.967.5582 2.2034.2267 2.7617-.7403L12 16.045l3.2383 5.6074c.5583.967 1.7947 1.2985 2.7617.7403.967-.5583 1.2985-1.7947.7402-2.7617l-3.2382-5.6094h6.4765C23.0951 14.0215 24 13.1165 24 12c0-1.1166-.905-2.0215-2.0215-2.0215H15.502l3.2382-5.6094c.5583-.967.2268-2.2034-.7402-2.7617-.967-.5582-2.2034-.2267-2.7617.7403L12 7.955 8.7617 2.3477C8.378 1.6829 7.674 1.3193 6.957 1.3379Zm9.959 1.0058c.1932-.0127.3928.0317.5781.1387.4944.2854.6565.8866.3711 1.3809l-4.1132 7.125h8.2265c.5709 0 1.0117.4408 1.0117 1.0117s-.4408 1.0117-1.0117 1.0117H14.92l-1.168-2.0234-1.168-2.0235 3.5294-6.1113c.1783-.3089.4808-.4885.8027-.5098zm-9.9336.004c.3587-.0093.7081.166.9043.5058l3.5293 6.1113-1.168 2.0235-1.168 2.0234H2.0216c-.5709 0-1.0117-.4408-1.0117-1.0117s.4408-1.0117 1.0117-1.0117h8.2265l-4.1132-7.125c-.2854-.4943-.1233-1.0955.371-1.3809a.9891.9891 0 0 1 .4766-.1347ZM9.666 14.0215h4.668l3.5312 6.1152c.2854.4943.1233 1.0955-.371 1.3809-.4942.2852-1.0956.1231-1.381-.3711L12 14.0254l-4.1133 7.121c-.2853.4943-.8867.6564-1.3808.3712-.4944-.2854-.6565-.8866-.3711-1.3809Z" />
+      </svg>
+    </span>
+  );
+}
+
+function formatWhen(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
 type SecurityInfo = {
   hasPassword: boolean;
   twoFactor: { enabled: boolean; activatedAt: string | null };
@@ -383,10 +399,6 @@ export function SecurityView() {
     const data = await post({ action: "password", currentPassword: String(form.get("current") || ""), nextPassword: String(form.get("next") || "") });
     if (data && !data.error) setMessage("Password updated. Other sessions were signed out.");
   }
-  async function logoutOthers() {
-    const data = await post({ action: "logout-others" });
-    if (data && !data.error) setMessage("Other sessions were signed out.");
-  }
   async function startSetup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const passwordValue = String(new FormData(event.currentTarget).get("current") || "");
@@ -429,39 +441,42 @@ export function SecurityView() {
   if (!info) return <Skeleton />;
   const enabled = info.twoFactor.enabled;
   return (
-    <div className="cp-grid">
-      <section className="cp-card cp-totp">
-        <p className="cp-kicker">Authenticator app</p>
-        <h3>Google Authenticator</h3>
-        <p className={enabled ? "cp-ok" : "cp-note"}>{enabled ? "Enabled" : "Not enabled"}{enabled && info.twoFactor.activatedAt ? ` · since ${info.twoFactor.activatedAt.slice(0, 10)}` : ""}</p>
-        <p>A 6-digit code from Google Authenticator is required on every new sign-in, including Google sign-in. There is no QR code. You type a setup key.</p>
+    <div className="cp-security">
+      <section className="cp-card cp-auth-card">
+        <div className="cp-auth-head">
+          <AuthenticatorMark />
+          <div>
+            <p className="cp-kicker">Authenticator app</p>
+            <h2>Google Authenticator</h2>
+            <p className="cp-auth-status">{enabled ? "Enabled" : "Not enabled"}{enabled && info.twoFactor.activatedAt ? ` · ${formatWhen(info.twoFactor.activatedAt)}` : ""}</p>
+          </div>
+        </div>
+        <p className="cp-auth-lead">Every new sign-in asks for the 6-digit code from the Google Authenticator app. You type a setup key. There is no QR code.</p>
         {!enabled && !secret ? (
-          <form onSubmit={(event) => void startSetup(event)}>
-            <ul className="cp-api-steps">
-              <li>Protects the wallet if the email password is guessed.</li>
-              <li>Works offline inside Google Authenticator.</li>
-              <li>Recovery codes are the way back if you lose the phone.</li>
-            </ul>
+          <form className="cp-auth-enable" onSubmit={(event) => void startSetup(event)}>
             {info.hasPassword ? (
               <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label>
-            ) : <p className="cp-note">Google accounts must have signed in during the last 15 minutes.</p>}
-            <button className="cp-btn" type="submit" disabled={busy}>Enable</button>
+            ) : null}
+            <button className="cp-btn" type="submit" disabled={busy}>{busy ? "Starting…" : "Enable"}</button>
           </form>
         ) : null}
         {secret ? (
-          <form onSubmit={(event) => void confirmSetup(event)}>
-            <p className="cp-note">Open Google Authenticator. Choose Add account, then Enter a setup key. Account name TrustifySMM. Paste the key below. Choose Time-based.</p>
+          <form className="cp-auth-setup" onSubmit={(event) => void confirmSetup(event)}>
+            <ol>
+              <li>Open Google Authenticator and choose Add account.</li>
+              <li>Choose Enter a setup key.</li>
+              <li>Account name: TrustifySMM. Key: the value below. Type: Time-based.</li>
+              <li>Enter the 6-digit code shown in the app.</li>
+            </ol>
             <p className="cp-api-key">{secret}</p>
-            <div className="cp-row-actions">
-              <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(secret)}>Copy setup key</button>
-            </div>
+            <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(secret)}>Copy setup key</button>
             <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label>
-            <button className="cp-btn" type="submit" disabled={busy}>Activate</button>
+            <button className="cp-btn" type="submit" disabled={busy}>{busy ? "Checking…" : "Activate"}</button>
           </form>
         ) : null}
         {codes ? (
-          <div>
-            <p>Save these codes. Each one works once. They will not be shown again.</p>
+          <div className="cp-auth-codes">
+            <p>Save these codes now. Each one works once, and they are not shown again.</p>
             <pre className="cp-api-key">{codes.join("\n")}</pre>
             <div className="cp-row-actions">
               <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(codes.join("\n"))}>Copy codes</button>
@@ -470,48 +485,63 @@ export function SecurityView() {
           </div>
         ) : null}
         {enabled ? (
-          <>
+          <div className="cp-auth-manage">
             <form onSubmit={(event) => void regenerate(event)}>
-              <h3>Regenerate recovery codes</h3>
-              <p className="cp-note">This replaces every unused code. Enter the current authenticator code{info.hasPassword ? " and your password" : ""}.</p>
+              <h3>Recovery codes</h3>
+              <p>Replacing the codes turns off every unused code from the previous set.</p>
               {info.hasPassword ? <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label> : null}
               <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" required /></label>
               <button className="cp-btn-ghost" type="submit" disabled={busy}>Regenerate recovery codes</button>
             </form>
             {confirmDisable ? (
               <form onSubmit={(event) => void disable(event)}>
-                <h3>Disable authenticator</h3>
-                <p>This removes the authenticator from the account. Enter a current code or one unused recovery code.</p>
+                <h3>Turn authenticator off?</h3>
+                <p>New sign-ins will no longer ask for a code. Enter a current code or one unused recovery code.</p>
                 {info.hasPassword ? <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label> : null}
                 <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" /></label>
                 <label className="cp-field"><span>Or a recovery code</span><input name="recovery" autoComplete="off" /></label>
                 <div className="cp-row-actions">
-                  <button className="cp-btn" type="submit" disabled={busy}>Disable authenticator</button>
+                  <button className="cp-btn" type="submit" disabled={busy}>Disable</button>
                   <button className="cp-btn-ghost" type="button" onClick={() => setConfirmDisable(false)}>Cancel</button>
                 </div>
               </form>
             ) : <button className="cp-btn-ghost" type="button" onClick={() => setConfirmDisable(true)}>Disable</button>}
-          </>
+          </div>
         ) : null}
         {error ? <p className="cp-error">{error}</p> : null}
         {message ? <p className="cp-ok">{message}</p> : null}
-        <h3>Password</h3>
-        {info.hasPassword ? (
+        <p className="cp-note">Lost the phone and the recovery codes? Email support@trustifysmm.com from the account address.</p>
+      </section>
+
+      {info.hasPassword ? (
+        <section className="cp-card">
+          <h3>Password</h3>
           <form onSubmit={(event) => void password(event)}>
-            <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" /></label>
-            <label className="cp-field"><span>New password</span><input name="next" type="password" autoComplete="new-password" minLength={8} /></label>
+            <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label>
+            <label className="cp-field"><span>New password</span><input name="next" type="password" autoComplete="new-password" minLength={8} required /></label>
             <button className="cp-btn" type="submit" disabled={busy}>Change password</button>
           </form>
-        ) : <p>This account signs in with Google. Set a panel password from My Profile if you also want email sign-in.</p>}
-        <h3>Sessions</h3>
-        <button className="cp-btn-ghost" type="button" onClick={() => void logoutOthers()}>Log out other sessions</button>
-        <p className="cp-note">Lost the phone and the recovery codes? Email support@trustifysmm.com from the account address. Support can clear the authenticator after confirming it is you.</p>
-      </section>
+        </section>
+      ) : null}
+
       <section className="cp-card">
         <h3>Login history</h3>
-        {info.logins.length === 0 ? <Empty title="No login history yet" copy="New sign-ins are recorded from this point on." /> : info.logins.map((row) => (
-          <p key={row.id}>{row.createdAt} · {row.method} · {row.ip}</p>
-        ))}
+        {info.logins.length === 0 ? <Empty title="No login history yet" copy="New sign-ins are recorded from this point on." /> : (
+          <div className="cp-table-wrap">
+            <table className="cp-table cp-login-table">
+              <thead><tr><th>When</th><th>Method</th><th>Address</th></tr></thead>
+              <tbody>
+                {info.logins.map((row) => (
+                  <tr key={row.id}>
+                    <td data-label="When">{formatWhen(row.createdAt)}</td>
+                    <td data-label="Method"><span className="cp-login-method">{row.method === "google" ? "Google" : "Password"}</span></td>
+                    <td data-label="Address">{row.ip}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
