@@ -52,7 +52,7 @@ type Payment = {
   logoUrl?: string | null;
 };
 
-const PRESETS = [10, 20, 25, 50, 100] as const;
+const PRESETS = [10, 20, 25, 50, 100, 250, 500, 1000] as const;
 const PAYMENT_WINDOW_MS = 60 * 60 * 1000;
 const STATUS_POLL_MS = 30_000;
 
@@ -543,43 +543,29 @@ export function AddFundsView() {
             ) : null}
 
             <div className="cp-sheet-coin">
-              <CoinLogo code={payment.payCurrency || ""} logoUrl={payment.logoUrl} size={42} />
+              <CoinLogo code={payment.payCurrency || ""} logoUrl={payment.logoUrl} size={44} />
               <div>
-                <strong>
-                  {payment.symbol || payment.payCurrency?.toUpperCase()} ({networkBadge(payment.payCurrency || "", payment.network)})
-                </strong>
+                <strong>{checkoutTitle(payment)}</strong>
                 <small>Pay on {payment.networkLabel || payment.network || "the selected network"}</small>
               </div>
             </div>
 
-            <div className="cp-checkout-layout">
-              {payment.address ? <CryptoDepositQr value={payment.address} label="Deposit address" /> : null}
-              <div className="cp-checkout-facts">
-                <div>
-                  <span className="cp-label">Send exact amount</span>
-                  <p className="cp-deposit-exact">
-                    {payment.payAmount || "—"} <small>{payment.symbol || payment.payCurrency?.toUpperCase()}</small>
-                  </p>
-                  <dl className="cp-lock-lines">
-                    <div>
-                      <dt>Amount</dt>
-                      <dd>${payment.amountUsd.toFixed(2)}</dd>
-                    </div>
-                    <div>
-                      <dt>Fee</dt>
-                      <dd className="cp-fee-plus">{lockedFeeUsd(payment) != null ? `+ $${lockedFeeUsd(payment)!.toFixed(2)}` : "Included"}</dd>
-                    </div>
-                    <div>
-                      <dt>You send</dt>
-                      <dd>
-                        {payment.payAmount || "—"} {payment.symbol || payment.payCurrency?.toUpperCase()}
-                      </dd>
-                    </div>
-                  </dl>
-                  <p className="cp-deposit-note">QR is the deposit address. Send the crypto total above. The fee is already inside it.</p>
-                </div>
+            {payment.address ? <CryptoDepositQr value={payment.address} /> : null}
+
+            <p className="cp-send-kicker">You send</p>
+            <p className="cp-deposit-exact">
+              {payment.payAmount || "—"} <small>{payment.symbol || payment.payCurrency?.toUpperCase()}</small>
+            </p>
+            <dl className="cp-lock-lines">
+              <div>
+                <dt>Amount</dt>
+                <dd>${payment.amountUsd.toFixed(2)}</dd>
               </div>
-            </div>
+              <div>
+                <dt>Fee</dt>
+                <dd className="cp-fee-plus">{lockedFeeUsd(payment) != null ? `+ $${lockedFeeUsd(payment)!.toFixed(2)}` : "Included"}</dd>
+              </div>
+            </dl>
 
             <div className="cp-timer">
               <div>
@@ -707,6 +693,13 @@ function payStage(status: string) {
   if (status === "paid") return 2;
   if (status === "confirming" || status === "partial" || status === "review") return 1;
   return 0;
+}
+
+function checkoutTitle(payment: Payment) {
+  const symbol = payment.symbol || (payment.payCurrency || "").toUpperCase();
+  const badge = networkBadge(payment.payCurrency || "", payment.network);
+  if (badge === "TRC20" || badge === "ERC20" || badge === "BEP20") return `${symbol} · ${badge}`;
+  return symbol;
 }
 
 function lockedFeeUsd(payment: Payment) {

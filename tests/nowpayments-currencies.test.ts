@@ -86,6 +86,8 @@ describe("NOWPayments deposit options", () => {
     const sol = options.find((row) => row.code === "sol");
     expect(usdt?.symbol).toBe("USDT");
     expect(networkBadge("usdtbsc", "bsc")).toBe("BEP20");
+    expect(networkBadge("trx", "trx")).toBe("TRON");
+    expect(networkBadge("usdttrc20", "trx")).toBe("TRC20");
     expect(bnb?.symbol).toBe("BNB");
     expect(bnb?.networkLabel).toBe("BNB Smart Chain (BEP20)");
     expect(sol?.symbol).toBe("SOL");

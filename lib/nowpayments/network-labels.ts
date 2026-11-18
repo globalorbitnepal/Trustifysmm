@@ -5,7 +5,7 @@
 export const NETWORK_LABELS: Record<string, string> = {
   btc: "Bitcoin",
   eth: "Ethereum",
-  trx: "TRON (TRC20)",
+  trx: "TRON",
   bsc: "BNB Smart Chain (BEP20)",
   matic: "Polygon",
   sol: "Solana",
