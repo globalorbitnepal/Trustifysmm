@@ -436,12 +436,25 @@ export function WalletScreen() {
   const [message, setMessage] = useState("");
   async function adjust(direction: "credit" | "debit") {
     setMessage("");
+    const value = Number(amount);
+    if (!userId) {
+      setMessage("Select a customer.");
+      return;
+    }
+    if (!Number.isFinite(value) || value <= 0) {
+      setMessage("Enter an amount greater than zero.");
+      return;
+    }
+    if (reason.trim().length < 3) {
+      setMessage("Enter a reason of at least 3 characters.");
+      return;
+    }
     try {
-      await send("/api/orbit/customers", { userId, direction, amount: Number(amount), reason, reference });
+      await send("/api/orbit/customers", { userId, direction, amount: value, reason, reference }, "PATCH");
       setAmount("");
       setReason("");
       reload();
-      setMessage("Wallet updated and written to the ledger.");
+      setMessage(direction === "credit" ? "Balance credited and written to the ledger." : "Balance debited and written to the ledger.");
     } catch (reasonError) {
       setMessage(reasonError instanceof Error ? reasonError.message : "Wallet update failed");
     }

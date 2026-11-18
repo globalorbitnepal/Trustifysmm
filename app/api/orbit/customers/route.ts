@@ -87,6 +87,21 @@ export async function PATCH(request: Request) {
   const user = users.find((row) => row.id === body.userId);
   if (!user) return NextResponse.json({ error: "Customer not found." }, { status: 404 });
 
+  if (body.direction && body.amount !== undefined) {
+    const reason = body.reason?.trim() || "";
+    if (reason.length < 3) return NextResponse.json({ error: "A reason is required for every wallet change." }, { status: 400 });
+    const value = Number(body.amount);
+    if (!Number.isFinite(value) || value <= 0) return NextResponse.json({ error: "Enter an amount greater than zero." }, { status: 400 });
+    const delta = body.direction === "debit" ? -value : value;
+    const result = await adjustAccount(user.apiKey, delta, `Orbit ${body.direction}: ${reason}`, body.reference?.trim() || undefined);
+    if ("error" in result) return NextResponse.json({ error: result.error }, { status: 400 });
+    user.balance = result.account.balance;
+    user.updatedAt = new Date().toISOString();
+    await persistCustomer(user);
+    await recordAdminAction("wallet.adjust", `${user.email} ${body.direction} ${value} — ${reason}`);
+    return NextResponse.json({ ok: true, balance: result.account.balance });
+  }
+
   if (body.name !== undefined) {
     const name = body.name.trim();
     if (name.length < 2) return NextResponse.json({ error: "Name must be at least 2 characters." }, { status: 400 });
@@ -96,16 +111,7 @@ export async function PATCH(request: Request) {
   user.updatedAt = new Date().toISOString();
   await persistCustomer(user);
 
-  if (body.direction && body.amount !== undefined) {
-    const reason = body.reason?.trim() || "";
-    if (reason.length < 3) return NextResponse.json({ error: "A reason is required for every wallet change." }, { status: 400 });
-    const delta = body.direction === "debit" ? -Math.abs(Number(body.amount)) : Math.abs(Number(body.amount));
-    const result = await adjustAccount(user.apiKey, delta, `Orbit ${body.direction}: ${reason}`, body.reference?.trim() || undefined);
-    if ("error" in result) return NextResponse.json({ error: result.error }, { status: 400 });
-    user.balance = result.account.balance;
-    await persistCustomer(user);
-    await recordAdminAction("wallet.adjust", `${user.email} ${body.direction} ${body.amount} — ${reason}`);
-  } else if (body.balance !== undefined) {
+  if (body.balance !== undefined) {
     const reason = body.reason?.trim() || "";
     if (reason.length < 3) return NextResponse.json({ error: "A reason is required for every wallet change." }, { status: 400 });
     const account = await setAccountBalance(user.apiKey, Number(body.balance), `Orbit set balance: ${reason}`);

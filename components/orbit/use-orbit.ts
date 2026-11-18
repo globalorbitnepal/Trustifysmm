@@ -28,9 +28,9 @@ export function usd(value: number) {
   return value.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-export async function send(url: string, body: unknown) {
+export async function send(url: string, body: unknown, method = "POST") {
   const response = await fetch(url, {
-    method: "POST",
+    method,
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
