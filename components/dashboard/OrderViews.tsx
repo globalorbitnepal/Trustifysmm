@@ -41,6 +41,7 @@ export function NewOrderView() {
     if (platform) params.set("platform", platform);
     if (group) params.set("group", group);
     if (q) params.set("q", q);
+    if (platform || group || q) params.set("limit", "400");
     const handle = setTimeout(() => {
       void fetch(`/api/dashboard/catalog?${params}`).then(async (res) => {
         if (res.ok) {
@@ -153,7 +154,7 @@ export function NewOrderView() {
                 }}
               >
                 <option value="">Choose a service</option>
-                {catalog.services.slice(0, 80).map((item) => (
+                {catalog.services.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.id} — {item.name} — ${item.ratePer1000}/1k
                   </option>

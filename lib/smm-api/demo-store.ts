@@ -429,6 +429,19 @@ export async function adjustAccountExact(
   });
 }
 
+export async function attachUpstreamOrder(orderId: number, upstreamOrderId: string) {
+  return withStoreLock(async () => {
+    const store = await ensureStore();
+    const order = store.orders.find((row) => row.order === orderId);
+    if (!order) return null;
+    order.upstreamOrderId = upstreamOrderId;
+    order.status = "Processing";
+    order.updatedAt = new Date().toISOString();
+    await persist(store);
+    return order;
+  });
+}
+
 export async function refundOrder(orderId: number, description: string) {
   return withStoreLock(async () => {
     const store = await ensureStore();

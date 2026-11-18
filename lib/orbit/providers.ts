@@ -9,6 +9,8 @@ export type ProviderRecord = {
   apiKey: string;
   enabled: boolean;
   priority: number;
+  /** Percent added on top of the provider rate. Server API uses 35. */
+  markupPercent?: number;
   lastStatus?: string;
   lastCheckedAt?: string;
 };
@@ -37,6 +39,7 @@ export function publicProvider(row: ProviderRecord) {
     endpoint: row.endpoint,
     enabled: row.enabled,
     priority: row.priority,
+    markupPercent: row.markupPercent ?? 35,
     keyMasked: key ? `${key.slice(0, 3)}…${key.slice(-2)}` : "",
     hasKey: Boolean(key),
     lastStatus: row.lastStatus ?? "Not checked",
@@ -67,6 +70,7 @@ export async function saveProvider(input: Partial<ProviderRecord> & { id?: strin
     if (input.apiKey) row.apiKey = input.apiKey.trim();
     if (input.enabled !== undefined) row.enabled = input.enabled;
     if (input.priority !== undefined) row.priority = Number(input.priority) || 1;
+    if (input.markupPercent !== undefined) row.markupPercent = Number(input.markupPercent) || 0;
     await writeAll(rows);
     return { provider: publicProvider(row) };
   }
@@ -77,10 +81,20 @@ export async function saveProvider(input: Partial<ProviderRecord> & { id?: strin
     apiKey: input.apiKey?.trim() || "",
     enabled: input.enabled !== false,
     priority: Number(input.priority) || rows.length + 1,
+    markupPercent: input.markupPercent !== undefined ? Number(input.markupPercent) || 0 : 35,
   };
   rows.push(row);
   await writeAll(rows);
   return { provider: publicProvider(row) };
+}
+
+export async function getProviderSecret(id: string) {
+  const rows = await readAll();
+  return rows.find((item) => item.id === id) ?? null;
+}
+
+export async function listProviderSecrets() {
+  return readAll();
 }
 
 export async function testProvider(id: string) {

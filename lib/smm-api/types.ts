@@ -26,6 +26,7 @@ export type DemoOrder = {
   createdAt: string;
   accountKey?: string;
   updatedAt?: string;
+  upstreamOrderId?: string;
 };
 
 export type DepositStatusHistory = { status: string; providerStatus?: string; at: string };

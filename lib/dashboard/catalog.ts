@@ -52,7 +52,7 @@ export function findService(id: number) {
 
 export function searchServices(input: { platform?: string; group?: string; q?: string; limit?: number }) {
   const q = input.q?.trim().toLowerCase() ?? "";
-  const limit = Math.min(Math.max(input.limit ?? 30, 1), 60);
+  const limit = Math.min(Math.max(input.limit ?? 40, 1), 400);
   const rows: PricingService[] = [];
   for (const service of catalog().services) {
     if (input.platform && service.platform !== input.platform) continue;

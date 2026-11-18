@@ -5,9 +5,11 @@ import {
   getAccountByKey,
   getOrder,
   listOrdersForKey,
+  refundOrder,
 } from "@/lib/smm-api/demo-store";
 import type { SmmApiParams } from "@/lib/smm-api/types";
 import { proxyToUpstream, upstreamConfigured } from "@/lib/smm-api/upstream";
+import { forwardOrderToServer } from "@/lib/smm-upstream/forward";
 
 function parseIntSafe(value: string | undefined) {
   const n = Number.parseInt(value ?? "", 10);
@@ -67,6 +69,11 @@ export async function handleSmmApi(params: SmmApiParams): Promise<unknown> {
         charge,
       });
       if ("error" in result) return result;
+      const forwarded = await forwardOrderToServer(result.order);
+      if ("error" in forwarded && forwarded.error) {
+        await refundOrder(result.order.order, `Server API rejected order #${result.order.order}. ${forwarded.error}`);
+        return { error: forwarded.error };
+      }
       return { order: result.order.order };
     }
 

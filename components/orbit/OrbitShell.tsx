@@ -47,6 +47,7 @@ const groups: NavGroup[] = [
       { href: "/orbit/services", label: "Services", icon: "services", exact: true },
       { href: "/orbit/services#categories", label: "Categories", icon: "grid" },
       { href: "/orbit/providers", label: "Platforms", icon: "providers" },
+      { href: "/orbit/server-api", label: "Server API", icon: "providers" },
       { href: "/orbit/pages/pricing", label: "Service Pricing", icon: "wallet" },
     ],
   },

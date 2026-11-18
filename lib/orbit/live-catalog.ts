@@ -5,6 +5,7 @@ import type { PricingService, ServicePricingData } from "@/data/service-pricing-
 import { readServiceAdminSync } from "@/lib/orbit/service-admin";
 import { catalogPlatformRows, mergePlatformLabels, sortPlatformIds } from "@/lib/catalog-platform-order";
 import { mergeSiteConfig } from "@/lib/orbit/site-config-sync";
+import { readUpstreamCatalogSync, upstreamAsPricing, upstreamCatalogStamp } from "@/lib/smm-upstream/catalog";
 import type { OrbitSiteConfig } from "@/lib/orbit/types";
 
 const base = pricingData as ServicePricingData;
@@ -17,7 +18,7 @@ let cache: Cache | null = null;
 
 function stamp() {
   const files = [overridesPath, configPath, adminPath];
-  return files.map((file) => (existsSync(file) ? String(statSync(file).mtimeMs) : "0")).join(":");
+  return `${files.map((file) => (existsSync(file) ? String(statSync(file).mtimeMs) : "0")).join(":")}:${upstreamCatalogStamp()}`;
 }
 
 function readOverrides() {
@@ -66,6 +67,14 @@ export function livePricingData(): ServicePricingData {
   for (const service of admin.custom) {
     if (!service.active || admin.hiddenIds.includes(service.id) || inactive.has(service.group)) continue;
     services.push({ ...service, ratePer1000: priceFor(service, overrides, markup) });
+  }
+
+  for (const row of readUpstreamCatalogSync().services) {
+    if (admin.hiddenIds.includes(row.localId) || inactive.has(row.category)) continue;
+    if (services.some((service) => service.id === row.localId)) continue;
+    const priced = upstreamAsPricing(row);
+    priced.ratePer1000 = priceFor(priced, overrides, markup);
+    services.push(priced);
   }
 
   const site = liveSiteConfig();

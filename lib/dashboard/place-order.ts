@@ -2,7 +2,8 @@ import { randomBytes } from "node:crypto";
 import { addNotification } from "@/lib/customer/panel-store";
 import type { CustomerUser } from "@/lib/customer/types";
 import { chargeFor, findService, parseLimit, validTargetUrl } from "@/lib/dashboard/catalog";
-import { placeOrdersAtomic } from "@/lib/smm-api/demo-store";
+import { placeOrdersAtomic, refundOrder } from "@/lib/smm-api/demo-store";
+import { forwardOrderToServer } from "@/lib/smm-upstream/forward";
 
 const hits = new Map<string, number[]>();
 
@@ -55,6 +56,11 @@ export async function placeCustomerOrders(user: CustomerUser, rows: OrderRowInpu
 
   if (!placed.replay) {
     for (const order of placed.orders) {
+      const forwarded = await forwardOrderToServer(order);
+      if ("error" in forwarded && forwarded.error) {
+        await refundOrder(order.order, `Server API rejected order #${order.order}. ${forwarded.error}`);
+        return { error: forwarded.error, status: 502 };
+      }
       const meta = priced.find((row) => row.service === order.service && row.link === order.link);
       await addNotification({
         userId: user.id,
