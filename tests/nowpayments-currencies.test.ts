@@ -51,8 +51,8 @@ describe("NOWPayments fee and minimum", () => {
     expect(customerDepositReason({ status: "expired" })).toMatch(/Nothing was added/);
     expect(customerDepositReason({ status: "failed", providerStatus: "refunded" })).toMatch(/refunded/);
     expect(customerDepositReason({ status: "review", reviewReason: "underpaid" })).toMatch(/less than/);
-    expect(sellRatePer1000(1, 35)).toBe(1.35);
-    expect(sellRatePer1000(0.5, 35)).toBe(0.675);
+    expect(sellRatePer1000(1, 30)).toBe(1.3);
+    expect(sellRatePer1000(0.5, 30)).toBe(0.65);
     expect(platformFromCategory("Instagram Followers")).toBe("instagram");
     expect(platformFromCategory("YouTube Views")).toBe("youtube");
   });

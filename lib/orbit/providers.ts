@@ -9,7 +9,7 @@ export type ProviderRecord = {
   apiKey: string;
   enabled: boolean;
   priority: number;
-  /** Percent added on top of the provider rate. Server API uses 35. */
+  /** Percent added on top of the provider rate. Service API uses 30. */
   markupPercent?: number;
   lastStatus?: string;
   lastCheckedAt?: string;
@@ -39,7 +39,7 @@ export function publicProvider(row: ProviderRecord) {
     endpoint: row.endpoint,
     enabled: row.enabled,
     priority: row.priority,
-    markupPercent: row.markupPercent ?? 35,
+    markupPercent: row.markupPercent ?? 30,
     keyMasked: key ? `${key.slice(0, 3)}…${key.slice(-2)}` : "",
     hasKey: Boolean(key),
     lastStatus: row.lastStatus ?? "Not checked",
@@ -81,7 +81,7 @@ export async function saveProvider(input: Partial<ProviderRecord> & { id?: strin
     apiKey: input.apiKey?.trim() || "",
     enabled: input.enabled !== false,
     priority: Number(input.priority) || rows.length + 1,
-    markupPercent: input.markupPercent !== undefined ? Number(input.markupPercent) || 0 : 35,
+    markupPercent: input.markupPercent !== undefined ? Number(input.markupPercent) || 0 : 30,
   };
   rows.push(row);
   await writeAll(rows);
@@ -95,6 +95,35 @@ export async function getProviderSecret(id: string) {
 
 export async function listProviderSecrets() {
   return readAll();
+}
+
+/** Loads the HonestSMM key from the server env into the local provider store. The key is never returned. */
+export async function ensureHonestProvider() {
+  const apiKey = process.env.HONESTSMM_API_KEY?.trim() || "";
+  if (!apiKey) return null;
+  const endpoint = process.env.HONESTSMM_API_URL?.trim() || "https://honestsmm.com/api/v2";
+  const markupPercent = Number(process.env.HONESTSMM_MARKUP_PERCENT || 30);
+  const rows = await readAll();
+  const existing = rows.find((row) => row.endpoint.includes("honestsmm.com") || row.name.toLowerCase() === "honestsmm");
+  if (
+    existing &&
+    existing.apiKey === apiKey &&
+    existing.endpoint === endpoint &&
+    (existing.markupPercent ?? 30) === markupPercent &&
+    existing.enabled
+  ) {
+    return existing;
+  }
+  const saved = await saveProvider({
+    id: existing?.id,
+    name: "HonestSMM",
+    endpoint,
+    apiKey,
+    markupPercent: Number.isFinite(markupPercent) ? markupPercent : 30,
+    enabled: true,
+  });
+  if ("error" in saved) return existing ?? null;
+  return (await readAll()).find((row) => row.id === saved.provider.id) ?? null;
 }
 
 export async function testProvider(id: string) {

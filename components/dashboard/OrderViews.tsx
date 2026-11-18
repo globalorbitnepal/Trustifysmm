@@ -41,7 +41,7 @@ export function NewOrderView() {
     if (platform) params.set("platform", platform);
     if (group) params.set("group", group);
     if (q) params.set("q", q);
-    if (platform || group || q) params.set("limit", "400");
+    if (platform || group || q) params.set("limit", "2000");
     const handle = setTimeout(() => {
       void fetch(`/api/dashboard/catalog?${params}`).then(async (res) => {
         if (res.ok) {

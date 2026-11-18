@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { recordAdminAction } from "@/lib/orbit/audit";
-import { getProviderSecret, listProviderSecrets, saveProvider, testProvider } from "@/lib/orbit/providers";
+import { ensureHonestProvider, getProviderSecret, listProviderSecrets, saveProvider, testProvider } from "@/lib/orbit/providers";
 import { serverApiSummary, syncProviderCatalog } from "@/lib/smm-upstream/catalog";
 import { panelPost } from "@/lib/smm-upstream/panel";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  return NextResponse.json(await serverApiSummary());
+export async function GET(request: Request) {
+  await ensureHonestProvider();
+  const category = new URL(request.url).searchParams.get("category") || undefined;
+  return NextResponse.json(await serverApiSummary(category));
 }
 
 export async function POST(request: Request) {
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
       name: body.name?.trim() || "HonestSMM",
       endpoint: body.endpoint?.trim() || "https://honestsmm.com/api/v2",
       apiKey: body.apiKey,
-      markupPercent: body.markupPercent ?? 35,
+      markupPercent: body.markupPercent ?? 30,
       enabled: true,
     });
     if ("error" in saved) return NextResponse.json(saved, { status: 400 });
@@ -34,7 +36,8 @@ export async function POST(request: Request) {
     return NextResponse.json(await serverApiSummary());
   }
 
-  const id = body.id || (await serverApiSummary()).provider?.id;
+  const ensured = await ensureHonestProvider();
+  const id = body.id || ensured?.id || (await serverApiSummary()).provider?.id;
   if (!id) return NextResponse.json({ error: "Save the server API key first." }, { status: 400 });
   const provider = await getProviderSecret(id);
   if (!provider) return NextResponse.json({ error: "Server API was not found." }, { status: 404 });

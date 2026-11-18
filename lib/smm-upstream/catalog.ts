@@ -33,7 +33,7 @@ type CatalogFile = {
 
 export function sellRatePer1000(cost: number, markupPercent: number) {
   if (!Number.isFinite(cost) || cost < 0) return 0;
-  const markup = Number.isFinite(markupPercent) ? markupPercent : 35;
+  const markup = Number.isFinite(markupPercent) ? markupPercent : 30;
   return Math.round(cost * (1 + markup / 100) * 10000) / 10000;
 }
 
@@ -55,7 +55,7 @@ export function platformFromCategory(category: string) {
 }
 
 function empty(): CatalogFile {
-  return { syncedAt: null, providerId: null, markupPercent: 35, services: [] };
+  return { syncedAt: null, providerId: null, markupPercent: 30, services: [] };
 }
 
 export function readUpstreamCatalogSync(): CatalogFile {
@@ -110,7 +110,7 @@ export async function syncProviderCatalog(provider: ProviderRecord) {
   if (!result.ok) return { error: result.error };
   const rows = Array.isArray(result.data) ? (result.data as RawService[]) : [];
   if (!rows.length) return { error: "The server API returned no services." as const };
-  const markup = provider.markupPercent ?? 35;
+  const markup = provider.markupPercent ?? 30;
   const services: UpstreamService[] = [];
   for (const row of rows) {
     const upstreamId = Number(row.service);
@@ -147,25 +147,18 @@ export async function syncProviderCatalog(provider: ProviderRecord) {
   return { services: services.length, categories: categories.size, markupPercent: markup, syncedAt: file.syncedAt };
 }
 
-export async function serverApiSummary() {
+export async function serverApiSummary(category?: string) {
   const file = readUpstreamCatalogSync();
   const provider = file.providerId ? await getProviderSecret(file.providerId) : null;
-  const categories = new Set(file.services.map((row) => row.category));
-  return {
-    provider: provider
-      ? {
-          id: provider.id,
-          name: provider.name,
-          endpoint: provider.endpoint,
-          markupPercent: provider.markupPercent ?? 35,
-          hasKey: Boolean(provider.apiKey.trim()),
-          lastStatus: provider.lastStatus ?? "Not checked",
-        }
-      : null,
-    syncedAt: file.syncedAt,
-    serviceCount: file.services.length,
-    categoryCount: categories.size,
-    preview: file.services.slice(0, 40).map((row) => ({
+  const counts = new Map<string, number>();
+  for (const row of file.services) counts.set(row.category, (counts.get(row.category) ?? 0) + 1);
+  const categories = [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const selected = category && counts.has(category) ? category : categories[0]?.name ?? "";
+  const services = file.services
+    .filter((row) => row.category === selected)
+    .map((row) => ({
       id: row.upstreamId,
       localId: row.localId,
       name: row.name,
@@ -174,7 +167,25 @@ export async function serverApiSummary() {
       ratePer1000: row.ratePer1000,
       min: row.min,
       max: row.max,
-    })),
+    }));
+  return {
+    provider: provider
+      ? {
+          id: provider.id,
+          name: provider.name,
+          endpoint: provider.endpoint,
+          markupPercent: provider.markupPercent ?? 30,
+          hasKey: Boolean(provider.apiKey.trim()),
+          lastStatus: provider.lastStatus ?? "Not checked",
+        }
+      : null,
+    syncedAt: file.syncedAt,
+    markupPercent: file.markupPercent || 30,
+    serviceCount: file.services.length,
+    categoryCount: categories.length,
+    categories,
+    category: selected,
+    services,
   };
 }
 

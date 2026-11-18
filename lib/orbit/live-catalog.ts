@@ -53,15 +53,18 @@ export function livePricingData(): ServicePricingData {
   const markup = liveSiteConfig().pricing?.globalMarkupPercent ?? 0;
   const inactive = new Set(admin.categories.filter((category) => !category.active).map((category) => category.name));
   const services: PricingService[] = [];
+  const upstream = readUpstreamCatalogSync().services;
 
-  for (const service of base.services) {
-    if (admin.hiddenIds.includes(service.id)) continue;
-    const patch = admin.patches[String(service.id)] ?? {};
-    const group = admin.groupAlias[String(patch.group ?? service.group)] ?? patch.group ?? admin.groupAlias[service.group] ?? service.group;
-    if (inactive.has(group)) continue;
-    const next = { ...service, ...patch, group, id: service.id };
-    next.ratePer1000 = priceFor(next, overrides, markup);
-    services.push(next);
+  if (!upstream.length) {
+    for (const service of base.services) {
+      if (admin.hiddenIds.includes(service.id)) continue;
+      const patch = admin.patches[String(service.id)] ?? {};
+      const group = admin.groupAlias[String(patch.group ?? service.group)] ?? patch.group ?? admin.groupAlias[service.group] ?? service.group;
+      if (inactive.has(group)) continue;
+      const next = { ...service, ...patch, group, id: service.id };
+      next.ratePer1000 = priceFor(next, overrides, markup);
+      services.push(next);
+    }
   }
 
   for (const service of admin.custom) {
@@ -69,7 +72,7 @@ export function livePricingData(): ServicePricingData {
     services.push({ ...service, ratePer1000: priceFor(service, overrides, markup) });
   }
 
-  for (const row of readUpstreamCatalogSync().services) {
+  for (const row of upstream) {
     if (admin.hiddenIds.includes(row.localId) || inactive.has(row.category)) continue;
     if (services.some((service) => service.id === row.localId)) continue;
     const priced = upstreamAsPricing(row);
