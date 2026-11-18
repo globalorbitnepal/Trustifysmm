@@ -481,13 +481,13 @@ export function AddFundsView() {
                 <dt>Fee</dt>
                 <dd className="cp-fee-plus">{quoting ? "…" : quote?.feeUsd != null ? `+ $${quote.feeUsd.toFixed(2)}` : "—"}</dd>
               </div>
-              <div className="is-total">
-                <dt>You send</dt>
-                <dd>{quoteLabel}</dd>
-              </div>
             </dl>
+            <div className="cp-send-block">
+              <span>You send</span>
+              <strong>{quoteLabel}</strong>
+            </div>
             <p className="cp-deposit-note">
-              Your wallet receives ${Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : "0.00"}. The fee is added by NOWPayments and is already inside the crypto amount. This site adds nothing extra. The quote refreshes every 30 seconds.
+              Wallet credit ${Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : "0.00"}. Provider fee is already inside this crypto amount.
             </p>
             {error ? <p className="cp-error">{error}</p> : null}
             <button

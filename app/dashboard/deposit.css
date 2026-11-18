@@ -805,9 +805,38 @@ html[data-dash="light"] .cp-deposit-modal-card,
 }
 .cp-banker-summary dt { font-size: 13px; color: var(--text); font-weight: 700; opacity: 0.78; }
 .cp-banker-summary dd { margin: 0; font-size: 16px; font-weight: 800; text-align: right; color: var(--text); }
-.cp-banker-summary .is-total dt,
-.cp-banker-summary .is-total dd { color: var(--text); font-size: 20px; font-weight: 800; letter-spacing: -0.03em; }
-.cp-banker-summary .cp-deposit-note { color: var(--text); font-size: 13.5px; line-height: 1.5; opacity: 0.9; }
+.cp-banker-summary dd { overflow-wrap: anywhere; }
+.cp-send-block {
+  margin: 14px 0 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(118, 44, 255, 0.14);
+  border: 1px solid rgba(176, 140, 255, 0.35);
+}
+.cp-send-block span {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.cp-send-block strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  word-break: break-word;
+}
+.cp-banker-summary .cp-deposit-note {
+  margin: 0 0 14px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+  opacity: 0.82;
+}
 html[data-dash="light"] .cp-deposit .cp-banker-summary,
 .cp.is-light .cp-deposit .cp-banker-summary {
   background: linear-gradient(180deg, #ffffff 0%, #f7f4ff 100%);

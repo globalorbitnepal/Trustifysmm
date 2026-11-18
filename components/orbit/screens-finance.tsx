@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { openDepositInvoice } from "@/components/dashboard/deposit-invoice";
 import { send, usd, useOrbit } from "@/components/orbit/use-orbit";
 import { networkLabel } from "@/lib/nowpayments/network-labels";
 
@@ -183,8 +184,8 @@ export function PaymentsScreen() {
       <section className="ob-banker-hero">
         <div>
           <span className="ob-hero-tag">Finance · Banker</span>
-          <h2>Crypto deposit command center</h2>
-          <p>Verify gateway confirmation, credit customer wallets, and keep a full audit trail.</p>
+          <h2>NOWPayments</h2>
+          <p>Every deposit, with customer name and email, success, failure, timeout, and a downloadable invoice.</p>
           <div className="ob-hero-meta">
             <span className="ob-hero-pill">{data?.gateway.live ? "● Gateway live" : "● Gateway not configured"}</span>
             <span className="ob-hero-pill">{data?.gateway.currencies.length ? data.gateway.currencies.join(" · ") : "No coins enabled"}</span>
@@ -326,6 +327,11 @@ export function PaymentsScreen() {
                     <button className="ob-btn" type="button" onClick={() => setDetail(row)}>
                       Details
                     </button>
+                    {row.status === "paid" ? (
+                      <button className="ob-btn" type="button" onClick={() => downloadOrbitInvoice(row)}>
+                        Invoice
+                      </button>
+                    ) : null}
                     {row.provider === "nowpayments" && row.nowPaymentId && !row.walletCredited ? (
                       <button
                         className="ob-btn"
@@ -404,9 +410,16 @@ export function PaymentsScreen() {
                 <p className="ob-muted">{detail.provider === "nowpayments" ? "NOWPayments deposit" : "Demo deposit"}</p>
                 <h3 id="ob-deposit-detail">{detail.id}</h3>
               </div>
-              <button className="ob-btn" type="button" onClick={() => setDetail(null)}>
-                Close
-              </button>
+              <div className="ob-toolbar">
+                {detail.status === "paid" ? (
+                  <button className="ob-btn primary" type="button" onClick={() => downloadOrbitInvoice(detail)}>
+                    Download invoice
+                  </button>
+                ) : null}
+                <button className="ob-btn" type="button" onClick={() => setDetail(null)}>
+                  Close
+                </button>
+              </div>
             </header>
 
             {detail.status === "review" || detail.status === "partial" ? (
@@ -464,6 +477,26 @@ export function PaymentsScreen() {
       ) : null}
     </>
   );
+}
+
+function downloadOrbitInvoice(row: Deposit) {
+  if (row.status !== "paid") return;
+  openDepositInvoice({
+    id: row.id,
+    amountUsd: row.amountUsd,
+    payCurrency: row.payCurrency,
+    payAmount: row.payAmount == null ? null : String(row.payAmount),
+    address: row.address,
+    network: row.network,
+    networkLabel: row.network ? networkLabel(row.network) : null,
+    status: row.status,
+    nowPaymentId: row.nowPaymentId,
+    txHash: row.txHash,
+    createdAt: row.createdAt,
+    paidAt: row.paidAt,
+    customerName: row.name,
+    customerEmail: row.email,
+  });
 }
 
 function StatusPill({ status }: { status: string }) {

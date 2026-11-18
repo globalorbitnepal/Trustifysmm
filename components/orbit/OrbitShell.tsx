@@ -65,6 +65,7 @@ const groups: NavGroup[] = [
     links: [
       { href: "/orbit/wallet", label: "Wallet Management", icon: "wallet" },
       { href: "/orbit/transactions", label: "Transactions", icon: "activity" },
+      { href: "/orbit/nowpayments", label: "NOWPayments", icon: "banker" },
       { href: "/orbit/payments", label: "Payment History", icon: "banker" },
     ],
   },
