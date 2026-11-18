@@ -556,117 +556,122 @@ export function AddFundsView() {
               </div>
             ) : null}
 
-            <div className="cp-sheet-coin">
-              <CoinLogo code={payment.payCurrency || ""} logoUrl={payment.logoUrl} size={44} />
-              <div>
-                <strong>{checkoutTitle(payment)}</strong>
-                <small>Pay on {payment.networkLabel || payment.network || "the selected network"}</small>
-              </div>
-            </div>
-
-            {payment.address ? <CryptoDepositQr value={payment.address} /> : null}
-
-            <p className="cp-send-kicker">You send</p>
-            <p className="cp-deposit-exact">
-              {payment.payAmount || "—"} <small>{payment.symbol || payment.payCurrency?.toUpperCase()}</small>
-            </p>
-            <dl className="cp-lock-lines">
-              <div>
-                <dt>Amount</dt>
-                <dd>${payment.amountUsd.toFixed(2)}</dd>
-              </div>
-              <div>
-                <dt>Fee</dt>
-                <dd className="cp-fee-plus">{lockedFeeUsd(payment) != null ? `+ $${lockedFeeUsd(payment)!.toFixed(2)}` : "Included"}</dd>
-              </div>
-            </dl>
-
-            <div className="cp-timer">
-              <div>
-                <span>Time remaining</span>
-                <strong>{formatWindow(payment, nowTick)}</strong>
-              </div>
-              <i style={{ width: `${windowPercent(payment, nowTick)}%` }} />
-            </div>
-
-            <ol className="cp-pay-stages">
-              {["Waiting for payment", "Confirming", "Completed"].map((label, index) => (
-                <li key={label} className={payStage(payment.status) >= index ? "is-on" : ""}>
-                  <span>{payStage(payment.status) > index ? "✓" : index + 1}</span>
-                  {label}
-                </li>
-              ))}
-            </ol>
-
-            {payment.address ? (
-              <div className="cp-deposit-copy">
-                <span className="cp-label">Deposit address</span>
-                <div>
-                  <code>{payment.address}</code>
-                  <button type="button" className="cp-btn-ghost" onClick={() => void copyValue(payment.address || "", "address")}>
-                    {copied === "address" ? "Copied" : "Copy address"}
-                  </button>
+            <div className="cp-sheet-body">
+              <div className="cp-sheet-main">
+                <div className="cp-sheet-coin">
+                  <CoinLogo code={payment.payCurrency || ""} logoUrl={payment.logoUrl} size={44} />
+                  <div>
+                    <strong>{checkoutTitle(payment)}</strong>
+                    <small>Pay on {payment.networkLabel || payment.network || "the selected network"}</small>
+                  </div>
                 </div>
-              </div>
-            ) : null}
 
-            {payment.payAmount ? (
-              <div className="cp-deposit-copy">
-                <span className="cp-label">Exact crypto amount</span>
-                <div>
-                  <code>
-                    {payment.payAmount} {payment.symbol || payment.payCurrency?.toUpperCase()}
-                  </code>
-                  <button type="button" className="cp-btn-ghost" onClick={() => void copyValue(payment.payAmount || "", "amount")}>
-                    {copied === "amount" ? "Copied" : "Copy amount"}
-                  </button>
+                {payment.address ? <CryptoDepositQr value={payment.address} /> : null}
+
+                <p className="cp-send-kicker">You send</p>
+                <p className="cp-deposit-exact">
+                  {payment.payAmount || "—"} <small>{payment.symbol || payment.payCurrency?.toUpperCase()}</small>
+                </p>
+                <dl className="cp-lock-lines">
+                  <div>
+                    <dt>Amount</dt>
+                    <dd>${payment.amountUsd.toFixed(2)}</dd>
+                  </div>
+                  <div>
+                    <dt>Fee</dt>
+                    <dd className="cp-fee-plus">{lockedFeeUsd(payment) != null ? `+ $${lockedFeeUsd(payment)!.toFixed(2)}` : "Included"}</dd>
+                  </div>
+                </dl>
+
+                <div className="cp-timer">
+                  <div>
+                    <span>Time remaining</span>
+                    <strong>{formatWindow(payment, nowTick)}</strong>
+                  </div>
+                  <i style={{ width: `${windowPercent(payment, nowTick)}%` }} />
                 </div>
+
+                <ol className="cp-pay-stages">
+                  {["Waiting for payment", "Confirming", "Completed"].map((label, index) => (
+                    <li key={label} className={payStage(payment.status) >= index ? "is-on" : ""}>
+                      <span>{payStage(payment.status) > index ? "✓" : index + 1}</span>
+                      {label}
+                    </li>
+                  ))}
+                </ol>
               </div>
-            ) : null}
 
-            <p className="cp-deposit-warning">
-              Send only {payment.symbol || payment.payCurrency?.toUpperCase()} on {payment.networkLabel || payment.network}. The amount
-              includes the provider service fee, which you pay. A different asset or network can be lost. Status refreshes every 30
-              seconds and stays in Payment history if you close this window. The payment window is at most 1 hour. A finished
-              payment is credited automatically.
-            </p>
+              <div className="cp-sheet-side">
+                {payment.address ? (
+                  <div className="cp-deposit-copy">
+                    <span className="cp-label">Deposit address</span>
+                    <div>
+                      <code>{payment.address}</code>
+                      <button type="button" className="cp-btn-ghost" onClick={() => void copyValue(payment.address || "", "address")}>
+                        {copied === "address" ? "Copied" : "Copy address"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
 
-            <div className="cp-deposit-checkout-actions">
-              <button
-                type="button"
-                className="cp-btn-ghost"
-                disabled={polling || isTerminal(payment.status)}
-                onClick={() => void refreshStatus(payment.id)}
-              >
-                {polling ? "Checking…" : "Refresh status"}
-              </button>
-              {isTerminal(payment.status) ? (
-                <button
-                  type="button"
-                  className="cp-btn"
-                  onClick={() => {
-                    setPayment(null);
-                    setCheckoutOpen(false);
-                  }}
-                >
-                  New deposit
-                </button>
-              ) : null}
+                {payment.payAmount ? (
+                  <div className="cp-deposit-copy">
+                    <span className="cp-label">Exact crypto amount</span>
+                    <div>
+                      <code>
+                        {payment.payAmount} {payment.symbol || payment.payCurrency?.toUpperCase()}
+                      </code>
+                      <button type="button" className="cp-btn-ghost" onClick={() => void copyValue(payment.payAmount || "", "amount")}>
+                        {copied === "amount" ? "Copied" : "Copy amount"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <ul className="cp-checkout-facts">
+                  <li>Send only {payment.symbol || payment.payCurrency?.toUpperCase()} on {payment.networkLabel || payment.network}</li>
+                  <li>Provider fee is already included</li>
+                  <li>Status updates every 30 seconds</li>
+                </ul>
+
+                <div className="cp-deposit-checkout-actions">
+                  <button
+                    type="button"
+                    className="cp-btn-ghost"
+                    disabled={polling || isTerminal(payment.status)}
+                    onClick={() => void refreshStatus(payment.id)}
+                  >
+                    {polling ? "Checking…" : "Refresh status"}
+                  </button>
+                  {isTerminal(payment.status) ? (
+                    <button
+                      type="button"
+                      className="cp-btn"
+                      onClick={() => {
+                        setPayment(null);
+                        setCheckoutOpen(false);
+                      }}
+                    >
+                      New deposit
+                    </button>
+                  ) : null}
+                </div>
+
+                {payment.status !== "paid" ? (
+                  <details className="cp-deposit-hash">
+                    <summary>Add a transaction hash for tracking</summary>
+                    <label className="cp-field">
+                      <span>A hash does not credit the wallet by itself</span>
+                      <input value={hash} onChange={(event) => setHash(event.target.value)} placeholder="Transaction hash" />
+                    </label>
+                    <button className="cp-btn-ghost" type="button" onClick={() => void submitHash()}>
+                      Save hash
+                    </button>
+                    {note ? <p className="cp-ok">{note}</p> : null}
+                  </details>
+                ) : null}
+              </div>
             </div>
-
-            {payment.status !== "paid" ? (
-              <details className="cp-deposit-hash">
-                <summary>Add a transaction hash for tracking</summary>
-                <label className="cp-field">
-                  <span>A hash does not credit the wallet by itself</span>
-                  <input value={hash} onChange={(event) => setHash(event.target.value)} placeholder="Transaction hash" />
-                </label>
-                <button className="cp-btn-ghost" type="button" onClick={() => void submitHash()}>
-                  Save hash
-                </button>
-                {note ? <p className="cp-ok">{note}</p> : null}
-              </details>
-            ) : null}
           </section>
         </div>
       ) : null}

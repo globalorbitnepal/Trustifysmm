@@ -503,16 +503,26 @@ html[data-dash="light"] .cp-deposit-modal-card,
   color: var(--text);
 }
 
-.cp-deposit-warning {
-  margin: 14px 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--badge-bad);
-  background: var(--badge-bad-bg);
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--text);
+.cp-checkout-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 12px;
+  padding: 0;
+  list-style: none;
 }
+.cp-checkout-facts li {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(118, 44, 255, 0.22);
+  background: rgba(118, 44, 255, 0.06);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.cp-deposit-warning { display: none; }
 
 .cp-deposit-checkout-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
 
@@ -926,7 +936,7 @@ html[data-dash="light"] .cp-sheet .cp-deposit-exact,
 .cp-sheet .cp-lock-lines dd { font-size: 16px; }
 .cp-sheet .cp-label { color: var(--text); font-size: 13px; font-weight: 800; }
 .cp-sheet .cp-deposit-copy code { color: var(--text); font-size: 14px; font-weight: 700; }
-.cp-sheet .cp-deposit-warning { color: var(--text); font-size: 14px; font-weight: 650; line-height: 1.5; }
+.cp-sheet-body { display: block; }
 .cp-sheet .cp-timer div { color: var(--text); font-size: 14px; }
 .cp-sheet .cp-pay-stages li { color: var(--text); font-size: 12px; opacity: 0.55; }
 .cp-sheet .cp-pay-stages li.is-on { opacity: 1; }
@@ -1002,6 +1012,37 @@ html[data-dash="light"] .cp-network,
   .cp-banker-steps { overflow-x: auto; }
   .cp-banker-head { flex-wrap: wrap; }
   .cp-banker-head .cp-deposit-pill { margin-left: 0; }
+}
+
+@media (min-width: 768px) {
+  .cp-sheet { padding: 16px; }
+  .cp-sheet-card {
+    width: min(920px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+    padding: 16px 18px 14px;
+  }
+  .cp-sheet-body {
+    display: grid;
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    gap: 16px 22px;
+    align-items: start;
+  }
+  .cp-sheet-coin { margin-bottom: 8px; padding: 8px 10px; }
+  .cp-sheet .cp-funds-qr { margin: 0 0 8px; }
+  .cp-sheet .cp-funds-qr img { width: 132px; height: 132px; }
+  .cp-sheet .cp-deposit-exact { font-size: 26px; margin: 0 0 8px; }
+  .cp-sheet .cp-lock-lines { margin-bottom: 10px; padding: 8px 12px; }
+  .cp-sheet .cp-timer { margin-bottom: 8px; }
+  .cp-sheet .cp-pay-stages { margin-bottom: 0; }
+  .cp-sheet-side .cp-deposit-copy { margin-bottom: 10px; }
+  .cp-sheet-side .cp-deposit-checkout-actions { margin-bottom: 8px; }
+}
+
+@media (min-width: 768px) and (max-height: 760px) {
+  .cp-sheet .cp-funds-qr img { width: 108px; height: 108px; }
+  .cp-sheet .cp-deposit-exact { font-size: 22px; }
+  .cp-sheet-coin { margin-bottom: 4px; padding: 6px 8px; }
 }
 
 @media (max-width: 640px) {
