@@ -28,13 +28,13 @@ export function usd(value: number) {
   return value.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-export async function send(url: string, body: unknown, method = "POST") {
+export async function send<T = Record<string, unknown>>(url: string, body: unknown, method = "POST"): Promise<T> {
   const response = await fetch(url, {
     method,
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-  const payload = await response.json();
+  const payload = (await response.json()) as T & { error?: string };
   if (!response.ok) throw new Error(payload.error || "Request failed");
   return payload;
 }

@@ -370,6 +370,8 @@ type Customer = {
   balance: number;
   orders: number;
   spending: number;
+  deposits?: number;
+  refunds?: number;
   suspended: boolean;
   apiKeyRevoked: boolean;
   lastLogin: string | null;
@@ -428,12 +430,15 @@ export function CustomersScreen() {
 }
 
 export function WalletScreen() {
-  const { data, reload } = useOrbit<{ customers: Customer[] }>("/api/orbit/customers");
+  const { data, error, reload } = useOrbit<{ customers: Customer[] }>("/api/orbit/customers");
   const [userId, setUserId] = useState("");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [reference, setReference] = useState("");
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState<"credit" | "debit" | "">("");
+  const selected = data?.customers.find((row) => row.id === userId) ?? null;
+
   async function adjust(direction: "credit" | "debit") {
     setMessage("");
     const value = Number(amount);
@@ -449,31 +454,71 @@ export function WalletScreen() {
       setMessage("Enter a reason of at least 3 characters.");
       return;
     }
+    setBusy(direction);
     try {
-      await send("/api/orbit/customers", { userId, direction, amount: value, reason, reference }, "PATCH");
+      const result = await send<{ balance?: number }>(
+        "/api/orbit/customers",
+        { userId, direction, amount: value, reason, reference },
+        "PATCH",
+      );
       setAmount("");
       setReason("");
       reload();
-      setMessage(direction === "credit" ? "Balance credited and written to the ledger." : "Balance debited and written to the ledger.");
+      setMessage(
+        `${direction === "credit" ? "Credited" : "Debited"} ${usd(value)} ${direction === "credit" ? "to" : "from"} ${
+          selected?.email ?? "the customer"
+        }. New balance ${usd(Number(result?.balance ?? 0))}.`,
+      );
     } catch (reasonError) {
       setMessage(reasonError instanceof Error ? reasonError.message : "Wallet update failed");
+    } finally {
+      setBusy("");
     }
   }
+
   return (
-    <form className="ob-form" onSubmit={(event) => event.preventDefault()}>
-      <label>Customer
-        <select value={userId} onChange={(event) => setUserId(event.target.value)} required>
-          <option value="">Select</option>
-          {data?.customers.map((row) => <option key={row.id} value={row.id}>{row.email} · {usd(row.balance)}</option>)}
-        </select>
-      </label>
-      <label>Amount USD<input value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
-      <label>Reason<input value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
-      <label>Reference<input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Optional, blocks duplicates" /></label>
-      <button className="ob-btn primary" type="button" onClick={() => adjust("credit")}>Credit</button>
-      <button className="ob-btn" type="button" onClick={() => adjust("debit")}>Debit</button>
-      {message ? <p>{message}</p> : null}
-    </form>
+    <>
+      <form className="ob-form" onSubmit={(event) => event.preventDefault()}>
+        <label>Customer
+          <select value={userId} onChange={(event) => setUserId(event.target.value)} required>
+            <option value="">Select</option>
+            {data?.customers.map((row) => <option key={row.id} value={row.id}>{row.email} · {usd(row.balance)}</option>)}
+          </select>
+        </label>
+        <label>Amount USD<input value={amount} onChange={(event) => setAmount(event.target.value)} required inputMode="decimal" /></label>
+        <label>Reason<input value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
+        <label>Reference<input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Optional, blocks duplicates" /></label>
+        <button className="ob-btn primary" type="button" disabled={busy !== ""} onClick={() => void adjust("credit")}>
+          {busy === "credit" ? "Crediting…" : "Credit"}
+        </button>
+        <button className="ob-btn" type="button" disabled={busy !== ""} onClick={() => void adjust("debit")}>
+          {busy === "debit" ? "Debiting…" : "Debit"}
+        </button>
+        {message ? <p className={message.startsWith("Credited") || message.startsWith("Debited") ? "ob-note" : "ob-error"}>{message}</p> : null}
+      </form>
+
+      {error ? <p className="ob-error">{error}</p> : null}
+      <p className="ob-muted">
+        {data ? `${data.customers.length} customers` : "Loading customers…"} · Every customer has a wallet. Credit and debit are written to the ledger with the reason and admin name.
+      </p>
+      <div className="ob-table-wrap">
+        <table className="ob-table">
+          <thead><tr><th>Customer</th><th>Wallet balance</th><th>Spent</th><th>Deposits</th><th>Refunds</th><th>Status</th></tr></thead>
+          <tbody>
+            {data?.customers.map((row) => (
+              <tr key={row.id} className={row.id === userId ? "is-selected" : undefined} onClick={() => setUserId(row.id)} style={{ cursor: "pointer" }}>
+                <td>{row.email}</td>
+                <td>{usd(row.balance)}</td>
+                <td>{usd(row.spending)}</td>
+                <td>{usd(row.deposits ?? 0)}</td>
+                <td>{usd(row.refunds ?? 0)}</td>
+                <td>{row.suspended ? "Suspended" : row.apiKeyRevoked ? "Key revoked" : "Active"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

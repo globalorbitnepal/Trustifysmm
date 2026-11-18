@@ -144,6 +144,23 @@ function accountByKey(store: StoreFile, key: string): DemoAccount | null {
   return store.accounts.find((row) => keyMatchesRecord(presented, row)) ?? null;
 }
 
+/**
+ * Wallet lookup for an admin action.
+ *
+ * If the wallet record is missing (a customer created before wallets were provisioned, or a
+ * key that changed without the wallet following), it is created from the customer record so
+ * the screen never reports "Wallet not found" for a real customer. An existing wallet keeps
+ * its balance untouched.
+ */
+export async function ensureAccountForCustomer(input: { email: string; key: string }) {
+  const key = (input.key ?? "").trim();
+  if (!key) return { error: "This customer has no API key, so a wallet cannot be linked." as const };
+  const existing = await getAccountByKey(key);
+  if (existing) return { account: existing, created: false as const };
+  const account = await ensureDemoAccount({ email: input.email, key, balance: 0 });
+  return { account, created: true as const };
+}
+
 /** Transparently upgrade a legacy plaintext `key` to `keyHash` on read. */
 async function migrateLegacyKey(store: StoreFile, account: DemoAccount) {
   if (!needsHashMigration(account)) return;
@@ -397,10 +414,22 @@ export async function adjustAccount(
   delta: number,
   description: string,
   ref?: string,
+  /**
+   * Customer email. When supplied and no wallet exists for the key, the wallet is created so an
+   * admin credit or debit always has somewhere to land.
+   */
+  ownerEmail?: string,
 ) {
   return withStoreLock(async () => {
     const store = await ensureStore();
-    const account = accountByKey(store, key);
+    let account = accountByKey(store, key);
+    let createdWallet = false;
+    if (!account && ownerEmail?.trim()) {
+      const keyHash = hashApiKey(key);
+      account = { keyHash, email: ownerEmail.trim(), balance: 0, currency: "USD" };
+      store.accounts.push(account);
+      createdWallet = true;
+    }
     if (!account) return { error: "Wallet not found." as const };
     const amount = Math.round(delta * 10000) / 10000;
     if (!Number.isFinite(amount) || amount === 0) return { error: "Enter an amount greater than zero." as const };
@@ -419,7 +448,7 @@ export async function adjustAccount(
       ref,
     });
     await persist(store);
-    return { account };
+    return { account, createdWallet };
   });
 }
 
@@ -501,10 +530,14 @@ export async function refundOrder(orderId: number, description: string) {
   });
 }
 
-export async function setAccountBalance(key: string, nextBalance: number, description: string) {
+export async function setAccountBalance(key: string, nextBalance: number, description: string, ownerEmail?: string) {
   return withStoreLock(async () => {
     const store = await ensureStore();
-    const account = accountByKey(store, key);
+    let account = accountByKey(store, key);
+    if (!account && ownerEmail?.trim()) {
+      account = { keyHash: hashApiKey(key), email: ownerEmail.trim(), balance: 0, currency: "USD" };
+      store.accounts.push(account);
+    }
     if (!account) return null;
     const next = Math.round(nextBalance * 10000) / 10000;
     if (!Number.isFinite(next) || next < 0) return null;

@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { livePricingData } from "@/lib/orbit/live-catalog";
+import { clearLiveCatalogCache, livePricingData } from "@/lib/orbit/live-catalog";
 import { serverApiSummary, setCategoryPrice, setServicePrice, syncProviderCatalog } from "@/lib/smm-upstream/catalog";
 
 const FILE = path.join(process.cwd(), "data", "runtime", "upstream-catalog.json");
 const backup = readFileSync(FILE, "utf8");
-const restore = () => require("node:fs").writeFileSync(FILE, backup);
+/*
+ * Restoring the file alone is not enough: the customer catalog caches by file stamp, so the
+ * cache must be dropped too or the next test sees this test's prices.
+ */
+const restore = () => {
+  writeFileSync(FILE, backup);
+  clearLiveCatalogCache();
+};
 
 /**
  * A price typed in Orbit must be exactly what the customer is charged. This edits the real

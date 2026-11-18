@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { listAllLogins, listAllTickets } from "@/lib/customer/panel-store";
 import { registerWithEmail, listCustomers, persistCustomer, replaceCustomerApiKey } from "@/lib/customer/user-store";
-import { adjustAccount, getAccountByKey, listAllLedger, listAllOrders, setAccountBalance, setAccountRevoked } from "@/lib/smm-api/demo-store";
+import { adjustAccount, ensureAccountForCustomer, listAllLedger, listAllOrders, setAccountBalance, setAccountRevoked } from "@/lib/smm-api/demo-store";
 import { recordAdminAction } from "@/lib/orbit/audit";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,12 @@ export async function GET() {
   ]);
   const rows = [];
   for (const user of users) {
-    const wallet = await getAccountByKey(user.apiKey);
+    /*
+     * A customer always has a wallet. If the record is missing it is created here (balance 0),
+     * so the Customer Wallets screen and the credit form can never report "Wallet not found".
+     */
+    const resolved = await ensureAccountForCustomer({ email: user.email, key: user.apiKey });
+    const wallet = "account" in resolved ? resolved.account ?? null : null;
     const mine = orders.filter((order) => order.accountKey === user.apiKey);
     const money = ledger.filter((row) => row.accountKey === user.apiKey);
     const last = logins.find((row) => row.userId === user.id);
@@ -93,13 +98,19 @@ export async function PATCH(request: Request) {
     const value = Number(body.amount);
     if (!Number.isFinite(value) || value <= 0) return NextResponse.json({ error: "Enter an amount greater than zero." }, { status: 400 });
     const delta = body.direction === "debit" ? -value : value;
-    const result = await adjustAccount(user.apiKey, delta, `Orbit ${body.direction}: ${reason}`, body.reference?.trim() || undefined);
+    const result = await adjustAccount(
+      user.apiKey,
+      delta,
+      `Orbit ${body.direction}: ${reason}`,
+      body.reference?.trim() || undefined,
+      user.email,
+    );
     if ("error" in result) return NextResponse.json({ error: result.error }, { status: 400 });
     user.balance = result.account.balance;
     user.updatedAt = new Date().toISOString();
     await persistCustomer(user);
     await recordAdminAction("wallet.adjust", `${user.email} ${body.direction} ${value} — ${reason}`);
-    return NextResponse.json({ ok: true, balance: result.account.balance });
+    return NextResponse.json({ ok: true, balance: result.account.balance, createdWallet: Boolean(result.createdWallet) });
   }
 
   if (body.name !== undefined) {
@@ -114,7 +125,7 @@ export async function PATCH(request: Request) {
   if (body.balance !== undefined) {
     const reason = body.reason?.trim() || "";
     if (reason.length < 3) return NextResponse.json({ error: "A reason is required for every wallet change." }, { status: 400 });
-    const account = await setAccountBalance(user.apiKey, Number(body.balance), `Orbit set balance: ${reason}`);
+    const account = await setAccountBalance(user.apiKey, Number(body.balance), `Orbit set balance: ${reason}`, user.email);
     if (!account) return NextResponse.json({ error: "Balance must be zero or greater." }, { status: 400 });
     user.balance = account.balance;
     await persistCustomer(user);
