@@ -4,6 +4,7 @@ import { listCustomers } from "@/lib/customer/user-store";
 import { listAllOrders, refundOrder } from "@/lib/smm-api/demo-store";
 import { recordAdminAction } from "@/lib/orbit/audit";
 import { readServiceAdminSync } from "@/lib/orbit/service-admin";
+import { readCatalogFile } from "@/lib/smm-upstream/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,14 @@ export async function GET(request: Request) {
   const status = url.searchParams.get("status") || "";
   const [orders, users] = await Promise.all([listAllOrders(), listCustomers()]);
   const byKey = new Map(users.map((user) => [user.apiKey, user]));
-  const costs = new Map(readServiceAdminSync().custom.map((service) => [service.id, service.costPer1000]));
+  const costs = new Map<string, number>();
+  for (const service of (await readCatalogFile()).services) costs.set(String(service.localId), service.costPer1000);
+  for (const service of readServiceAdminSync().custom) {
+    if (service.costPer1000 !== undefined) costs.set(String(service.id), service.costPer1000);
+  }
   let rows = orders.map((order) => {
     const service = findService(order.service);
-    const costRate = costs.get(order.service);
+    const costRate = costs.get(String(order.service));
     const cost = costRate !== undefined ? (costRate * order.quantity) / 1000 : null;
     return {
       id: order.order,
@@ -34,6 +39,8 @@ export async function GET(request: Request) {
       remains: order.remains,
       startCount: order.start_count,
       createdAt: order.createdAt,
+      upstreamOrderId: order.upstreamOrderId ?? null,
+      upstreamServiceId: order.upstreamServiceId ?? service?.id ?? null,
     };
   });
   if (status) rows = rows.filter((row) => row.status === status);

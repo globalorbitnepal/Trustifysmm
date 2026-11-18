@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { recordAdminAction } from "@/lib/orbit/audit";
 import { ensureHonestProvider, getProviderSecret, listProviderSecrets, saveProvider, testProvider } from "@/lib/orbit/providers";
-import { serverApiSummary, syncProviderCatalog } from "@/lib/smm-upstream/catalog";
+import {
+  repriceCatalog,
+  serverApiSummary,
+  setCategoryPrice,
+  setServicePrice,
+  syncProviderCatalog,
+} from "@/lib/smm-upstream/catalog";
 import { panelPost } from "@/lib/smm-upstream/panel";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +27,9 @@ export async function POST(request: Request) {
     endpoint?: string;
     apiKey?: string;
     markupPercent?: number;
+    localId?: number;
+    category?: string;
+    price?: number | string | null;
   };
 
   if (body.action === "save") {
@@ -32,8 +42,33 @@ export async function POST(request: Request) {
       enabled: true,
     });
     if ("error" in saved) return NextResponse.json(saved, { status: 400 });
+    if (body.markupPercent !== undefined) {
+      await repriceCatalog(Number(body.markupPercent) || 0);
+      revalidatePath("/services");
+      revalidatePath("/pricing");
+    }
     await recordAdminAction("server-api.save", saved.provider.name);
     return NextResponse.json(await serverApiSummary());
+  }
+
+  if (body.action === "service-price") {
+    const value = body.price === null || body.price === "" ? null : Number(body.price);
+    const saved = await setServicePrice(Number(body.localId), value);
+    if ("error" in saved) return NextResponse.json(saved, { status: 400 });
+    await recordAdminAction("server-api.price", `${body.localId} → ${saved.row.ratePer1000}`);
+    revalidatePath("/services");
+    revalidatePath("/pricing");
+    return NextResponse.json(await serverApiSummary(saved.row.category));
+  }
+
+  if (body.action === "category-price") {
+    const value = body.price === null || body.price === "" ? null : Number(body.price);
+    const saved = await setCategoryPrice(String(body.category || ""), value);
+    if ("error" in saved) return NextResponse.json(saved, { status: 400 });
+    await recordAdminAction("server-api.category-price", `${body.category} → ${value ?? "auto"}`);
+    revalidatePath("/services");
+    revalidatePath("/pricing");
+    return NextResponse.json(await serverApiSummary(String(body.category || "")));
   }
 
   const ensured = await ensureHonestProvider();

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { feeFromQuotes, minAmountQuery, providerMinUsd } from "@/lib/nowpayments/client";
 import { customerDepositReason } from "@/lib/nowpayments/status";
-import { platformFromCategory, sellRatePer1000 } from "@/lib/smm-upstream/catalog";
+import { effectiveRate, platformFromCategory, sellRatePer1000 } from "@/lib/smm-upstream/catalog";
 
 const originalFetch = global.fetch;
 const originalKey = process.env.NOWPAYMENTS_API_KEY;
@@ -55,6 +55,10 @@ describe("NOWPayments fee and minimum", () => {
     expect(sellRatePer1000(0.5, 30)).toBe(0.65);
     expect(platformFromCategory("Instagram Followers")).toBe("instagram");
     expect(platformFromCategory("YouTube Views")).toBe("youtube");
+    const row = { localId: 9000001, providerId: "p", upstreamId: 1, name: "x", category: "c", platform: "other", type: "Default", costPer1000: 1, ratePer1000: 0, min: 1, max: 2, refill: false, cancel: false };
+    expect(effectiveRate(row, { markupPercent: 30 })).toBe(1.3);
+    expect(effectiveRate(row, { markupPercent: 30, priceOverrides: { "9000001": 2 } })).toBe(2);
+    expect(effectiveRate(row, { markupPercent: 30, categoryPrices: { c: 5 } })).toBe(6.5);
   });
 });
 

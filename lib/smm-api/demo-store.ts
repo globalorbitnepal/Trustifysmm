@@ -58,9 +58,12 @@ const defaultStore = (): StoreFile => {
     invoices: [],
     transactions: [],
     idempotency: [],
-    nextOrderId: 900001,
+    nextOrderId: 1100,
   };
 };
+
+/** Customer-facing order numbers start at 1100 and never reuse a value. */
+const FIRST_ORDER_ID = 1100;
 
 async function ensureStore(): Promise<StoreFile> {
   try {
@@ -71,6 +74,12 @@ async function ensureStore(): Promise<StoreFile> {
     parsed.orders ??= [];
     parsed.invoices ??= [];
     parsed.accounts ??= [];
+    /*
+     * Older stores started at 900001. Orders are numbered for customers from 1100,
+     * so the counter is lowered when no order has been placed yet.
+     */
+    const highest = parsed.orders.reduce((max, order) => Math.max(max, order.order), 0);
+    parsed.nextOrderId = highest >= FIRST_ORDER_ID ? highest + 1 : FIRST_ORDER_ID;
     await quarantineRetiredKeys(parsed);
     return parsed;
   } catch {
@@ -324,6 +333,19 @@ export async function placeOrdersAtomic(input: {
   });
 }
 
+export async function updateOrderStatus(orderId: number, status: DemoOrder["status"], remains?: number) {
+  return withStoreLock(async () => {
+    const store = await ensureStore();
+    const order = store.orders.find((row) => row.order === orderId);
+    if (!order) return null;
+    order.status = status;
+    if (remains !== undefined && Number.isFinite(remains)) order.remains = remains;
+    order.updatedAt = new Date().toISOString();
+    await persist(store);
+    return order;
+  });
+}
+
 export async function getOrder(orderId: number) {
   const store = await ensureStore();
   return store.orders.find((o) => o.order === orderId) ?? null;
@@ -429,12 +451,13 @@ export async function adjustAccountExact(
   });
 }
 
-export async function attachUpstreamOrder(orderId: number, upstreamOrderId: string) {
+export async function attachUpstreamOrder(orderId: number, upstreamOrderId: string, upstreamServiceId?: number) {
   return withStoreLock(async () => {
     const store = await ensureStore();
     const order = store.orders.find((row) => row.order === orderId);
     if (!order) return null;
     order.upstreamOrderId = upstreamOrderId;
+    if (upstreamServiceId !== undefined) order.upstreamServiceId = upstreamServiceId;
     order.status = "Processing";
     order.updatedAt = new Date().toISOString();
     await persist(store);

@@ -27,6 +27,9 @@ export type DemoOrder = {
   accountKey?: string;
   updatedAt?: string;
   upstreamOrderId?: string;
+  /** Provider service id, kept so status, cancel and refill always hit the right service. */
+  upstreamServiceId?: number;
+  upstreamStatus?: string;
 };
 
 export type DepositStatusHistory = { status: string; providerStatus?: string; at: string };

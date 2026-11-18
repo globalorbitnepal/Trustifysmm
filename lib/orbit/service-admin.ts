@@ -152,7 +152,11 @@ export async function updateCustomService(id: number, patch: Partial<CustomServi
   const service = admin.custom.find((row) => row.id === id);
   if (!service) {
     const source = baseService(id);
-    if (!source) return { error: "Service not found." as const };
+    if (!source) {
+      const fromServer = await setPriceForService(id, Number(patch.ratePer1000 ?? NaN));
+      if ("error" in fromServer) return { error: "Service not found." as const };
+      return { patched: true };
+    }
     admin.patches[String(id)] = { ...admin.patches[String(id)], ...patch, id: source.id };
     if (patch.ratePer1000 !== undefined) {
       const rate = Number(patch.ratePer1000);
@@ -185,6 +189,12 @@ export async function updateCustomService(id: number, patch: Partial<CustomServi
   if (patch.cancel !== undefined) service.cancel = patch.cancel;
   await writeAdmin(admin);
   return { service };
+}
+
+/** Route a price edit from the Services screen to the synced Server API catalog. */
+export async function setPriceForService(id: number, ratePer1000: number) {
+  const { setServicePrice } = await import("@/lib/smm-upstream/catalog");
+  return setServicePrice(id, ratePer1000);
 }
 
 export async function duplicateService(id: number) {

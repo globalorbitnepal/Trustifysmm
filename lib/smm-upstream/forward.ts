@@ -29,6 +29,6 @@ export async function forwardOrderToServer(order: DemoOrder) {
   if (!result.ok || !upstreamId) {
     return { error: result.error || "The server API did not accept the order." };
   }
-  await attachUpstreamOrder(order.order, upstreamId);
+  await attachUpstreamOrder(order.order, upstreamId, mapped.upstreamId);
   return { skipped: false as const, upstreamOrderId: upstreamId };
 }

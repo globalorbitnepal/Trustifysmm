@@ -336,7 +336,7 @@ export function OrdersView({ history = false }: { history?: boolean }) {
 
 export function OrderDetailView({ id }: { id: string }) {
   const [order, setOrder] = useState<{
-    id: number; serviceName: string; serviceId: number; platformLabel: string; link: string; quantity: number;
+    id: number; upstreamOrderId: string | null; serviceName: string; serviceId: number; platformLabel: string; link: string; quantity: number;
     charge: number; status: string; remains: number; startCount: number | null; progress: number | null;
     createdAt: string; updatedAt: string; refill: boolean; cancel: boolean;
   } | null>(null);
@@ -348,8 +348,18 @@ export function OrderDetailView({ id }: { id: string }) {
   }, [id]);
   async function act(action: "refill" | "cancel") {
     const res = await fetch(`/api/dashboard/orders/${id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
-    const data = (await res.json()) as { error?: string };
-    setMessage(data.error || "Request sent to the provider.");
+    const data = (await res.json()) as { error?: string; status?: string };
+    if (data.error) {
+      setMessage(data.error);
+      return;
+    }
+    if (action === "cancel") {
+      setMessage("Order cancelled. The charge was returned to your wallet.");
+      const next = await fetch(`/api/dashboard/orders/${id}`).then((r) => r.json());
+      if (next?.order) setOrder(next.order);
+      return;
+    }
+    setMessage("Refill request sent to the provider.");
   }
   if (!order) return <Skeleton />;
   return (
@@ -357,6 +367,7 @@ export function OrderDetailView({ id }: { id: string }) {
       <p className="cp-kicker">Order #{order.id}</p>
       <h2>{order.serviceName}</h2>
       <p>{order.platformLabel} · Service {order.serviceId}</p>
+      {order.upstreamOrderId ? <p className="cp-note">Server API order {order.upstreamOrderId}</p> : null}
       <p>Target {order.link}</p>
       <p>Quantity {order.quantity}</p>
       <p>Start count {order.startCount ?? "Not reported yet"}</p>

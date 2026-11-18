@@ -5,7 +5,7 @@ import { openDepositInvoice } from "@/components/dashboard/deposit-invoice";
 import { send, usd, useOrbit } from "@/components/orbit/use-orbit";
 import { networkLabel } from "@/lib/nowpayments/network-labels";
 
-type OrderRow = { id: number; customer: string; service: string; platform: string; link: string; quantity: number; charge: number; cost: number | null; margin: number | null; status: string; createdAt: string };
+type OrderRow = { id: number; customer: string; service: string; serviceId: number; upstreamServiceId: number | null; upstreamOrderId: string | null; platform: string; link: string; quantity: number; charge: number; cost: number | null; margin: number | null; status: string; createdAt: string };
 
 export function OrdersScreen() {
   const [q, setQ] = useState("");
@@ -13,6 +13,33 @@ export function OrdersScreen() {
   const { data, error, reload } = useOrbit<{ orders: OrderRow[]; total: number }>(`/api/orbit/orders?q=${encodeURIComponent(q)}&status=${status}`);
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState("");
+
+  async function refresh(orderId?: number) {
+    setBusy(String(orderId ?? "all"));
+    setMessage("");
+    try {
+      const response = await fetch("/api/orbit/orders/sync", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(orderId ? { orderId } : {}),
+      });
+      const payload = (await response.json()) as { error?: string; status?: string; refunded?: boolean; results?: { id: number; status: string; refunded?: boolean }[] };
+      setMessage(
+        response.ok
+          ? orderId
+            ? `#${orderId} is ${payload.status}${payload.refunded ? ". Refunded to the customer." : "."}`
+            : `Checked ${payload.results?.length ?? 0} open orders.`
+          : payload.error || "Refresh failed.",
+      );
+      reload();
+    } catch {
+      setMessage("The server API could not be reached.");
+    } finally {
+      setBusy("");
+    }
+  }
+
   return (
     <>
       <div className="ob-toolbar">
@@ -22,17 +49,20 @@ export function OrdersScreen() {
           {["Pending", "Processing", "In progress", "Completed", "Partial", "Canceled", "Refunded"].map((item) => <option key={item}>{item}</option>)}
         </select>
         <input placeholder="Refund reason" value={reason} onChange={(event) => setReason(event.target.value)} />
+        <button className="ob-btn" type="button" disabled={busy === "all"} onClick={() => void refresh()}>{busy === "all" ? "Checking…" : "Refresh provider status"}</button>
       </div>
       {error ? <p className="ob-error">{error}</p> : null}
       {message ? <p>{message}</p> : null}
-      <p className="ob-muted">{data ? `${data.total} orders` : "Loading orders…"} · Wholesale cost appears only when the service has a saved cost.</p>
+      <p className="ob-muted">{data ? `${data.total} orders` : "Loading orders…"} · Your order number is separate from the Server API order and service IDs.</p>
       <div className="ob-table-wrap">
         <table className="ob-table">
-          <thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Link</th><th>Qty</th><th>Charge</th><th>Margin</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Your order</th><th>Server API order</th><th>Server service</th><th>Customer</th><th>Service</th><th>Link</th><th>Qty</th><th>Charge</th><th>Margin</th><th>Status</th><th></th></tr></thead>
           <tbody>
             {data?.orders.map((order) => (
               <tr key={order.id}>
                 <td>#{order.id}</td>
+                <td>{order.upstreamOrderId || "—"}</td>
+                <td>{order.upstreamServiceId ?? "—"}</td>
                 <td>{order.customer}</td>
                 <td>{order.service}</td>
                 <td>{order.link}</td>
@@ -40,15 +70,24 @@ export function OrdersScreen() {
                 <td>{usd(order.charge)}</td>
                 <td>{order.margin === null ? "—" : usd(order.margin)}</td>
                 <td>{order.status}</td>
-                <td>{order.status === "Refunded" ? null : <button className="ob-btn" type="button" onClick={async () => {
-                  try {
-                    await send("/api/orbit/orders", { orderId: order.id, reason });
-                    setMessage(`Refunded #${order.id}`);
-                    reload();
-                  } catch (reasonError) {
-                    setMessage(reasonError instanceof Error ? reasonError.message : "Refund failed");
-                  }
-                }}>Refund</button>}</td>
+                <td>
+                  <div className="ob-toolbar">
+                    {order.upstreamOrderId ? (
+                      <button className="ob-btn" type="button" disabled={busy === String(order.id)} onClick={() => void refresh(order.id)}>
+                        {busy === String(order.id) ? "Checking…" : "Sync"}
+                      </button>
+                    ) : null}
+                    {order.status === "Refunded" ? null : <button className="ob-btn" type="button" onClick={async () => {
+                      try {
+                        await send("/api/orbit/orders", { orderId: order.id, reason });
+                        setMessage(`Refunded #${order.id}`);
+                        reload();
+                      } catch (reasonError) {
+                        setMessage(reasonError instanceof Error ? reasonError.message : "Refund failed");
+                      }
+                    }}>Refund</button>}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
