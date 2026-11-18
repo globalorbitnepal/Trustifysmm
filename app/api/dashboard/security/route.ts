@@ -8,8 +8,7 @@ import {
   beginTotpEnrollment,
   clearTotp,
   confirmTotpEnrollment,
-  consumeRecoveryCode,
-  regenerateRecoveryCodes,
+  enabledTotpSecret,
   totpStatus,
   verifyTotpForUser,
 } from "@/lib/customer/totp-store";
@@ -38,7 +37,6 @@ export async function POST(request: Request) {
     currentPassword?: string;
     nextPassword?: string;
     code?: string;
-    recoveryCode?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -74,8 +72,14 @@ export async function POST(request: Request) {
     const started = await beginTotpEnrollment(user.id, user.email);
     if ("error" in started) return NextResponse.json({ error: started.error }, { status: 400 });
     await recordAudit(user.id, "totp_enrollment_started");
-    const image = await setupQr(started.secret, user.email);
+    const image = await setupQr(started.secret);
     return NextResponse.json({ secret: started.secret, qr: image.qr, account: started.account, mode: started.mode });
+  }
+  if (body.action === "totp-label") {
+    const current = await enabledTotpSecret(user.id);
+    if ("error" in current) return NextResponse.json({ error: current.error }, { status: 400 });
+    const image = await setupQr(current.secret);
+    return NextResponse.json({ secret: current.secret, qr: image.qr, account: "TrustifySMM", mode: "Time-based" });
   }
   if (body.action === "totp-confirm") {
     if (!rateLimitTotp(`enroll:${user.id}`)) return NextResponse.json({ error: "Too many codes. Wait a few minutes." }, { status: 429 });
@@ -87,18 +91,18 @@ export async function POST(request: Request) {
       userId: user.id,
       type: "security",
       title: "Authenticator enabled",
-      body: "Google Authenticator is now required on every new sign-in. Keep the recovery codes somewhere private.",
+      body: "Google Authenticator is now required on every new sign-in.",
       href: "/dashboard/security",
     });
-    if (!next) return NextResponse.json({ recoveryCodes: confirmed.recoveryCodes, activatedAt: confirmed.activatedAt });
+    if (!next) return NextResponse.json({ activatedAt: confirmed.activatedAt, twoFactor: { enabled: true, activatedAt: confirmed.activatedAt } });
     next.balance = user.balance;
-    return sessionJson(next, { recoveryCodes: confirmed.recoveryCodes, activatedAt: confirmed.activatedAt, twoFactor: { enabled: true, activatedAt: confirmed.activatedAt } });
+    return sessionJson(next, { activatedAt: confirmed.activatedAt, twoFactor: { enabled: true, activatedAt: confirmed.activatedAt } });
   }
   if (body.action === "totp-disable") {
     const recent = await recentAuth(user.passwordHash, body.currentPassword || "");
     if (recent) return NextResponse.json({ error: recent }, { status: 401 });
     if (!rateLimitTotp(`disable:${user.id}`)) return NextResponse.json({ error: "Too many codes. Wait a few minutes." }, { status: 429 });
-    const proof = await proofOfAuthenticator(user.id, body.code || "", body.recoveryCode || "");
+    const proof = await proofOfAuthenticator(user.id, body.code || "");
     if (proof) return NextResponse.json({ error: proof }, { status: 401 });
     await clearTotp(user.id);
     const next = await bumpSessionVersion(user.id);
@@ -113,24 +117,6 @@ export async function POST(request: Request) {
     if (!next) return NextResponse.json({ ok: true, twoFactor: { enabled: false, activatedAt: null } });
     next.balance = user.balance;
     return sessionJson(next, { twoFactor: { enabled: false, activatedAt: null } });
-  }
-  if (body.action === "totp-regenerate") {
-    const recent = await recentAuth(user.passwordHash, body.currentPassword || "");
-    if (recent) return NextResponse.json({ error: recent }, { status: 401 });
-    if (!rateLimitTotp(`regen:${user.id}`)) return NextResponse.json({ error: "Too many codes. Wait a few minutes." }, { status: 429 });
-    const checked = await verifyTotpForUser(user.id, body.code || "");
-    if ("error" in checked) return NextResponse.json({ error: checked.error }, { status: 401 });
-    const next = await regenerateRecoveryCodes(user.id);
-    if ("error" in next) return NextResponse.json({ error: next.error }, { status: 400 });
-    await recordAudit(user.id, "totp_recovery_regenerated");
-    await addNotification({
-      userId: user.id,
-      type: "security",
-      title: "Recovery codes replaced",
-      body: "New authenticator recovery codes were created. The previous codes no longer work.",
-      href: "/dashboard/security",
-    });
-    return NextResponse.json({ recoveryCodes: next.recoveryCodes });
   }
   return NextResponse.json({ error: "Unsupported action." }, { status: 400 });
 }
@@ -151,11 +137,8 @@ async function recentAuth(passwordHash: string | null, password: string) {
   return null;
 }
 
-async function proofOfAuthenticator(userId: string, code: string, recoveryCode: string) {
-  if (recoveryCode.trim()) {
-    const used = await consumeRecoveryCode(userId, recoveryCode);
-    return "error" in used ? used.error : null;
-  }
+async function proofOfAuthenticator(userId: string, code: string) {
+  if (!/^\d{6}$/.test(code.replace(/\s+/g, ""))) return "Enter the 6-digit code from Google Authenticator.";
   const checked = await verifyTotpForUser(userId, code);
   return "error" in checked ? checked.error : null;
 }

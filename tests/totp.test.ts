@@ -24,8 +24,6 @@ import {
   beginTotpEnrollment,
   clearTotp,
   confirmTotpEnrollment,
-  consumeRecoveryCode,
-  regenerateRecoveryCodes,
   totpStatus,
   verifyTotpForUser,
 } from "@/lib/customer/totp-store";
@@ -66,14 +64,14 @@ describe("authenticator codes", () => {
     expect(enc).toBeTruthy();
     expect(enc).not.toContain(secret);
     expect(decryptSecret(enc!)).toBe(secret);
-    expect(provisioningUri("JBSWY3DPEHPK3PXP", "a@b.com")).toBe(
-      "otpauth://totp/TrustifySMM:a%40b.com?secret=JBSWY3DPEHPK3PXP&issuer=TrustifySMM&algorithm=SHA1&digits=6&period=30",
+    const uri = provisioningUri(secret);
+    expect(uri).toBe(
+      `otpauth://totp/TrustifySMM?secret=${secret}&issuer=TrustifySMM&algorithm=SHA1&digits=6&period=30`,
     );
-    expect(provisioningUri(secret, "a@b.com")).not.toMatch(/nowpayment/i);
-    const image = await setupQr(secret, "a@b.com");
-    expect(image.uri).toContain("TrustifySMM:");
-    expect(image.uri).toContain(secret);
-    expect(image.uri.startsWith("otpauth://totp/TrustifySMM:")).toBe(true);
+    expect(uri).not.toMatch(/@|nowpayment/i);
+    const image = await setupQr(secret);
+    expect(image.uri).toBe(uri);
+    expect(image.uri.startsWith("otpauth://totp/TrustifySMM?")).toBe(true);
     expect(image.qr.startsWith("data:image/png;base64,")).toBe(true);
     expect(image.qr.length).toBeGreaterThan(2000);
   });
@@ -90,7 +88,7 @@ describe("authenticator codes", () => {
   });
 });
 
-describe("enrollment and recovery", () => {
+describe("enrollment", () => {
   const userId = "usr_totp_test";
 
   it("does not enable authenticator until the setup code is correct", async () => {
@@ -104,23 +102,12 @@ describe("enrollment and recovery", () => {
 
     const code = totpCode(started.secret).code;
     const confirmed = await confirmTotpEnrollment(userId, code);
-    if (!("recoveryCodes" in confirmed) || !confirmed.recoveryCodes) throw new Error("activation failed");
+    if (!("activatedAt" in confirmed)) throw new Error("activation failed");
     expect((await totpStatus(userId)).enabled).toBe(true);
-    expect(confirmed.recoveryCodes).toHaveLength(10);
+    expect(confirmed).not.toHaveProperty("recoveryCodes");
 
     const reused = await verifyTotpForUser(userId, code);
     expect(reused).toEqual({ error: "That code was already used." });
-
-    const recovery = confirmed.recoveryCodes[0];
-    if (!recovery) throw new Error("missing recovery code");
-    expect(await consumeRecoveryCode(userId, recovery)).toMatchObject({ ok: true });
-    expect(await consumeRecoveryCode(userId, recovery)).toEqual({ error: "That recovery code is not valid." });
-
-    const replaced = await regenerateRecoveryCodes(userId);
-    expect("recoveryCodes" in replaced).toBe(true);
-    expect(await consumeRecoveryCode(userId, recovery)).toEqual({ error: "That recovery code is not valid." });
-    if (!("recoveryCodes" in replaced) || !replaced.recoveryCodes?.[0]) throw new Error("regenerate failed");
-    expect(await consumeRecoveryCode(userId, replaced.recoveryCodes[0])).toMatchObject({ ok: true });
 
     await clearTotp(userId);
     expect((await totpStatus(userId)).enabled).toBe(false);

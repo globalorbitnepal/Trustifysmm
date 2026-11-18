@@ -75,7 +75,6 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
   const [loading, setLoading] = useState(false);
   const [twoFactor, setTwoFactor] = useState(false);
   const [code, setCode] = useState("");
-  const [recovery, setRecovery] = useState(false);
 
   useEffect(() => {
     const code = search.get("error");
@@ -129,7 +128,7 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
       const res = await fetch("/api/auth/totp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(recovery ? { recoveryCode: code } : { code }),
+        body: JSON.stringify({ code }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -255,22 +254,19 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
                 <div className="auth-totp">
                   <img src="/brand/google-authenticator.svg" alt="" width={44} height={44} />
                   <div>
-                    <strong>{recovery ? "Recovery code" : "Authenticator code"}</strong>
-                    <p>{email ? "Password accepted." : "Google sign-in accepted."} Enter the code from Google Authenticator. The dashboard opens only if it matches.</p>
+                    <strong>Authenticator code</strong>
+                    <p>{email ? "Password accepted." : "Google sign-in accepted."} Enter the 6-digit code from the TrustifySMM entry. The dashboard opens only if it matches.</p>
                   </div>
-                  <label htmlFor="signin-totp">{recovery ? "Recovery code" : "6-digit code"}</label>
+                  <label htmlFor="signin-totp">6-digit code</label>
                   <input
                     id="signin-totp"
                     value={code}
-                    onChange={(event) => setCode(event.target.value)}
-                    inputMode={recovery ? "text" : "numeric"}
+                    onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                    inputMode="numeric"
                     autoComplete="one-time-code"
-                    placeholder={recovery ? "XXXXX-XXXXX" : "123456"}
+                    placeholder="123456"
                     required
                   />
-                  <button className="auth-signup-link" type="button" onClick={() => { setRecovery((value) => !value); setCode(""); setError(""); }}>
-                    {recovery ? "Use an authenticator code" : "Use a recovery code"}
-                  </button>
                 </div>
               ) : null}
 

@@ -355,7 +355,6 @@ export function SecurityView() {
   const [error, setError] = useState("");
   const [secret, setSecret] = useState("");
   const [qr, setQr] = useState("");
-  const [codes, setCodes] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmDisable, setConfirmDisable] = useState(false);
 
@@ -374,14 +373,13 @@ export function SecurityView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as { error?: string; secret?: string; qr?: string; recoveryCodes?: string[]; twoFactor?: SecurityInfo["twoFactor"] };
+      const data = (await res.json()) as { error?: string; secret?: string; qr?: string; twoFactor?: SecurityInfo["twoFactor"] };
       if (!res.ok) {
         setError(data.error || "Request failed.");
         return data;
       }
       if (data.secret) setSecret(data.secret);
       if (data.qr) setQr(data.qr);
-      if (data.recoveryCodes) setCodes(data.recoveryCodes);
       if (data.twoFactor) setInfo((current) => current ? { ...current, twoFactor: data.twoFactor! } : current);
       return data;
     } finally {
@@ -399,16 +397,16 @@ export function SecurityView() {
     event.preventDefault();
     const passwordValue = String(new FormData(event.currentTarget).get("current") || "");
     const data = await post({ action: "totp-start", currentPassword: passwordValue });
-    if (data?.secret) setMessage("Add this setup key in Google Authenticator, then enter the 6-digit code.");
+    if (data?.secret) setMessage("Scan the QR code. The app entry is named TrustifySMM. Then enter the 6-digit code.");
   }
   async function confirmSetup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const code = String(new FormData(event.currentTarget).get("code") || "");
     const data = await post({ action: "totp-confirm", code });
-    if (data?.recoveryCodes) {
+    if (data?.twoFactor?.enabled) {
       setSecret("");
       setQr("");
-      setMessage("Authenticator is on. Save these recovery codes now. They are shown once.");
+      setMessage("Authenticator is on. Sign-in asks for the 6-digit code.");
       load();
     }
   }
@@ -419,20 +417,14 @@ export function SecurityView() {
       action: "totp-disable",
       currentPassword: String(form.get("current") || ""),
       code: String(form.get("code") || ""),
-      recoveryCode: String(form.get("recovery") || ""),
     });
     if (data && !data.error) {
       setConfirmDisable(false);
-      setCodes(null);
+      setSecret("");
+      setQr("");
       setMessage("Authenticator is off. New sign-ins no longer ask for a code.");
       load();
     }
-  }
-  async function regenerate(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const data = await post({ action: "totp-regenerate", currentPassword: String(form.get("current") || ""), code: String(form.get("code") || "") });
-    if (data?.recoveryCodes) setMessage("New recovery codes are ready. The old codes no longer work.");
   }
 
   if (!info) return <Skeleton />;
@@ -448,7 +440,7 @@ export function SecurityView() {
             <p className="cp-auth-status">{enabled ? "Enabled" : "Not enabled"}{enabled && info.twoFactor.activatedAt ? ` · ${formatWhen(info.twoFactor.activatedAt)}` : ""}</p>
           </div>
         </div>
-        <p className="cp-auth-lead">Every new sign-in asks for the 6-digit code from Google Authenticator. Scan the QR code or copy the setup key. The app saves the account as TrustifySMM.</p>
+        <p className="cp-auth-lead">Every new sign-in asks for the 6-digit code from Google Authenticator. The app entry is named TrustifySMM.</p>
         {!enabled && !secret ? (
           <form className="cp-auth-enable" onSubmit={(event) => void startSetup(event)}>
             {info.hasPassword ? (
@@ -457,7 +449,7 @@ export function SecurityView() {
             <button className="cp-btn" type="submit" disabled={busy}>{busy ? "Starting…" : "Enable"}</button>
           </form>
         ) : null}
-        {secret ? (
+        {secret && !enabled ? (
           <form className="cp-auth-setup" onSubmit={(event) => void confirmSetup(event)}>
             <div className="cp-auth-pair">
               {qr ? (
@@ -468,9 +460,9 @@ export function SecurityView() {
               ) : null}
               <div>
                 <ol>
-                  <li>Open Google Authenticator and scan the QR code. The new entry is named TrustifySMM.</li>
-                  <li>Or choose Enter a setup key. Type TrustifySMM as the account name, paste the key, and choose Time-based.</li>
-                  <li>Enter the 6-digit code from the TrustifySMM entry. Authenticator turns on only after it matches.</li>
+                  <li>Open Google Authenticator and scan the QR code. The entry name is TrustifySMM.</li>
+                  <li>Or choose Enter a setup key. Account name: TrustifySMM. Paste the key. Choose Time-based.</li>
+                  <li>Enter the 6-digit code from that TrustifySMM entry. Authenticator turns on only after it matches.</li>
                 </ol>
                 <p className="cp-api-key">{secret}</p>
                 <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(secret)}>Copy setup key</button>
@@ -480,32 +472,32 @@ export function SecurityView() {
             <button className="cp-btn" type="submit" disabled={busy}>{busy ? "Checking…" : "Activate"}</button>
           </form>
         ) : null}
-        {codes ? (
-          <div className="cp-auth-codes">
-            <p>Save these codes now. Each one works once, and they are not shown again.</p>
-            <pre className="cp-api-key">{codes.join("\n")}</pre>
-            <div className="cp-row-actions">
-              <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(codes.join("\n"))}>Copy codes</button>
-              <button className="cp-btn-ghost" type="button" onClick={() => downloadFile("trustifysmm-recovery-codes.txt", `TrustifySMM recovery codes\n\n${codes.join("\n")}\n`, "text/plain")}>Download codes</button>
-            </div>
-          </div>
-        ) : null}
         {enabled ? (
           <div className="cp-auth-manage">
-            <form onSubmit={(event) => void regenerate(event)}>
-              <h3>Recovery codes</h3>
-              <p>Replacing the codes turns off every unused code from the previous set.</p>
-              {info.hasPassword ? <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label> : null}
-              <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" required /></label>
-              <button className="cp-btn-ghost" type="submit" disabled={busy}>Regenerate recovery codes</button>
-            </form>
+            <h3>Name in the app</h3>
+            <p>Delete the old entry if it shows an email. Scan this QR. The new entry is named TrustifySMM, and the same 6-digit codes keep working.</p>
+            {secret ? (
+              <div className="cp-auth-pair">
+                {qr ? (
+                  <figure className="cp-auth-qr-wrap">
+                    <img className="cp-auth-qr" src={qr} alt="Setup QR code for Google Authenticator" width={280} height={280} />
+                    <figcaption>TrustifySMM</figcaption>
+                  </figure>
+                ) : null}
+                <div>
+                  <p className="cp-api-key">{secret}</p>
+                  <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(secret)}>Copy setup key</button>
+                </div>
+              </div>
+            ) : (
+              <button className="cp-btn-ghost" type="button" disabled={busy} onClick={() => void post({ action: "totp-label" })}>Show QR</button>
+            )}
             {confirmDisable ? (
               <form onSubmit={(event) => void disable(event)}>
                 <h3>Turn authenticator off?</h3>
-                <p>New sign-ins will no longer ask for a code. Enter a current code or one unused recovery code.</p>
+                <p>New sign-ins will no longer ask for a code. Enter the current 6-digit code from TrustifySMM.</p>
                 {info.hasPassword ? <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label> : null}
-                <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" /></label>
-                <label className="cp-field"><span>Or a recovery code</span><input name="recovery" autoComplete="off" /></label>
+                <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label>
                 <div className="cp-row-actions">
                   <button className="cp-btn" type="submit" disabled={busy}>Disable</button>
                   <button className="cp-btn-ghost" type="button" onClick={() => setConfirmDisable(false)}>Cancel</button>
@@ -516,7 +508,7 @@ export function SecurityView() {
         ) : null}
         {error ? <p className="cp-error">{error}</p> : null}
         {message ? <p className="cp-ok">{message}</p> : null}
-        <p className="cp-note">Lost the phone and the recovery codes? Email support@trustifysmm.com from the account address.</p>
+        <p className="cp-note">Lost the phone? Email support@trustifysmm.com from the account address.</p>
       </section>
 
       {info.hasPassword ? (

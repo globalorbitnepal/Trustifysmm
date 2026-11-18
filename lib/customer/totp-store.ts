@@ -3,12 +3,9 @@ import path from "node:path";
 import {
   decryptSecret,
   encryptSecret,
-  generateRecoveryCodes,
   generateTotpSecret,
-  hashRecoveryCode,
   matchTotp,
   provisioningUri,
-  recoveryCodeMatches,
 } from "@/lib/customer/totp";
 
 export type TotpRecord = {
@@ -88,8 +85,9 @@ export async function beginTotpEnrollment(
       pendingExpiresAt: expires,
     };
     await writeFileShape(file);
-    /* The URI is built so the secret matches a standard authenticator entry. It is not returned. */
-    provisioningUri(secret, email);
+    /* The URI name is TrustifySMM only. The email is not written into the authenticator entry. */
+    provisioningUri(secret);
+    void email;
     return { secret, account: "TrustifySMM", mode: "Time-based" as const };
   });
 }
@@ -108,7 +106,6 @@ export async function confirmTotpEnrollment(userId: string, code: string) {
     if (!secret) return { error: "Authenticator encryption is not configured." as const };
     const match = matchTotp(secret, code, null);
     if (!match.ok) return { error: codeError(match.reason) };
-    const codes = generateRecoveryCodes(10);
     file.records[userId] = {
       enabled: true,
       secretEnc: current.pendingSecretEnc,
@@ -116,10 +113,27 @@ export async function confirmTotpEnrollment(userId: string, code: string) {
       pendingExpiresAt: null,
       activatedAt: new Date().toISOString(),
       lastStep: match.step,
-      recoveryHashes: codes.map(hashRecoveryCode),
+      recoveryHashes: [],
     };
     await writeFileShape(file);
-    return { recoveryCodes: codes, activatedAt: file.records[userId].activatedAt };
+    return { activatedAt: file.records[userId].activatedAt };
+  });
+}
+
+/** Current secret for an enabled account, so an existing entry can be scanned again under the name TrustifySMM. */
+export async function enabledTotpSecret(userId: string) {
+  return locked(async () => {
+    const file = await readFileShape();
+    const current = file.records[userId];
+    if (!current?.enabled || !current.secretEnc) return { error: "Authenticator is not enabled." as const };
+    const secret = decryptSecret(current.secretEnc);
+    if (!secret) return { error: "Authenticator encryption is not configured." as const };
+    if (current.recoveryHashes.length) {
+      current.recoveryHashes = [];
+      file.records[userId] = current;
+      await writeFileShape(file);
+    }
+    return { secret };
   });
 }
 
@@ -139,31 +153,12 @@ export async function verifyTotpForUser(userId: string, code: string) {
   });
 }
 
-export async function consumeRecoveryCode(userId: string, code: string) {
-  return locked(async () => {
-    const file = await readFileShape();
-    const current = file.records[userId];
-    if (!current?.enabled) return { error: "Authenticator is not enabled." as const };
-    const index = current.recoveryHashes.findIndex((hash) => recoveryCodeMatches(code, hash));
-    if (index < 0) return { error: "That recovery code is not valid." as const };
-    current.recoveryHashes.splice(index, 1);
-    file.records[userId] = current;
-    await writeFileShape(file);
-    return { ok: true as const, remaining: current.recoveryHashes.length };
-  });
+export async function consumeRecoveryCode(_userId: string, _code: string) {
+  return { error: "Enter the 6-digit code from Google Authenticator." as const };
 }
 
-export async function regenerateRecoveryCodes(userId: string) {
-  return locked(async () => {
-    const file = await readFileShape();
-    const current = file.records[userId];
-    if (!current?.enabled) return { error: "Authenticator is not enabled." as const };
-    const codes = generateRecoveryCodes(10);
-    current.recoveryHashes = codes.map(hashRecoveryCode);
-    file.records[userId] = current;
-    await writeFileShape(file);
-    return { recoveryCodes: codes };
-  });
+export async function regenerateRecoveryCodes(_userId: string) {
+  return { error: "Recovery codes are not used. Enter the 6-digit code from Google Authenticator." as const };
 }
 
 export async function clearTotp(userId: string) {
