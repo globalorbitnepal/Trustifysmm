@@ -884,17 +884,18 @@ html[data-dash="light"] .cp-banker-summary dl > div,
   color: #f5f7ff;
   font-size: 15px;
   line-height: 1.45;
-  background: rgba(18, 20, 46, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: #16182e;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(22px) saturate(1.35);
+  backdrop-filter: none;
 }
 html[data-dash="light"] .cp-sheet-card,
 .cp.is-light .cp-sheet-card {
-  background: rgba(255, 255, 255, 0.78);
+  background: #ffffff;
   color: #14182e;
-  border-color: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 28px 70px rgba(40, 24, 90, 0.18);
+  border-color: rgba(20, 24, 46, 0.08);
+  box-shadow: 0 28px 70px rgba(40, 24, 90, 0.16);
+  backdrop-filter: none;
 }
 html[data-dash="light"] .cp-sheet .cp-deposit-exact,
 .cp.is-light .cp-sheet .cp-deposit-exact { color: #0e7490; }
