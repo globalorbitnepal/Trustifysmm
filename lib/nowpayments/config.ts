@@ -42,7 +42,7 @@ export function loadNowPaymentsConfig(): NowPaymentsConfig {
     ipnSecret,
     baseUrl: baseUrl.replace(/\/$/, ""),
     sandbox,
-    minDepositUsd: numEnv("NOWPAYMENTS_MIN_DEPOSIT_USD", 10),
+    minDepositUsd: numEnv("NOWPAYMENTS_MIN_DEPOSIT_USD", 5),
     maxDepositUsd: numEnv("NOWPAYMENTS_MAX_DEPOSIT_USD", 50_000),
     paymentExpiryMinutes: numEnv("NOWPAYMENTS_PAYMENT_EXPIRY_MINUTES", 60),
     payCurrencies: configured ? (payCurrencies.length ? payCurrencies : ["usdttrc20"]) : [],

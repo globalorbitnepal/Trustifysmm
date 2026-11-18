@@ -81,13 +81,39 @@ export async function listNowPaymentCurrencies() {
   return npFetch<{ currencies?: string[] }>("/v1/currencies");
 }
 
-export async function estimateNowPayment(amountUsd: number, payCurrency: string) {
+export function estimateQuery(amountUsd: number, payCurrency: string, includeCustomerFee: boolean) {
   const query = new URLSearchParams({
     amount: String(amountUsd),
     currency_from: "usd",
     currency_to: payCurrency,
   });
+  if (includeCustomerFee) {
+    query.set("is_fixed_rate", "true");
+    query.set("is_fee_paid_by_user", "true");
+  }
+  return query;
+}
+
+export async function estimateNowPayment(amountUsd: number, payCurrency: string, includeCustomerFee = false) {
+  const query = estimateQuery(amountUsd, payCurrency, includeCustomerFee);
   return npFetch<EstimateResponse>(`/v1/estimate?${query.toString()}`);
+}
+
+/**
+ * Fee the customer pays, taken only from two provider quotes.
+ * `gross` is the crypto they must send (fee included). `base` is the quote without that fee.
+ * We do not add a markup.
+ */
+export function feeFromQuotes(amountUsd: number, baseCrypto: string | number, grossCrypto: string | number) {
+  const base = Number(baseCrypto);
+  const gross = Number(grossCrypto);
+  if (!Number.isFinite(amountUsd) || amountUsd <= 0 || !Number.isFinite(base) || !Number.isFinite(gross) || base <= 0 || gross <= 0) {
+    return null;
+  }
+  const feeCrypto = gross - base;
+  if (feeCrypto < -1e-12) return null;
+  const feeUsd = Math.round(amountUsd * (gross / base - 1) * 100) / 100;
+  return { feeCrypto: Math.max(0, feeCrypto), feeUsd: Math.max(0, feeUsd), payCrypto: gross };
 }
 
 export function providerMinUsd(data: MinAmountResponse): number | null {
@@ -96,13 +122,17 @@ export function providerMinUsd(data: MinAmountResponse): number | null {
   return Math.ceil(n * 100 - 1e-6) / 100;
 }
 
-export async function minNowPaymentAmount(payCurrency: string) {
-  const query = new URLSearchParams({
-    currency_from: "usd",
-    currency_to: payCurrency,
+/** Minimum USD for the coin the customer sends, with the customer paying the provider fee. */
+export function minAmountQuery(payCurrency: string) {
+  return new URLSearchParams({
+    currency_from: payCurrency,
+    currency_to: "usd",
     fiat_equivalent: "usd",
     is_fixed_rate: "true",
     is_fee_paid_by_user: "true",
   });
-  return npFetch<MinAmountResponse>(`/v1/min-amount?${query.toString()}`);
+}
+
+export async function minNowPaymentAmount(payCurrency: string) {
+  return npFetch<MinAmountResponse>(`/v1/min-amount?${minAmountQuery(payCurrency).toString()}`);
 }

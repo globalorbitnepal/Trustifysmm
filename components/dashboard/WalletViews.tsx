@@ -46,11 +46,13 @@ type Payment = {
   createdAt: string;
   expiresAt: string | null;
   quoteCrypto?: string | null;
+  baseCrypto?: string | null;
+  feeUsd?: number | null;
   symbol?: string | null;
   logoUrl?: string | null;
 };
 
-const PRESETS = [10, 25, 50, 100, 250, 500] as const;
+const PRESETS = [5, 10, 25, 50, 100, 250, 500] as const;
 const PAYMENT_WINDOW_MS = 60 * 60 * 1000;
 const STATUS_POLL_MS = 30_000;
 
@@ -82,7 +84,7 @@ export function AddFundsView() {
   const [coin, setCoin] = useState("");
   const [query, setQuery] = useState("");
   const [amount, setAmount] = useState("25");
-  const [quote, setQuote] = useState<{ crypto: string; at: number } | null>(null);
+  const [quote, setQuote] = useState<{ crypto: string; base: string | null; feeUsd: number | null; at: number } | null>(null);
   const [payment, setPayment] = useState<Payment | null>(null);
   const [hash, setHash] = useState("");
   const [error, setError] = useState("");
@@ -95,7 +97,7 @@ export function AddFundsView() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
-  const minDeposit = gateway?.minDepositUsd ?? 10;
+  const minDeposit = gateway?.minDepositUsd ?? 5;
   const maxDeposit = gateway?.maxDepositUsd ?? 50_000;
 
   useEffect(() => {
@@ -157,8 +159,15 @@ export function AddFundsView() {
           `/api/payments/nowpayments/estimate?currency=${encodeURIComponent(currency)}&amount=${amountNumber}`,
         );
         if (!res.ok) return;
-        const data = (await res.json()) as { estimatedCrypto?: string };
-        if (!cancelled && data.estimatedCrypto) setQuote({ crypto: data.estimatedCrypto, at: Date.now() });
+        const data = (await res.json()) as { estimatedCrypto?: string; baseCrypto?: string | null; feeUsd?: number | null };
+        if (!cancelled && data.estimatedCrypto) {
+          setQuote({
+            crypto: data.estimatedCrypto,
+            base: data.baseCrypto ?? null,
+            feeUsd: typeof data.feeUsd === "number" ? data.feeUsd : null,
+            at: Date.now(),
+          });
+        }
       } finally {
         if (!cancelled) setQuoting(false);
       }
@@ -263,6 +272,8 @@ export function AddFundsView() {
       payCurrency: data.pay_currency ?? selected.code,
       payAmount: data.pay_amount ?? null,
       quoteCrypto: quote?.crypto ?? null,
+      baseCrypto: quote?.base ?? null,
+      feeUsd: quote?.feeUsd ?? null,
       symbol: selected.symbol,
       logoUrl: selected.logoUrl,
       address: data.pay_address ?? null,
@@ -381,9 +392,11 @@ export function AddFundsView() {
                 ))}
               </div>
               <p className="cp-banker-min">
-                Account minimum ${minDeposit.toFixed(2)}
-                {providerMin != null ? ` · ${selected?.symbol ?? "This coin"} provider minimum $${providerMin.toFixed(2)}` : ""}
+                {providerMin != null
+                  ? `${selected?.symbol ?? "This coin"} minimum $${providerMin.toFixed(2)} on ${selected ? networkBadge(selected.code, selected.network) : "this network"}`
+                  : `Minimum $${minDeposit.toFixed(2)}`}
                 {" "}· Maximum ${maxDeposit.toLocaleString()}
+                {providerMin != null && providerMin > 5 ? " · $5 is below this coin’s provider minimum" : ""}
               </p>
               {!amountValid && amount !== "" ? (
                 <p className="cp-error">Enter ${effectiveMin.toFixed(2)} to ${maxDeposit.toLocaleString()}.</p>
@@ -465,15 +478,17 @@ export function AddFundsView() {
               </div>
               <div>
                 <dt>Provider fee</dt>
-                <dd>Included in the crypto you send</dd>
+                <dd>
+                  {quoting ? "Quoting…" : quote?.feeUsd != null ? `$${quote.feeUsd.toFixed(2)}` : "—"}
+                </dd>
               </div>
               <div className="is-total">
-                <dt>Estimated crypto</dt>
+                <dt>You send</dt>
                 <dd>{quoteLabel}</dd>
               </div>
             </dl>
             <p className="cp-deposit-note">
-              This quote refreshes every 30 seconds. Checkout locks the exact amount from NOWPayments, including the service fee you pay. Your wallet is credited the USD amount, after the payment is verified.
+              Wallet credit stays ${Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : "0.00"}. The fee above is the live NOWPayments difference, refreshed every 30 seconds. We add nothing on top. Checkout locks the exact crypto amount.
             </p>
             {error ? <p className="cp-error">{error}</p> : null}
             <button
@@ -484,7 +499,7 @@ export function AddFundsView() {
             >
               {busy ? "Creating payment…" : "Continue to crypto checkout"}
             </button>
-            <p className="cp-banker-secure">Secured by NOWPayments · Pay window up to 1 hour</p>
+            <p className="cp-banker-secure">Secured by NOWPayments · Provider window, capped at 1 hour</p>
             <Link className="cp-btn-ghost cp-funds-link" href="/dashboard/payments">
               Payment history
             </Link>
@@ -557,7 +572,11 @@ export function AddFundsView() {
                   <p className="cp-deposit-exact">
                     {payment.payAmount || "—"} <small>{payment.symbol || payment.payCurrency?.toUpperCase()}</small>
                   </p>
-                  <p className="cp-deposit-note">Wallet credit ${payment.amountUsd.toFixed(2)}. Provider fee is included in this amount.</p>
+                  <p className="cp-deposit-note">
+                    Wallet credit ${payment.amountUsd.toFixed(2)}
+                    {lockedFeeUsd(payment) != null ? ` · Provider fee $${lockedFeeUsd(payment)!.toFixed(2)}` : ""}
+                    . Send this exact crypto amount. The QR is the deposit address only.
+                  </p>
                 </div>
               </div>
             </div>
@@ -688,6 +707,13 @@ function payStage(status: string) {
   if (status === "paid") return 2;
   if (status === "confirming" || status === "partial" || status === "review") return 1;
   return 0;
+}
+
+function lockedFeeUsd(payment: Payment) {
+  const base = Number(payment.baseCrypto);
+  const gross = Number(payment.payAmount);
+  if (!Number.isFinite(base) || !Number.isFinite(gross) || base <= 0 || gross <= 0) return payment.feeUsd ?? null;
+  return Math.max(0, Math.round(payment.amountUsd * (gross / base - 1) * 100) / 100);
 }
 
 function shortCoinName(symbol: string, name: string) {

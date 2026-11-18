@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { feeFromQuotes, minAmountQuery, providerMinUsd } from "@/lib/nowpayments/client";
 
 const originalFetch = global.fetch;
 const originalKey = process.env.NOWPAYMENTS_API_KEY;
@@ -23,6 +24,27 @@ afterEach(() => {
   process.env.NOWPAYMENTS_IPN_SECRET = originalIpn;
   process.env.BANKER_PAY_CURRENCIES = originalCoins;
   vi.resetModules();
+});
+
+describe("NOWPayments fee and minimum", () => {
+  it("asks for the minimum of the coin the customer sends", () => {
+    const query = minAmountQuery("ltc");
+    expect(query.get("currency_from")).toBe("ltc");
+    expect(query.get("currency_to")).toBe("usd");
+    expect(query.get("is_fee_paid_by_user")).toBe("true");
+    expect(query.get("is_fixed_rate")).toBe("true");
+  });
+
+  it("rounds each coin's fiat minimum up to the next cent", () => {
+    expect(providerMinUsd({ fiat_equivalent: 6.7615239 })).toBe(6.77);
+    expect(providerMinUsd({ fiat_equivalent: 11.99100031 })).toBe(12);
+  });
+
+  it("uses only the gap between the provider quotes as the customer fee", () => {
+    const fee = feeFromQuotes(10, "0.22840295", "0.23237967");
+    expect(fee?.feeUsd).toBe(0.17);
+    expect(feeFromQuotes(25, "25", "20")).toBeNull();
+  });
 });
 
 describe("NOWPayments deposit options", () => {
