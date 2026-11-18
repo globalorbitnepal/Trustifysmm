@@ -2,7 +2,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export { CUSTOMER_COOKIE_NAME, sessionCookieOptions } from "@/lib/customer/session-edge";
 
-const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+export const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_AGE_MS = SESSION_MAX_AGE_MS;
 
 function sessionSecret() {
   const s = process.env.SESSION_SECRET?.trim() || process.env.ORBIT_PASSKEY?.trim();
@@ -59,4 +60,12 @@ export function parseCustomerSessionToken(
 
 export function verifyCustomerSessionToken(token: string | undefined | null): string | null {
   return parseCustomerSessionToken(token)?.userId ?? null;
+}
+
+/** How long ago this session cookie was issued. Null when the cookie is missing or invalid. */
+export function sessionAgeMs(token: string | undefined | null): number | null {
+  if (!parseCustomerSessionToken(token)) return null;
+  const expiresAt = Number(token!.split(".")[1]);
+  if (!Number.isFinite(expiresAt)) return null;
+  return Date.now() - (expiresAt - SESSION_MAX_AGE_MS);
 }

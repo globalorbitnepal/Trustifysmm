@@ -333,42 +333,179 @@ export function ProfileView() {
   );
 }
 
+type SecurityInfo = {
+  hasPassword: boolean;
+  twoFactor: { enabled: boolean; activatedAt: string | null };
+  logins: { id: string; method: string; createdAt: string; ip: string }[];
+};
+
 export function SecurityView() {
-  const [info, setInfo] = useState<{ hasPassword: boolean; twoFactor: string; logins: { id: string; method: string; createdAt: string; ip: string }[] } | null>(null);
+  const [info, setInfo] = useState<SecurityInfo | null>(null);
   const [message, setMessage] = useState("");
-  useEffect(() => { void fetch("/api/dashboard/security").then(async (res) => { if (res.ok) setInfo(await res.json()); }); }, []);
+  const [error, setError] = useState("");
+  const [secret, setSecret] = useState("");
+  const [codes, setCodes] = useState<string[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [confirmDisable, setConfirmDisable] = useState(false);
+
+  function load() {
+    void fetch("/api/dashboard/security").then(async (res) => { if (res.ok) setInfo(await res.json()); });
+  }
+  useEffect(() => { load(); }, []);
+
+  async function post(body: Record<string, string>) {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch("/api/dashboard/security", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = (await res.json()) as { error?: string; secret?: string; recoveryCodes?: string[]; twoFactor?: SecurityInfo["twoFactor"] };
+      if (!res.ok) {
+        setError(data.error || "Request failed.");
+        return data;
+      }
+      if (data.secret) setSecret(data.secret);
+      if (data.recoveryCodes) setCodes(data.recoveryCodes);
+      if (data.twoFactor) setInfo((current) => current ? { ...current, twoFactor: data.twoFactor! } : current);
+      return data;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function password(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const res = await fetch("/api/dashboard/security", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "password", currentPassword: form.get("current"), nextPassword: form.get("next") }),
-    });
-    const data = (await res.json()) as { error?: string };
-    setMessage(data.error || "Password updated. Other sessions were signed out.");
+    const data = await post({ action: "password", currentPassword: String(form.get("current") || ""), nextPassword: String(form.get("next") || "") });
+    if (data && !data.error) setMessage("Password updated. Other sessions were signed out.");
   }
   async function logoutOthers() {
-    const res = await fetch("/api/dashboard/security", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "logout-others" }) });
-    setMessage(res.ok ? "Other sessions were signed out." : "Could not update sessions.");
+    const data = await post({ action: "logout-others" });
+    if (data && !data.error) setMessage("Other sessions were signed out.");
   }
+  async function startSetup(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const passwordValue = String(new FormData(event.currentTarget).get("current") || "");
+    const data = await post({ action: "totp-start", currentPassword: passwordValue });
+    if (data?.secret) setMessage("Add this setup key in Google Authenticator, then enter the 6-digit code.");
+  }
+  async function confirmSetup(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const code = String(new FormData(event.currentTarget).get("code") || "");
+    const data = await post({ action: "totp-confirm", code });
+    if (data?.recoveryCodes) {
+      setSecret("");
+      setMessage("Authenticator is on. Save these recovery codes now. They are shown once.");
+      load();
+    }
+  }
+  async function disable(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const data = await post({
+      action: "totp-disable",
+      currentPassword: String(form.get("current") || ""),
+      code: String(form.get("code") || ""),
+      recoveryCode: String(form.get("recovery") || ""),
+    });
+    if (data && !data.error) {
+      setConfirmDisable(false);
+      setCodes(null);
+      setMessage("Authenticator is off. New sign-ins no longer ask for a code.");
+      load();
+    }
+  }
+  async function regenerate(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const data = await post({ action: "totp-regenerate", currentPassword: String(form.get("current") || ""), code: String(form.get("code") || "") });
+    if (data?.recoveryCodes) setMessage("New recovery codes are ready. The old codes no longer work.");
+  }
+
   if (!info) return <Skeleton />;
+  const enabled = info.twoFactor.enabled;
   return (
     <div className="cp-grid">
-      <section className="cp-card">
+      <section className="cp-card cp-totp">
+        <p className="cp-kicker">Authenticator app</p>
+        <h3>Google Authenticator</h3>
+        <p className={enabled ? "cp-ok" : "cp-note"}>{enabled ? "Enabled" : "Not enabled"}{enabled && info.twoFactor.activatedAt ? ` · since ${info.twoFactor.activatedAt.slice(0, 10)}` : ""}</p>
+        <p>A 6-digit code from Google Authenticator is required on every new sign-in, including Google sign-in. There is no QR code. You type a setup key.</p>
+        {!enabled && !secret ? (
+          <form onSubmit={(event) => void startSetup(event)}>
+            <ul className="cp-api-steps">
+              <li>Protects the wallet if the email password is guessed.</li>
+              <li>Works offline inside Google Authenticator.</li>
+              <li>Recovery codes are the way back if you lose the phone.</li>
+            </ul>
+            {info.hasPassword ? (
+              <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label>
+            ) : <p className="cp-note">Google accounts must have signed in during the last 15 minutes.</p>}
+            <button className="cp-btn" type="submit" disabled={busy}>Enable</button>
+          </form>
+        ) : null}
+        {secret ? (
+          <form onSubmit={(event) => void confirmSetup(event)}>
+            <p className="cp-note">Open Google Authenticator. Choose Add account, then Enter a setup key. Account name TrustifySMM. Paste the key below. Choose Time-based.</p>
+            <p className="cp-api-key">{secret}</p>
+            <div className="cp-row-actions">
+              <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(secret)}>Copy setup key</button>
+            </div>
+            <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label>
+            <button className="cp-btn" type="submit" disabled={busy}>Activate</button>
+          </form>
+        ) : null}
+        {codes ? (
+          <div>
+            <p>Save these codes. Each one works once. They will not be shown again.</p>
+            <pre className="cp-api-key">{codes.join("\n")}</pre>
+            <div className="cp-row-actions">
+              <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(codes.join("\n"))}>Copy codes</button>
+              <button className="cp-btn-ghost" type="button" onClick={() => downloadFile("trustifysmm-recovery-codes.txt", `TrustifySMM recovery codes\n\n${codes.join("\n")}\n`, "text/plain")}>Download codes</button>
+            </div>
+          </div>
+        ) : null}
+        {enabled ? (
+          <>
+            <form onSubmit={(event) => void regenerate(event)}>
+              <h3>Regenerate recovery codes</h3>
+              <p className="cp-note">This replaces every unused code. Enter the current authenticator code{info.hasPassword ? " and your password" : ""}.</p>
+              {info.hasPassword ? <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label> : null}
+              <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" required /></label>
+              <button className="cp-btn-ghost" type="submit" disabled={busy}>Regenerate recovery codes</button>
+            </form>
+            {confirmDisable ? (
+              <form onSubmit={(event) => void disable(event)}>
+                <h3>Disable authenticator</h3>
+                <p>This removes the authenticator from the account. Enter a current code or one unused recovery code.</p>
+                {info.hasPassword ? <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label> : null}
+                <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" /></label>
+                <label className="cp-field"><span>Or a recovery code</span><input name="recovery" autoComplete="off" /></label>
+                <div className="cp-row-actions">
+                  <button className="cp-btn" type="submit" disabled={busy}>Disable authenticator</button>
+                  <button className="cp-btn-ghost" type="button" onClick={() => setConfirmDisable(false)}>Cancel</button>
+                </div>
+              </form>
+            ) : <button className="cp-btn-ghost" type="button" onClick={() => setConfirmDisable(true)}>Disable</button>}
+          </>
+        ) : null}
+        {error ? <p className="cp-error">{error}</p> : null}
+        {message ? <p className="cp-ok">{message}</p> : null}
         <h3>Password</h3>
         {info.hasPassword ? (
           <form onSubmit={(event) => void password(event)}>
-            <label className="cp-field"><span>Current password</span><input name="current" type="password" /></label>
-            <label className="cp-field"><span>New password</span><input name="next" type="password" /></label>
-            <button className="cp-btn" type="submit">Change password</button>
+            <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" /></label>
+            <label className="cp-field"><span>New password</span><input name="next" type="password" autoComplete="new-password" minLength={8} /></label>
+            <button className="cp-btn" type="submit" disabled={busy}>Change password</button>
           </form>
-        ) : <p>This account signs in with Google. Password change is available after an email password is set.</p>}
+        ) : <p>This account signs in with Google. Set a panel password from My Profile if you also want email sign-in.</p>}
         <h3>Sessions</h3>
         <button className="cp-btn-ghost" type="button" onClick={() => void logoutOthers()}>Log out other sessions</button>
-        <h3>Two-factor authentication</h3>
-        <p>Authenticator app setup is not configured on this account yet.</p>
-        {message ? <p>{message}</p> : null}
+        <p className="cp-note">Lost the phone and the recovery codes? Email support@trustifysmm.com from the account address. Support can clear the authenticator after confirming it is you.</p>
       </section>
       <section className="cp-card">
         <h3>Login history</h3>

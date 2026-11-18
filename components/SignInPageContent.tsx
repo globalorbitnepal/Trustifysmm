@@ -73,10 +73,14 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [twoFactor, setTwoFactor] = useState(false);
+  const [code, setCode] = useState("");
+  const [recovery, setRecovery] = useState(false);
 
   useEffect(() => {
     const code = search.get("error");
     if (code) setError(OAUTH_ERRORS[code] ?? "Could not sign in. Try again.");
+    if (search.get("totp") === "1") setTwoFactor(true);
   }, [search]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -97,9 +101,39 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, remember }),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { error?: string; twoFactor?: boolean };
       if (!res.ok) {
         setError(data.error ?? "Could not sign in.");
+        return;
+      }
+      if (data.twoFactor) {
+        setTwoFactor(true);
+        setError("");
+        return;
+      }
+      const next = search.get("next") || "/dashboard";
+      router.replace(next);
+      router.refresh();
+    } catch {
+      setError("Connection failed. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onTotp(event: React.FormEvent) {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/totp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(recovery ? { recoveryCode: code } : { code }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "That code was not accepted.");
         return;
       }
       const next = search.get("next") || "/dashboard";
@@ -167,6 +201,31 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
             <p>{copy?.cardLede || "Use the email and password from your reseller account."}</p>
           </div>
 
+          {twoFactor ? (
+            <form className="auth-signup-form" onSubmit={onTotp}>
+              <p>Enter the 6-digit code from Google Authenticator for TrustifySMM.</p>
+              <label htmlFor="signin-totp">{recovery ? "Recovery code" : "Authenticator code"}</label>
+              <div className="auth-signup-field">
+                <input
+                  id="signin-totp"
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                  inputMode={recovery ? "text" : "numeric"}
+                  autoComplete="one-time-code"
+                  placeholder={recovery ? "XXXXX-XXXXX" : "123456"}
+                  required
+                />
+              </div>
+              {error ? <p className="auth-signup-error">{error}</p> : null}
+              <button className="auth-signup-submit" type="submit" disabled={loading || code.trim().length < 6}>
+                {loading ? "Checking…" : "Continue to dashboard"}
+              </button>
+              <button className="auth-signup-link" type="button" onClick={() => { setRecovery((value) => !value); setCode(""); setError(""); }}>
+                {recovery ? "Use an authenticator code" : "Use a recovery code"}
+              </button>
+            </form>
+          ) : (
+          <>
           <GoogleAuthButton mode="login" disabled={loading} />
           <AuthDivider />
 
@@ -234,6 +293,8 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
                 )}
               </button>
           </form>
+          </>
+          )}
 
           <p className="auth-signup-foot">
             <ShieldIcon />

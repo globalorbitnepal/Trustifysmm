@@ -24,8 +24,29 @@ model User {
   balance       Decimal   @default(0) @db.Decimal(12, 4)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  /// AES-256-GCM ciphertext. Never a plaintext TOTP secret.
+  totpSecretEnc       String?
+  totpEnabled         Boolean   @default(false)
+  totpActivatedAt     DateTime?
+  /// Last accepted 30-second step. Rejects a replay of that code.
+  totpLastStep        Int?
+  totpPendingEnc      String?
+  totpPendingExpiresAt DateTime?
   orders        PanelOrder[]
   transactions  WalletTransaction[]
+  totpRecoveryCodes TotpRecoveryCode[]
+}
+
+/// One-time backup codes. Only the hash is stored.
+model TotpRecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model PanelOrder {

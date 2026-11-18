@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
+import { finishPasswordLogin } from "@/lib/customer/complete-login";
 import { loginWithEmail } from "@/lib/customer/user-store";
-import { jsonWithSession } from "@/lib/customer/auth-response";
-import { recordLogin } from "@/lib/customer/panel-store";
 
 export async function POST(request: Request) {
   let body: { email?: string; password?: string; remember?: boolean };
@@ -18,8 +17,7 @@ export async function POST(request: Request) {
   }
 
   const result = await loginWithEmail(email, password);
-  if (result.error) return NextResponse.json({ error: result.error }, { status: 401 });
+  if (result.error || !result.user) return NextResponse.json({ error: result.error || "Invalid email or password." }, { status: 401 });
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  await recordLogin(result.user!.id, "password", ip);
-  return jsonWithSession(result.user!, body.remember !== false);
+  return finishPasswordLogin(result.user, body.remember !== false, ip);
 }

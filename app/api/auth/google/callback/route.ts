@@ -7,9 +7,8 @@ import {
   siteUrl,
   verifyGoogleIdToken,
 } from "@/lib/customer/google-oauth";
+import { finishGoogleLogin } from "@/lib/customer/complete-login";
 import { loginOrRegisterWithGoogle } from "@/lib/customer/user-store";
-import { recordLogin } from "@/lib/customer/panel-store";
-import { createCustomerSessionToken, CUSTOMER_COOKIE_NAME, sessionCookieOptions } from "@/lib/customer/session";
 
 function redirectWithError(code: string) {
   return NextResponse.redirect(`${siteUrl()}/signin?error=${encodeURIComponent(code)}`);
@@ -37,15 +36,8 @@ export async function GET(request: Request) {
     const result = await loginOrRegisterWithGoogle(profile);
     if (result.error) return redirectWithError("account_conflict");
 
-    const session = createCustomerSessionToken(result.user!.id, result.user!.sessionVersion ?? 0);
-    if (!session) return redirectWithError("session_unavailable");
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    await recordLogin(result.user!.id, "google", ip);
-
-    const res = NextResponse.redirect(`${siteUrl()}/dashboard`);
-    res.cookies.set(CUSTOMER_COOKIE_NAME, session, sessionCookieOptions(true));
-    res.cookies.set(OAUTH_STATE_COOKIE, "", { path: "/", maxAge: 0 });
-    return res;
+    return finishGoogleLogin(result.user!, ip, siteUrl());
   } catch {
     return redirectWithError("google_callback_failed");
   }

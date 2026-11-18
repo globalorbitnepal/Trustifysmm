@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { listAllLogins, listAllTickets } from "@/lib/customer/panel-store";
-import { registerWithEmail, listCustomers, persistCustomer, replaceCustomerApiKey } from "@/lib/customer/user-store";
+import { addNotification, listAllLogins, listAllTickets, recordAudit } from "@/lib/customer/panel-store";
+import { bumpSessionVersion, listCustomers, persistCustomer, registerWithEmail, replaceCustomerApiKey } from "@/lib/customer/user-store";
 import { adjustAccount, ensureAccountForCustomer, listAllLedger, listAllOrders, setAccountBalance, setAccountRevoked } from "@/lib/smm-api/demo-store";
 import { recordAdminAction } from "@/lib/orbit/audit";
+import { clearTotp, totpStatus } from "@/lib/customer/totp-store";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export async function GET() {
       suspended: Boolean(user.suspended),
       google: Boolean(user.googleId),
       hasPassword: Boolean(user.passwordHash),
+      totpEnabled: (await totpStatus(user.id)).enabled,
       createdAt: user.createdAt,
       lastLogin: last?.createdAt ?? null,
       tickets: tickets.filter((ticket) => ticket.userId === user.id).length,
@@ -82,6 +84,7 @@ export async function PATCH(request: Request) {
     suspended?: boolean;
     direction?: "credit" | "debit";
     amount?: number;
+    clearTotp?: boolean;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -91,6 +94,23 @@ export async function PATCH(request: Request) {
   const users = await listCustomers();
   const user = users.find((row) => row.id === body.userId);
   if (!user) return NextResponse.json({ error: "Customer not found." }, { status: 404 });
+
+  if (body.clearTotp) {
+    const reason = body.reason?.trim() || "";
+    if (reason.length < 8) return NextResponse.json({ error: "A reason of at least 8 characters is required to clear authenticator." }, { status: 400 });
+    await clearTotp(user.id);
+    await bumpSessionVersion(user.id);
+    await recordAudit(user.id, "totp_cleared_by_admin");
+    await recordAdminAction("customer.totp_clear", `${user.email} — ${reason}`);
+    await addNotification({
+      userId: user.id,
+      type: "security",
+      title: "Authenticator removed by support",
+      body: "Authenticator was removed after a support request. Sign in again and turn it back on from Security Settings if you still want it.",
+      href: "/dashboard/security",
+    });
+    return NextResponse.json({ ok: true, totpEnabled: false });
+  }
 
   if (body.direction && body.amount !== undefined) {
     const reason = body.reason?.trim() || "";

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { listAllLogins, listAllTickets } from "@/lib/customer/panel-store";
 import { getUserById } from "@/lib/customer/user-store";
 import { findService } from "@/lib/dashboard/catalog";
+import { totpStatus } from "@/lib/customer/totp-store";
 import { listApiActivity } from "@/lib/smm-api/activity";
 import { getAccountByKey, listLedger, listOrdersByAccount } from "@/lib/smm-api/demo-store";
 
@@ -30,6 +31,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       apiKeyRevoked: Boolean(user.apiKeyRevoked),
       apiKeyMasked: `${user.apiKey.slice(0, 8)}…${user.apiKey.slice(-4)}`,
       google: Boolean(user.googleId),
+      totpEnabled: (await totpStatus(user.id)).enabled,
+      totpActivatedAt: (await totpStatus(user.id)).activatedAt,
       createdAt: user.createdAt,
     },
     orders: orders.slice(0, 40).map((order) => ({

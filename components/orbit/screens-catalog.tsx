@@ -4,7 +4,7 @@ import { useState } from "react";
 import { send, usd, useOrbit } from "@/components/orbit/use-orbit";
 
 type Detail = {
-  customer: { id: string; email: string; name: string | null; balance: number; suspended: boolean; apiKeyRevoked: boolean; createdAt: string; apiKeyMasked: string };
+  customer: { id: string; email: string; name: string | null; balance: number; suspended: boolean; apiKeyRevoked: boolean; createdAt: string; apiKeyMasked: string; totpEnabled?: boolean };
   orders: { id: number; service: string; link: string; quantity: number; charge: number; status: string; channel?: string; createdAt: string }[];
   api?: { id: string; at: string; action: string; ok: boolean; detail: string; ip: string; orderId: number | null; keyPrefix: string }[];
   ledger: { id: string; type: string; amount: number; description: string; createdAt: string }[];
@@ -38,7 +38,7 @@ export function CustomerDetailScreen({ id }: { id: string }) {
         <h2 style={{ marginTop: 0 }}>{customer.name || customer.email}</h2>
         <p>{customer.email}</p>
         <p>Joined {customer.createdAt.slice(0, 10)} · Balance {usd(customer.balance)} · API {customer.apiKeyMasked}</p>
-        <p>Status: {customer.suspended ? "Suspended" : "Active"}{customer.apiKeyRevoked ? " · API revoked" : ""}</p>
+        <p>Status: {customer.suspended ? "Suspended" : "Active"}{customer.apiKeyRevoked ? " · API revoked" : ""}{customer.totpEnabled ? " · Authenticator on" : " · Authenticator off"}</p>
       </article>
       <form className="ob-form" onSubmit={(event) => { event.preventDefault(); patch({ name, reason: reason || "Profile edit" }); }}>
         <label>Name<input value={name} placeholder={customer.name || ""} onChange={(event) => setName(event.target.value)} /></label>
@@ -48,6 +48,7 @@ export function CustomerDetailScreen({ id }: { id: string }) {
         <button className="ob-btn" type="button" onClick={() => patch({ balance: Number(balance), reason })}>Set balance</button>
         <button className="ob-btn" type="button" onClick={() => patch({ suspended: !customer.suspended })}>{customer.suspended ? "Restore account" : "Suspend account"}</button>
         <button className="ob-btn" type="button" onClick={() => patch({ revoked: !customer.apiKeyRevoked })}>{customer.apiKeyRevoked ? "Restore API" : "Revoke API"}</button>
+        <button className="ob-btn" type="button" onClick={() => patch({ clearTotp: true, reason })}>Clear authenticator</button>
       </form>
       {message ? <p>{message}</p> : null}
       <div className="ob-table-wrap">
