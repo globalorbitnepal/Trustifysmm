@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 process.env.TOTP_ENCRYPTION_KEY = randomBytes(32).toString("base64");
 process.env.SESSION_SECRET = "totp-test-session-secret-32chars";
 
-import { finishPasswordLogin } from "@/lib/customer/complete-login";
+import { finishGoogleLogin, finishPasswordLogin } from "@/lib/customer/complete-login";
 import { createPendingLoginToken, readPendingLoginToken } from "@/lib/customer/pending-login";
 import { parseCustomerSessionToken } from "@/lib/customer/session";
 import {
@@ -68,6 +68,17 @@ describe("authenticator codes", () => {
     expect(provisioningUri(secret, "a@b.com")).toContain("algorithm=SHA1");
     expect(provisioningUri(secret, "a@b.com")).not.toContain("qr");
   });
+
+  it("accepts a 32-byte hex encryption key and rejects a short one", () => {
+    const previous = process.env.TOTP_ENCRYPTION_KEY;
+    process.env.TOTP_ENCRYPTION_KEY = randomBytes(32).toString("hex");
+    const secret = generateTotpSecret();
+    const enc = encryptSecret(secret);
+    expect(decryptSecret(enc!)).toBe(secret);
+    process.env.TOTP_ENCRYPTION_KEY = "too-short";
+    expect(encryptSecret(secret)).toBeNull();
+    process.env.TOTP_ENCRYPTION_KEY = previous;
+  });
 });
 
 describe("enrollment and recovery", () => {
@@ -125,5 +136,11 @@ describe("login second factor", () => {
     expect(readPendingLoginToken(token)?.userId).toBe(id);
     expect(parseCustomerSessionToken(token)).toBeNull();
     expect(hotp(started.secret, 1)).toMatch(/^\d{6}$/);
+
+    const google = await finishGoogleLogin(user, "127.0.0.1", "https://trustifysmm.com");
+    expect(google.headers.get("location")).toBe("https://trustifysmm.com/signin?totp=1");
+    const googleCookie = google.headers.get("set-cookie") || "";
+    expect(googleCookie).toContain("trustify_2fa=");
+    expect(googleCookie).not.toContain("trustify_session=");
   });
 });

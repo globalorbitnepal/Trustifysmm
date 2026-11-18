@@ -4,10 +4,18 @@ const STEP_SECONDS = 30;
 const DIGITS = 6;
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
+/**
+ * 32-byte AES-256 key from TOTP_ENCRYPTION_KEY.
+ * Accepts standard base64 or 64 hex characters. The value is never logged.
+ */
 export function totpEncryptionKey(): Buffer | null {
-  const raw = process.env.TOTP_ENCRYPTION_KEY?.trim() ?? "";
+  const raw = process.env.TOTP_ENCRYPTION_KEY?.trim().replace(/^["']|["']$/g, "") ?? "";
   if (!raw) return null;
   try {
+    if (/^[0-9a-fA-F]{64}$/.test(raw)) {
+      const hex = Buffer.from(raw, "hex");
+      return hex.length === 32 ? hex : null;
+    }
     const key = Buffer.from(raw, "base64");
     return key.length === 32 ? key : null;
   } catch {
