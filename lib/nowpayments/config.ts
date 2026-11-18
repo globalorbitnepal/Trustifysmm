@@ -29,7 +29,7 @@ export function loadNowPaymentsConfig(): NowPaymentsConfig {
   const rawCurrencies =
     process.env.BANKER_PAY_CURRENCIES ||
     process.env.BANKER_PAY_CURRENCY ||
-    "usdttrc20,usdterc20,usdtbsc,usdc,btc,eth,bnbbsc,sol,ltc,trx";
+    "usdterc20,usdtbsc,usdc,btc,eth,bnbbsc,sol,ltc,trx";
   const payCurrencies = rawCurrencies
     .split(",")
     .map((c) => c.trim().toLowerCase())
@@ -42,10 +42,10 @@ export function loadNowPaymentsConfig(): NowPaymentsConfig {
     ipnSecret,
     baseUrl: baseUrl.replace(/\/$/, ""),
     sandbox,
-    minDepositUsd: numEnv("NOWPAYMENTS_MIN_DEPOSIT_USD", 5),
+    minDepositUsd: numEnv("NOWPAYMENTS_MIN_DEPOSIT_USD", 10),
     maxDepositUsd: numEnv("NOWPAYMENTS_MAX_DEPOSIT_USD", 50_000),
     paymentExpiryMinutes: numEnv("NOWPAYMENTS_PAYMENT_EXPIRY_MINUTES", 60),
-    payCurrencies: configured ? (payCurrencies.length ? payCurrencies : ["usdttrc20"]) : [],
+    payCurrencies: configured ? (payCurrencies.length ? payCurrencies : ["usdterc20"]) : [],
     configured,
     live: configured,
   };

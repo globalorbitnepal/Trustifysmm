@@ -54,7 +54,7 @@ export async function createBankerInvoice(input: {
   const cfg = loadNowPaymentsConfig();
   const amount = Math.round(input.amountUsd * 100) / 100;
   if (!Number.isFinite(amount) || amount < cfg.minDepositUsd) {
-    return { error: `Minimum top-up is $${cfg.minDepositUsd.toFixed(2)} USD` } as const;
+    return { error: `Use $${cfg.minDepositUsd.toFixed(2)} or more.` } as const;
   }
   if (amount > cfg.maxDepositUsd) {
     return { error: `Maximum single top-up is $${cfg.maxDepositUsd.toLocaleString()} USD` } as const;
@@ -71,7 +71,7 @@ export async function createBankerInvoice(input: {
   }
 
   const allowed = configuredPayCurrencies();
-  const payCurrency = (input.payCurrency || allowed.currencies[0] || "usdttrc20").toLowerCase();
+  const payCurrency = (input.payCurrency || allowed.currencies[0] || "usdterc20").toLowerCase();
   if (input.requireLive) {
     if (!allowed.live) return { error: "Crypto payments are not configured yet." } as const;
     if (!allowed.currencies.includes(payCurrency)) return { error: "That coin is not enabled." } as const;
@@ -79,7 +79,7 @@ export async function createBankerInvoice(input: {
     const providerMin = minimum.ok ? providerMinUsd(minimum.data) : null;
     if (providerMin != null && amount + 1e-9 < providerMin) {
       return {
-        error: `This coin’s provider minimum is $${providerMin.toFixed(2)} USD. The account minimum is $${cfg.minDepositUsd.toFixed(2)}.`,
+        error: `NOWPayments cannot accept $${amount.toFixed(2)} for this coin.`,
       } as const;
     }
   }

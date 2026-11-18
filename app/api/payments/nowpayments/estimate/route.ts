@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   if (!option) return NextResponse.json({ error: "That currency is not enabled." }, { status: 422 });
   if (option.minUsd != null && amount + 1e-9 < option.minUsd) {
     return NextResponse.json(
-      { error: `${option.symbol} minimum is $${option.minUsd.toFixed(2)} on ${option.networkLabel}.`, minUsd: option.minUsd },
+      { error: `NOWPayments cannot quote $${amount.toFixed(2)} for ${option.symbol}.`, minUsd: option.minUsd },
       { status: 422 },
     );
   }

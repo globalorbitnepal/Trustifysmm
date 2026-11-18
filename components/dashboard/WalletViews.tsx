@@ -52,7 +52,7 @@ type Payment = {
   logoUrl?: string | null;
 };
 
-const PRESETS = [5, 10, 25, 50, 100, 250, 500] as const;
+const PRESETS = [10, 20, 25, 50, 100] as const;
 const PAYMENT_WINDOW_MS = 60 * 60 * 1000;
 const STATUS_POLL_MS = 30_000;
 
@@ -83,7 +83,7 @@ export function AddFundsView() {
   const [options, setOptions] = useState<DepositOption[]>([]);
   const [coin, setCoin] = useState("");
   const [query, setQuery] = useState("");
-  const [amount, setAmount] = useState("25");
+  const [amount, setAmount] = useState("10");
   const [quote, setQuote] = useState<{ crypto: string; base: string | null; feeUsd: number | null; at: number } | null>(null);
   const [payment, setPayment] = useState<Payment | null>(null);
   const [hash, setHash] = useState("");
@@ -238,7 +238,7 @@ export function AddFundsView() {
       return;
     }
     if (!amountValid) {
-      setError(`Enter a USD amount between $${effectiveMin.toFixed(2)} and $${maxDeposit.toLocaleString()}.`);
+      setError("Choose $10, $20, $25, $50, or $100.");
       return;
     }
     setBusy(true);
@@ -383,23 +383,14 @@ export function AddFundsView() {
                     key={preset}
                     type="button"
                     className={Number(amount) === preset ? "is-on" : ""}
-                    disabled={preset < effectiveMin}
-                    title={preset < effectiveMin ? `This coin requires at least $${effectiveMin.toFixed(2)}` : undefined}
                     onClick={() => setAmount(String(preset))}
                   >
                     ${preset}
                   </button>
                 ))}
               </div>
-              <p className="cp-banker-min">
-                {providerMin != null
-                  ? `${selected?.symbol ?? "This coin"} minimum $${providerMin.toFixed(2)} on ${selected ? networkBadge(selected.code, selected.network) : "this network"}`
-                  : `Minimum $${minDeposit.toFixed(2)}`}
-                {" "}· Maximum ${maxDeposit.toLocaleString()}
-                {providerMin != null && providerMin > 5 ? " · $5 is below this coin’s provider minimum" : ""}
-              </p>
               {!amountValid && amount !== "" ? (
-                <p className="cp-error">Enter ${effectiveMin.toFixed(2)} to ${maxDeposit.toLocaleString()}.</p>
+                <p className="cp-error">Choose $10, $20, $25, $50, or $100.</p>
               ) : null}
             </section>
 
@@ -457,7 +448,6 @@ export function AddFundsView() {
                         <strong>{networkBadge(row.code, row.network)}</strong>
                         <small>{row.networkLabel}</small>
                       </span>
-                      {row.minUsd != null ? <em>Min ${row.minUsd.toFixed(2)}</em> : null}
                     </button>
                   ))}
                 </div>
@@ -469,7 +459,7 @@ export function AddFundsView() {
             <h3>Payment summary</h3>
             <dl>
               <div>
-                <dt>Amount (wallet credit)</dt>
+                <dt>Amount</dt>
                 <dd>${Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : "0.00"}</dd>
               </div>
               <div>
@@ -477,10 +467,8 @@ export function AddFundsView() {
                 <dd>{selected ? networkBadge(selected.code, selected.network) : "—"}</dd>
               </div>
               <div>
-                <dt>Provider fee</dt>
-                <dd>
-                  {quoting ? "Quoting…" : quote?.feeUsd != null ? `$${quote.feeUsd.toFixed(2)}` : "—"}
-                </dd>
+                <dt>Fee</dt>
+                <dd className="cp-fee-plus">{quoting ? "…" : quote?.feeUsd != null ? `+ $${quote.feeUsd.toFixed(2)}` : "—"}</dd>
               </div>
               <div className="is-total">
                 <dt>You send</dt>
@@ -488,7 +476,7 @@ export function AddFundsView() {
               </div>
             </dl>
             <p className="cp-deposit-note">
-              Wallet credit stays ${Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : "0.00"}. The fee above is the live NOWPayments difference, refreshed every 30 seconds. We add nothing on top. Checkout locks the exact crypto amount.
+              Your wallet receives ${Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : "0.00"}. The fee is added by NOWPayments and is already inside the crypto amount. This site adds nothing extra. The quote refreshes every 30 seconds.
             </p>
             {error ? <p className="cp-error">{error}</p> : null}
             <button
@@ -572,11 +560,23 @@ export function AddFundsView() {
                   <p className="cp-deposit-exact">
                     {payment.payAmount || "—"} <small>{payment.symbol || payment.payCurrency?.toUpperCase()}</small>
                   </p>
-                  <p className="cp-deposit-note">
-                    Wallet credit ${payment.amountUsd.toFixed(2)}
-                    {lockedFeeUsd(payment) != null ? ` · Provider fee $${lockedFeeUsd(payment)!.toFixed(2)}` : ""}
-                    . Send this exact crypto amount. The QR is the deposit address only.
-                  </p>
+                  <dl className="cp-lock-lines">
+                    <div>
+                      <dt>Amount</dt>
+                      <dd>${payment.amountUsd.toFixed(2)}</dd>
+                    </div>
+                    <div>
+                      <dt>Fee</dt>
+                      <dd className="cp-fee-plus">{lockedFeeUsd(payment) != null ? `+ $${lockedFeeUsd(payment)!.toFixed(2)}` : "Included"}</dd>
+                    </div>
+                    <div>
+                      <dt>You send</dt>
+                      <dd>
+                        {payment.payAmount || "—"} {payment.symbol || payment.payCurrency?.toUpperCase()}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="cp-deposit-note">QR is the deposit address. Send the crypto total above. The fee is already inside it.</p>
                 </div>
               </div>
             </div>

@@ -106,6 +106,24 @@ export function CoinLogo({
     overflow: "hidden",
     ...style,
   };
+  const brandFile: Record<string, string> = {
+    usdt: "/coins/usdt.svg",
+    usdc: "/coins/usdc.svg",
+    btc: "/coins/btc.svg",
+    eth: "/coins/eth.svg",
+    bnb: "/coins/bnb.svg",
+    sol: "/coins/sol.svg",
+    ltc: "/coins/ltc.svg",
+    trx: "/coins/trx.svg",
+  };
+  if (brandFile[key]) {
+    return (
+      <span className={className} style={{ width: size, height: size, display: "inline-grid", placeItems: "center", flexShrink: 0, ...style }} aria-hidden>
+        <img src={brandFile[key]} alt="" width={size} height={size} style={{ width: size, height: size, objectFit: "contain" }} />
+      </span>
+    );
+  }
+
   const known = key === "usdc" || Boolean(COINS[key]);
   const remote = known ? "" : safeProviderLogo(logoUrl);
   if (remote) {

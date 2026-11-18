@@ -21,7 +21,7 @@ export const supportFaqCategories: SupportFaqCategory[] = [
       },
       {
         q: "What is the minimum deposit or order?",
-        a: "Minimum order size depends on each service’s min field in the catalog — often 10–100 units. Balance top-ups start at $10 USD. A coin can require more when the payment provider’s live minimum is higher, and that amount is shown before checkout.",
+        a: "Order size follows each service’s catalog limits, often 10–100 units. Wallet top-ups use $10, $20, $25, $50, and $100. NOWPayments adds its fee on top, and that fee is shown with the crypto amount before you pay.",
       },
       {
         q: "Do you offer a test or trial balance?",

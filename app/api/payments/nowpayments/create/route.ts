@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   }
   if (amount < cfg.minDepositUsd || amount > cfg.maxDepositUsd) {
     return NextResponse.json(
-      { error: `Enter a USD amount between $${cfg.minDepositUsd} and $${cfg.maxDepositUsd}.` },
+      { error: amount > cfg.maxDepositUsd ? `The highest top-up is $${cfg.maxDepositUsd.toLocaleString()}.` : "Choose $10, $20, $25, $50, or $100." },
       { status: 400 },
     );
   }
