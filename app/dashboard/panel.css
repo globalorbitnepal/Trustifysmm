@@ -1677,6 +1677,10 @@ html[data-dash="light"] .cp-account-hero,
 .cp-auth-head h2 { margin: 0; font-size: 1.45rem; }
 .cp-auth-logo { width: 72px; height: 72px; flex: 0 0 72px; border-radius: 18px; background: #fff; }
 .cp-auth-pair { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+.cp-auth-quota { margin: 0; font-weight: 700; color: #c4b5fd; }
+.cp-auth-delete { display: grid; gap: 10px; padding: 16px; border-radius: 16px; border: 1px solid rgba(248, 113, 113, 0.35); background: rgba(127, 29, 29, 0.16); }
+.cp-auth-delete h3, .cp-auth-delete p { margin: 0; }
+.cp-auth-delete p { line-height: 1.5; }
 .cp-auth-qr-wrap { margin: 0; display: grid; gap: 8px; justify-items: center; }
 .cp-auth-qr-wrap figcaption { font-weight: 800; letter-spacing: 0.01em; }
 .cp-auth-qr { width: 280px; height: 280px; background: #fff; border-radius: 16px; padding: 16px; box-sizing: border-box; }

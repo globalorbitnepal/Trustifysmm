@@ -24,6 +24,9 @@ import {
   beginTotpEnrollment,
   clearTotp,
   confirmTotpEnrollment,
+  deleteAuthenticator,
+  pauseAuthenticator,
+  resumeAuthenticator,
   totpStatus,
   verifyTotpForUser,
 } from "@/lib/customer/totp-store";
@@ -112,6 +115,50 @@ describe("enrollment", () => {
     await clearTotp(userId);
     expect((await totpStatus(userId)).enabled).toBe(false);
     expect(await verifyTotpForUser(userId, code)).toEqual({ error: "Authenticator is not enabled." });
+  });
+});
+
+describe("daily authenticator limit", () => {
+  const userId = "usr_totp_quota";
+
+  it("turns the saved entry off and on, then allows only 3 deletes and 3 new activations in a day", async () => {
+    const base = Date.now();
+    const at = (step: number) => new Date(base + step * 31_000);
+
+    const first = await beginTotpEnrollment(userId, "quota@example.com", at(0));
+    if (!("secret" in first)) throw new Error("setup failed");
+    await confirmTotpEnrollment(userId, totpCode(first.secret, at(0).getTime()).code, at(0));
+
+    const paused = await pauseAuthenticator(userId, totpCode(first.secret, at(1).getTime()).code, at(1));
+    expect(paused).toMatchObject({ ok: true });
+    expect((await totpStatus(userId)).enabled).toBe(false);
+    expect((await totpStatus(userId)).saved).toBe(true);
+    expect(await verifyTotpForUser(userId, totpCode(first.secret, at(2).getTime()).code)).toEqual({ error: "Authenticator is not enabled." });
+
+    const resumed = await resumeAuthenticator(userId, totpCode(first.secret, at(2).getTime()).code, at(2));
+    expect(resumed).toMatchObject({ ok: true });
+    expect((await totpStatus(userId)).enabled).toBe(true);
+    expect((await totpStatus(userId, at(2))).usage.activate).toBe(1);
+
+    const removed = await deleteAuthenticator(userId, totpCode(first.secret, at(3).getTime()).code, at(3));
+    expect(removed).toMatchObject({ ok: true });
+    expect((await totpStatus(userId, at(3))).saved).toBe(false);
+    expect((await totpStatus(userId, at(3))).usage.delete).toBe(1);
+
+    for (const step of [4, 6]) {
+      const started = await beginTotpEnrollment(userId, "quota@example.com", at(step));
+      if (!("secret" in started)) throw new Error(`setup ${step} failed`);
+      const turnedOn = await confirmTotpEnrollment(userId, totpCode(started.secret, at(step).getTime()).code, at(step));
+      expect(turnedOn).not.toHaveProperty("error");
+      const deleted = await deleteAuthenticator(userId, totpCode(started.secret, at(step + 1).getTime()).code, at(step + 1));
+      expect(deleted).toMatchObject({ ok: true });
+    }
+
+    expect((await totpStatus(userId, at(8))).usage).toMatchObject({ activate: 3, delete: 3, activateRemaining: 0, deleteRemaining: 0 });
+    expect(await beginTotpEnrollment(userId, "quota@example.com", at(8))).toEqual({
+      error: "Authenticator can be turned on 3 times a day. Try again tomorrow.",
+    });
+    await clearTotp(userId);
   });
 });
 

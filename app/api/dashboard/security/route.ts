@@ -6,11 +6,12 @@ import { requireCustomer } from "@/lib/customer/guard";
 import { rateLimitTotp } from "@/lib/customer/pending-login";
 import {
   beginTotpEnrollment,
-  clearTotp,
   confirmTotpEnrollment,
+  deleteAuthenticator,
   enabledTotpSecret,
+  pauseAuthenticator,
+  resumeAuthenticator,
   totpStatus,
-  verifyTotpForUser,
 } from "@/lib/customer/totp-store";
 import { bumpSessionVersion, changeCustomerPassword, setCustomerPassword, toPublicUser } from "@/lib/customer/user-store";
 import { verifyPassword } from "@/lib/customer/password";
@@ -94,29 +95,58 @@ export async function POST(request: Request) {
       body: "Google Authenticator is now required on every new sign-in.",
       href: "/dashboard/security",
     });
-    if (!next) return NextResponse.json({ activatedAt: confirmed.activatedAt, twoFactor: { enabled: true, activatedAt: confirmed.activatedAt } });
+    const status = await totpStatus(user.id);
+    if (!next) return NextResponse.json({ activatedAt: confirmed.activatedAt, twoFactor: status });
     next.balance = user.balance;
-    return sessionJson(next, { activatedAt: confirmed.activatedAt, twoFactor: { enabled: true, activatedAt: confirmed.activatedAt } });
+    return sessionJson(next, { activatedAt: confirmed.activatedAt, twoFactor: status });
+  }
+  if (body.action === "totp-resume") {
+    const recent = await recentAuth(user.passwordHash, body.currentPassword || "");
+    if (recent) return NextResponse.json({ error: recent }, { status: 401 });
+    if (!rateLimitTotp(`resume:${user.id}`)) return NextResponse.json({ error: "Too many codes. Wait a few minutes." }, { status: 429 });
+    const resumed = await resumeAuthenticator(user.id, body.code || "");
+    if ("error" in resumed) return NextResponse.json({ error: resumed.error }, { status: 401 });
+    await recordAudit(user.id, "totp_enabled");
+    return NextResponse.json({ twoFactor: await totpStatus(user.id) });
   }
   if (body.action === "totp-disable") {
     const recent = await recentAuth(user.passwordHash, body.currentPassword || "");
     if (recent) return NextResponse.json({ error: recent }, { status: 401 });
     if (!rateLimitTotp(`disable:${user.id}`)) return NextResponse.json({ error: "Too many codes. Wait a few minutes." }, { status: 429 });
-    const proof = await proofOfAuthenticator(user.id, body.code || "");
-    if (proof) return NextResponse.json({ error: proof }, { status: 401 });
-    await clearTotp(user.id);
-    const next = await bumpSessionVersion(user.id);
+    const paused = await pauseAuthenticator(user.id, body.code || "");
+    if ("error" in paused) return NextResponse.json({ error: paused.error }, { status: 401 });
     await recordAudit(user.id, "totp_disabled");
     await addNotification({
       userId: user.id,
       type: "security",
       title: "Authenticator disabled",
-      body: "Google Authenticator was turned off. New sign-ins no longer ask for a code.",
+      body: "Google Authenticator was turned off. The TrustifySMM entry is still in the app. New sign-ins no longer ask for a code.",
       href: "/dashboard/security",
     });
-    if (!next) return NextResponse.json({ ok: true, twoFactor: { enabled: false, activatedAt: null } });
+    return NextResponse.json({ twoFactor: await totpStatus(user.id) });
+  }
+  if (body.action === "totp-delete") {
+    const recent = await recentAuth(user.passwordHash, body.currentPassword || "");
+    if (recent) return NextResponse.json({ error: recent }, { status: 401 });
+    if (!rateLimitTotp(`delete:${user.id}`)) return NextResponse.json({ error: "Too many codes. Wait a few minutes." }, { status: 429 });
+    const removed = await deleteAuthenticator(user.id, body.code || "");
+    if ("error" in removed) {
+      const message = removed.error ?? "That code is not valid.";
+      const status = message.includes("3 times") ? 429 : 401;
+      return NextResponse.json({ error: message }, { status });
+    }
+    const next = await bumpSessionVersion(user.id);
+    await recordAudit(user.id, "totp_deleted");
+    await addNotification({
+      userId: user.id,
+      type: "security",
+      title: "Google Authenticator deleted",
+      body: "TrustifySMM was removed from this account. Delete the TrustifySMM entry in the Google Authenticator app. You can set it up again later.",
+      href: "/dashboard/security",
+    });
+    if (!next) return NextResponse.json({ twoFactor: await totpStatus(user.id) });
     next.balance = user.balance;
-    return sessionJson(next, { twoFactor: { enabled: false, activatedAt: null } });
+    return sessionJson(next, { twoFactor: await totpStatus(user.id) });
   }
   return NextResponse.json({ error: "Unsupported action." }, { status: 400 });
 }
@@ -137,8 +167,3 @@ async function recentAuth(passwordHash: string | null, password: string) {
   return null;
 }
 
-async function proofOfAuthenticator(userId: string, code: string) {
-  if (!/^\d{6}$/.test(code.replace(/\s+/g, ""))) return "Enter the 6-digit code from Google Authenticator.";
-  const checked = await verifyTotpForUser(userId, code);
-  return "error" in checked ? checked.error : null;
-}

@@ -343,9 +343,11 @@ function formatWhen(iso: string) {
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
+type AuthenticatorUsage = { limit: number; activate: number; delete: number; activateRemaining: number; deleteRemaining: number };
+
 type SecurityInfo = {
   hasPassword: boolean;
-  twoFactor: { enabled: boolean; activatedAt: string | null };
+  twoFactor: { enabled: boolean; activatedAt: string | null; saved: boolean; usage: AuthenticatorUsage };
   logins: { id: string; method: string; createdAt: string; ip: string }[];
 };
 
@@ -357,6 +359,7 @@ export function SecurityView() {
   const [qr, setQr] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDisable, setConfirmDisable] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   function load() {
     void fetch("/api/dashboard/security").then(async (res) => { if (res.ok) setInfo(await res.json()); });
@@ -422,13 +425,47 @@ export function SecurityView() {
       setConfirmDisable(false);
       setSecret("");
       setQr("");
-      setMessage("Authenticator is off. New sign-ins no longer ask for a code.");
+      setMessage("Authenticator is off. The TrustifySMM entry stays in Google Authenticator. Sign-in no longer asks for a code.");
+      load();
+    }
+  }
+  async function resume(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const data = await post({
+      action: "totp-resume",
+      currentPassword: String(form.get("current") || ""),
+      code: String(form.get("code") || ""),
+    });
+    if (data?.twoFactor?.enabled) {
+      setMessage("Authenticator is on again. The same TrustifySMM entry is used.");
+      load();
+    }
+  }
+  async function removeAuthenticator(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const data = await post({
+      action: "totp-delete",
+      currentPassword: String(form.get("current") || ""),
+      code: String(form.get("code") || ""),
+    });
+    if (data && !data.error) {
+      setConfirmDelete(false);
+      setConfirmDisable(false);
+      setSecret("");
+      setQr("");
+      setMessage("Google Authenticator was deleted from this account. Open the app and delete the TrustifySMM entry. You can set it up again later.");
       load();
     }
   }
 
   if (!info) return <Skeleton />;
   const enabled = info.twoFactor.enabled;
+  const saved = info.twoFactor.saved;
+  const usage = info.twoFactor.usage;
+  const activateLeft = usage?.activateRemaining ?? 3;
+  const deleteLeft = usage?.deleteRemaining ?? 3;
   return (
     <div className="cp-security">
       <section className="cp-card cp-auth-card">
@@ -440,13 +477,22 @@ export function SecurityView() {
             <p className="cp-auth-status">{enabled ? "Enabled" : "Not enabled"}{enabled && info.twoFactor.activatedAt ? ` · ${formatWhen(info.twoFactor.activatedAt)}` : ""}</p>
           </div>
         </div>
-        <p className="cp-auth-lead">Every new sign-in asks for the 6-digit code from Google Authenticator. The app entry is named TrustifySMM.</p>
-        {!enabled && !secret ? (
+        <p className="cp-auth-lead">Every new sign-in asks for the 6-digit code from Google Authenticator. The app entry is named TrustifySMM. Turning it on and deleting it are each limited to 3 times a day.</p>
+        <p className="cp-auth-quota">Turn on left today: {activateLeft} of 3. Deletes left today: {deleteLeft} of 3.</p>
+        {!enabled && saved && !secret ? (
+          <form className="cp-auth-enable" onSubmit={(event) => void resume(event)}>
+            <p>Authenticator is off. The TrustifySMM entry is still in Google Authenticator. Enter the current 6-digit code to turn it on again.</p>
+            {info.hasPassword ? <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label> : null}
+            <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label>
+            <button className="cp-btn" type="submit" disabled={busy}>{busy ? "Checking…" : "Turn on"}</button>
+          </form>
+        ) : null}
+        {!enabled && !saved && !secret ? (
           <form className="cp-auth-enable" onSubmit={(event) => void startSetup(event)}>
             {info.hasPassword ? (
               <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label>
             ) : null}
-            <button className="cp-btn" type="submit" disabled={busy}>{busy ? "Starting…" : "Enable"}</button>
+            <button className="cp-btn" type="submit" disabled={busy || activateLeft < 1}>{busy ? "Starting…" : "Enable"}</button>
           </form>
         ) : null}
         {secret && !enabled ? (
@@ -495,7 +541,7 @@ export function SecurityView() {
             {confirmDisable ? (
               <form onSubmit={(event) => void disable(event)}>
                 <h3>Turn authenticator off?</h3>
-                <p>New sign-ins will no longer ask for a code. Enter the current 6-digit code from TrustifySMM.</p>
+                <p>Sign-in stops asking for a code. The TrustifySMM entry stays in Google Authenticator, and you can turn it on again with the same code.</p>
                 {info.hasPassword ? <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label> : null}
                 <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label>
                 <div className="cp-row-actions">
@@ -503,7 +549,25 @@ export function SecurityView() {
                   <button className="cp-btn-ghost" type="button" onClick={() => setConfirmDisable(false)}>Cancel</button>
                 </div>
               </form>
-            ) : <button className="cp-btn-ghost" type="button" onClick={() => setConfirmDisable(true)}>Disable</button>}
+            ) : <button className="cp-btn-ghost" type="button" onClick={() => { setConfirmDisable(true); setConfirmDelete(false); }}>Disable</button>}
+          </div>
+        ) : null}
+        {saved ? (
+          <div className="cp-auth-delete">
+            <h3>Delete Google Authenticator</h3>
+            <p>This removes TrustifySMM from your account. Then open Google Authenticator and delete the TrustifySMM entry there. You can set it up again later, up to 3 times a day.</p>
+            {confirmDelete ? (
+              <form onSubmit={(event) => void removeAuthenticator(event)}>
+                {info.hasPassword ? <label className="cp-field"><span>Current password</span><input name="current" type="password" autoComplete="current-password" required /></label> : null}
+                <label className="cp-field"><span>6-digit code</span><input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required /></label>
+                <div className="cp-row-actions">
+                  <button className="cp-btn" type="submit" disabled={busy || deleteLeft < 1}>Delete Google Authenticator</button>
+                  <button className="cp-btn-ghost" type="button" onClick={() => setConfirmDelete(false)}>Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <button className="cp-btn-ghost" type="button" disabled={deleteLeft < 1} onClick={() => { setConfirmDelete(true); setConfirmDisable(false); }}>Delete Google Authenticator</button>
+            )}
           </div>
         ) : null}
         {error ? <p className="cp-error">{error}</p> : null}
