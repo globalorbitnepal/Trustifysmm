@@ -241,6 +241,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <div className="cp-content">{children}</div>
+        <nav className="cp-dock" aria-label="Dashboard">
+          <Link href="/dashboard" className={pathname === "/dashboard" ? "is-on" : ""}>Home</Link>
+          <Link href="/dashboard/new-order" className={pathname.startsWith("/dashboard/new-order") ? "is-on" : ""}>Order</Link>
+          <Link href="/dashboard/add-funds" className={pathname.startsWith("/dashboard/add-funds") ? "is-on" : ""}>Funds</Link>
+          <Link href="/dashboard/orders" className={pathname.startsWith("/dashboard/orders") ? "is-on" : ""}>Orders</Link>
+          <button type="button" onClick={() => setOpen(true)}>Menu</button>
+        </nav>
       </div>
       {search ? (
         <div className="cp-modal" role="dialog" aria-label="Search dashboard">

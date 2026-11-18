@@ -623,9 +623,36 @@ button {
   animation: hero-rise 0.8s 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.hero-logo-field {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero-logo-bit {
+  position: absolute;
+  aspect-ratio: 1;
+  opacity: 0.34;
+  animation: icon-float 7.5s ease-in-out infinite;
+  filter: drop-shadow(0 8px 12px rgba(20, 8, 48, 0.28));
+}
+
+.hero-logo-bit .platform-brand-wrap {
+  width: 100%;
+  height: 100%;
+  border-radius: 28%;
+}
+
+.hero-logo-bit .platform-brand-svg {
+  width: 62%;
+  height: 62%;
+}
+
 .orbit {
   position: relative;
-  min-height: 520px;
+  min-height: clamp(420px, 48vw, 640px);
   display: grid;
   place-items: center;
 }
@@ -638,51 +665,63 @@ button {
   background: radial-gradient(circle, rgba(112, 40, 232, 0.26) 0%, rgba(40, 123, 255, 0.1) 46%, transparent 72%);
 }
 
+.orbit-rotor {
+  position: absolute;
+  inset: 2%;
+  transform-origin: 50% 50%;
+  animation: orbit-spin 42s linear infinite;
+}
+
 .orbit-lines {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-  transform-origin: 52% 54%;
-  animation: orbit-spin 48s linear infinite;
 }
 
-.orbit-stage {
-  position: relative;
-  z-index: 4;
-  isolation: isolate;
-  width: min(100%, 680px);
-  max-width: 100%;
-  aspect-ratio: 1 / 0.92;
-  margin: 0 auto;
+.orbit-sat {
+  position: absolute;
+  width: clamp(56px, 17%, 112px);
+  aspect-ratio: 1;
+  left: calc(50% + cos(var(--a)) * var(--r));
+  top: calc(50% + sin(var(--a)) * var(--r));
+  translate: -50% -50%;
+  z-index: 5;
+}
+
+.orbit-sat-face {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  animation: orbit-spin 42s linear infinite reverse;
+  filter: drop-shadow(0 14px 18px rgba(40, 16, 90, 0.38));
+}
+
+.orbit-sat-face .platform-brand-wrap {
+  width: 100%;
+  height: 100%;
+  border-radius: 28%;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 12px 22px rgba(8, 4, 24, 0.28);
+}
+
+.orbit-sat-face .platform-brand-svg {
+  width: 58%;
+  height: 58%;
 }
 
 .orbit-core {
   position: absolute;
-  top: 24%;
-  left: 30%;
-  width: 40%;
+  top: 50%;
+  left: 50%;
+  width: min(34%, 220px);
   height: auto;
   z-index: 6;
+  translate: -50% -50%;
   background: transparent;
-  filter: drop-shadow(0 14px 22px rgba(88, 56, 200, 0.28));
+  filter: drop-shadow(0 18px 28px rgba(88, 56, 200, 0.38));
   animation: core-float 5.5s ease-in-out infinite;
-}
-
-.orbit-float {
-  position: absolute;
-  height: auto;
-  animation: icon-float 5.2s ease-in-out infinite;
-}
-
-.orbit-icon {
-  display: block;
-  width: 100%;
-  height: auto;
-  background: transparent;
-  filter: drop-shadow(0 12px 20px rgba(72, 40, 160, 0.26));
-  transform-origin: center center;
 }
 
 @keyframes hero-rise {
@@ -725,9 +764,10 @@ button {
   .lede,
   .hero-actions,
   .badge,
-  .orbit-lines,
+  .orbit-rotor,
+  .orbit-sat-face,
   .orbit-core,
-  .orbit-float,
+  .hero-logo-bit,
   .logo-img,
   .cp-content-enter {
     animation: none !important;
@@ -1148,18 +1188,29 @@ button {
 }
 
 .platform-mark {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   display: grid;
   place-items: center;
   margin-bottom: 4px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
 }
 
+.platform-mark img,
+.platform-mark .platform-card-logo,
+.platform-mark .platform-brand-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+}
+
+.platform-mark .platform-brand-svg,
 .platform-mark svg {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   display: block;
 }
 
@@ -1184,7 +1235,7 @@ button {
 }
 
 .platform-mark--instagram {
-  background: linear-gradient(135deg, #feda75, #d62976 58%, #962fbf);
+  background: transparent;
 }
 
 .platform-card--youtube {
@@ -1193,7 +1244,7 @@ button {
 }
 
 .platform-mark--youtube {
-  background: linear-gradient(135deg, #ff4b4b, #cc0000);
+  background: transparent;
 }
 
 .platform-card--tiktok {
@@ -1202,7 +1253,7 @@ button {
 }
 
 .platform-mark--tiktok {
-  background: linear-gradient(135deg, #25f4ee, #111 48%, #fe2c55);
+  background: transparent;
 }
 
 .platform-card--facebook {
@@ -1211,7 +1262,7 @@ button {
 }
 
 .platform-mark--facebook {
-  background: linear-gradient(135deg, #3b8ff3, #1877f2);
+  background: transparent;
 }
 
 .platform-card--x {
@@ -1220,7 +1271,7 @@ button {
 }
 
 .platform-mark--x {
-  background: linear-gradient(135deg, #1a1a22, #000);
+  background: transparent;
 }
 
 .platform-card--telegram {
@@ -1229,7 +1280,7 @@ button {
 }
 
 .platform-mark--telegram {
-  background: linear-gradient(135deg, #54c3ff, #29a9eb);
+  background: transparent;
 }
 
 .platform-card--whatsapp {
@@ -1238,7 +1289,7 @@ button {
 }
 
 .platform-mark--whatsapp {
-  background: linear-gradient(135deg, #43e47b, #25d366);
+  background: transparent;
 }
 
 .platform-card--snapchat {
@@ -1247,7 +1298,7 @@ button {
 }
 
 .platform-mark--snapchat {
-  background: linear-gradient(135deg, #fff86b, #fffc00);
+  background: transparent;
 }
 
 .platform-card--threads {
@@ -1256,7 +1307,7 @@ button {
 }
 
 .platform-mark--threads {
-  background: linear-gradient(135deg, #2a2a2a, #101010);
+  background: transparent;
 }
 
 .platform-card--more {
@@ -3864,8 +3915,16 @@ button {
   }
 
   .orbit {
+    order: 2;
+    min-height: 380px;
+  }
+
+  .hero-copy {
     order: 1;
-    min-height: 360px;
+  }
+
+  .hero-logo-bit {
+    opacity: 0.22;
   }
 
   .hero-copy {
@@ -3913,8 +3972,12 @@ button {
     font-size: 68px;
   }
 
-  .orbit-stage {
-    width: min(100%, 760px);
+  .orbit {
+    min-height: 700px;
+  }
+
+  .orbit-sat {
+    width: clamp(72px, 17%, 128px);
   }
 }
 
@@ -3926,6 +3989,10 @@ button {
 
   .headline {
     font-size: 76px;
+  }
+
+  .orbit {
+    min-height: 860px;
   }
 }
 
@@ -5296,6 +5363,15 @@ button {
     margin-left: auto;
     margin-right: auto;
   }
+}
+
+@media (max-width: 760px) {
+  .auth-signup-card-wrap { order: -1; }
+  .auth-signup-perks, .auth-signup-trust { display: none; }
+  .auth-signup-title { font-size: 30px; }
+  .auth-signup-form input, .auth-signup-submit { min-height: 50px; font-size: 16px; }
+  .auth-signup-card { border-radius: 22px; }
+  .site-footer { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
 }
 
 @media (max-width: 600px) {
@@ -6714,4 +6790,70 @@ button {
   .blog-prose-p {
     font-size: 16px;
   }
+}
+
+.app-tabbar,
+.install-banner { display: none; }
+
+.app-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  background: rgba(10, 7, 24, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.app-tab {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-height: 48px;
+  color: rgba(236, 230, 255, 0.72);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.app-tab svg { width: 20px; height: 20px; }
+.app-tab.is-on { color: #fff; }
+.app-tab.is-on span { color: #c4b5fd; }
+
+.install-banner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  z-index: 51;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(90deg, rgba(109, 40, 217, 0.96), rgba(37, 99, 235, 0.96));
+  box-shadow: 0 12px 30px rgba(8, 4, 24, 0.35);
+}
+
+.install-banner p { margin: 0; font-size: 13px; font-weight: 700; }
+.install-banner button, .install-banner a {
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #4c1d95;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 12px;
+  text-decoration: none;
+}
+
+@media (max-width: 860px) {
+  .app-tabbar { display: grid; }
+  .install-banner { display: flex; }
 }

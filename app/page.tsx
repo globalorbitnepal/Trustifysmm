@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
-import { SocialOrbit } from "@/components/SocialOrbit";
+import { HeroLogoField, SocialOrbit } from "@/components/SocialOrbit";
 import { WhyChoose } from "@/components/WhyChoose";
 import { SupportedPlatforms } from "@/components/SupportedPlatforms";
 import { HowItWorks } from "@/components/HowItWorks";
@@ -39,6 +39,7 @@ export default function HomePage() {
       <SiteHeader />
       {enabled("hero") ? (
       <section className="hero-band" aria-labelledby="hero-title">
+        <HeroLogoField />
         <div className="hero">
           <div className="hero-copy">
             <p className="badge">

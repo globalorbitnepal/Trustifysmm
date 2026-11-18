@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { MobileAppChrome } from "@/components/MobileAppChrome";
 import { SiteNavProgress } from "@/components/SiteNavProgress";
 import { TrafficBeacon } from "@/components/TrafficBeacon";
 import "./globals.css";
@@ -20,6 +21,8 @@ export const metadata: Metadata = {
   },
   description:
     "Power your social media growth with reliable, affordable and automated services across the platforms you love.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "TrustifySMM", statusBarStyle: "black-translucent" },
   icons: {
     icon: [
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
@@ -40,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteNavProgress />
         <TrafficBeacon />
         {children}
+        <MobileAppChrome />
       </body>
     </html>
   );
