@@ -201,35 +201,11 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
             <p>{copy?.cardLede || "Use the email and password from your reseller account."}</p>
           </div>
 
-          {twoFactor ? (
-            <form className="auth-signup-form" onSubmit={onTotp}>
-              <p>Enter the 6-digit code from Google Authenticator for TrustifySMM.</p>
-              <label htmlFor="signin-totp">{recovery ? "Recovery code" : "Authenticator code"}</label>
-              <div className="auth-signup-field">
-                <input
-                  id="signin-totp"
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  inputMode={recovery ? "text" : "numeric"}
-                  autoComplete="one-time-code"
-                  placeholder={recovery ? "XXXXX-XXXXX" : "123456"}
-                  required
-                />
-              </div>
-              {error ? <p className="auth-signup-error">{error}</p> : null}
-              <button className="auth-signup-submit" type="submit" disabled={loading || code.trim().length < 6}>
-                {loading ? "Checking…" : "Continue to dashboard"}
-              </button>
-              <button className="auth-signup-link" type="button" onClick={() => { setRecovery((value) => !value); setCode(""); setError(""); }}>
-                {recovery ? "Use an authenticator code" : "Use a recovery code"}
-              </button>
-            </form>
-          ) : (
-          <>
-          <GoogleAuthButton mode="login" disabled={loading} />
-          <AuthDivider />
+          {twoFactor ? null : <GoogleAuthButton mode="login" disabled={loading} />}
+          {twoFactor ? null : <AuthDivider />}
 
-          <form className="auth-signup-form" onSubmit={onSubmit}>
+          <form className="auth-signup-form" onSubmit={twoFactor ? onTotp : onSubmit}>
+              {!twoFactor || email ? (<>
               <label htmlFor="signin-email">Email</label>
               <div className="auth-signup-field">
                 <span className="auth-signup-field-icon" aria-hidden>
@@ -243,7 +219,8 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
                   placeholder="you@agency.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
+                  required={!twoFactor}
+                  readOnly={twoFactor}
                 />
               </div>
 
@@ -260,7 +237,8 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
+                  required={!twoFactor}
+                  readOnly={twoFactor}
                 />
                 <button
                   type="button"
@@ -271,6 +249,30 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
                   {showPass ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
+              </>) : null}
+
+              {twoFactor ? (
+                <div className="auth-totp">
+                  <img src="/brand/google-authenticator.svg" alt="" width={44} height={44} />
+                  <div>
+                    <strong>{recovery ? "Recovery code" : "Authenticator code"}</strong>
+                    <p>{email ? "Password accepted." : "Google sign-in accepted."} Enter the code from Google Authenticator. The dashboard opens only if it matches.</p>
+                  </div>
+                  <label htmlFor="signin-totp">{recovery ? "Recovery code" : "6-digit code"}</label>
+                  <input
+                    id="signin-totp"
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                    inputMode={recovery ? "text" : "numeric"}
+                    autoComplete="one-time-code"
+                    placeholder={recovery ? "XXXXX-XXXXX" : "123456"}
+                    required
+                  />
+                  <button className="auth-signup-link" type="button" onClick={() => { setRecovery((value) => !value); setCode(""); setError(""); }}>
+                    {recovery ? "Use an authenticator code" : "Use a recovery code"}
+                  </button>
+                </div>
+              ) : null}
 
               <div className="auth-signin-row">
                 <label className="auth-signup-check auth-signin-remember">
@@ -284,8 +286,8 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
 
               {error ? <p className="auth-signup-error">{error}</p> : null}
 
-              <button className="auth-signup-submit" type="submit" disabled={!canSubmit}>
-                {loading ? "Signing in…" : (
+              <button className="auth-signup-submit" type="submit" disabled={twoFactor ? loading || code.trim().length < 6 : !canSubmit}>
+                {loading ? "Checking…" : twoFactor ? "Open dashboard" : (
                   <>
                     Sign in to panel
                     <ArrowIcon />
@@ -293,8 +295,6 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
                 )}
               </button>
           </form>
-          </>
-          )}
 
           <p className="auth-signup-foot">
             <ShieldIcon />

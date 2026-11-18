@@ -19,6 +19,7 @@ import {
   provisioningUri,
   totpCode,
 } from "@/lib/customer/totp";
+import { setupQr } from "@/lib/customer/totp-qr";
 import {
   beginTotpEnrollment,
   clearTotp,
@@ -59,14 +60,18 @@ describe("authenticator codes", () => {
     expect(matchTotp(secret, current.code, current.counter, now)).toEqual({ ok: false, reason: "replay" });
   });
 
-  it("stores the secret encrypted and never as plaintext", () => {
+  it("stores the secret encrypted and never as plaintext", async () => {
     const secret = generateTotpSecret();
     const enc = encryptSecret(secret);
     expect(enc).toBeTruthy();
     expect(enc).not.toContain(secret);
     expect(decryptSecret(enc!)).toBe(secret);
     expect(provisioningUri(secret, "a@b.com")).toContain("algorithm=SHA1");
-    expect(provisioningUri(secret, "a@b.com")).not.toContain("qr");
+    const image = await setupQr(secret, "a@b.com");
+    expect(image.uri).toContain(secret);
+    expect(image.uri.startsWith("otpauth://totp/")).toBe(true);
+    expect(image.qr.startsWith("data:image/png;base64,")).toBe(true);
+    expect(image.qr.length).toBeGreaterThan(2000);
   });
 
   it("accepts a 32-byte hex encryption key and rejects a short one", () => {

@@ -4958,6 +4958,24 @@ button {
   color: #e9d5ff;
 }
 
+.auth-totp {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 8px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(26, 115, 232, 0.08);
+}
+.auth-totp img { border-radius: 10px; background: #fff; }
+.auth-totp p { margin: 0; color: var(--muted, #64748b); line-height: 1.45; }
+.auth-totp input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  padding: 12px 14px;
+  font-size: 1.15rem;
+  letter-spacing: 0.18em;
+}
 .auth-signup-error {
   margin: 12px 0 0;
   font-size: 14px;

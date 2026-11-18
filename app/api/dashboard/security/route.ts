@@ -15,6 +15,7 @@ import {
 } from "@/lib/customer/totp-store";
 import { bumpSessionVersion, changeCustomerPassword, setCustomerPassword, toPublicUser } from "@/lib/customer/user-store";
 import { verifyPassword } from "@/lib/customer/password";
+import { setupQr } from "@/lib/customer/totp-qr";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,8 @@ export async function POST(request: Request) {
     const started = await beginTotpEnrollment(user.id, user.email);
     if ("error" in started) return NextResponse.json({ error: started.error }, { status: 400 });
     await recordAudit(user.id, "totp_enrollment_started");
-    return NextResponse.json({ secret: started.secret, account: started.account, mode: started.mode });
+    const image = await setupQr(started.secret, user.email);
+    return NextResponse.json({ secret: started.secret, qr: image.qr, account: started.account, mode: started.mode });
   }
   if (body.action === "totp-confirm") {
     if (!rateLimitTotp(`enroll:${user.id}`)) return NextResponse.json({ error: "Too many codes. Wait a few minutes." }, { status: 429 });
