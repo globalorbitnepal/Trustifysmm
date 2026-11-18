@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { listAllLogins, listAllTickets } from "@/lib/customer/panel-store";
 import { getUserById } from "@/lib/customer/user-store";
 import { findService } from "@/lib/dashboard/catalog";
+import { listApiActivity } from "@/lib/smm-api/activity";
 import { getAccountByKey, listLedger, listOrdersByAccount } from "@/lib/smm-api/demo-store";
 
 export const dynamic = "force-dynamic";
@@ -10,12 +11,13 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const { id } = await context.params;
   const user = await getUserById(id);
   if (!user) return NextResponse.json({ error: "Customer not found." }, { status: 404 });
-  const [wallet, orders, ledger, logins, tickets] = await Promise.all([
+  const [wallet, orders, ledger, logins, tickets, activity] = await Promise.all([
     getAccountByKey(user.apiKey),
     listOrdersByAccount(user.apiKey),
     listLedger(user.apiKey),
     listAllLogins(),
     listAllTickets(),
+    listApiActivity(300),
   ]);
   return NextResponse.json({
     customer: {
@@ -37,10 +39,12 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       quantity: order.quantity,
       charge: order.charge,
       status: order.status,
+      channel: order.channel || "dashboard",
       createdAt: order.createdAt,
     })),
     ledger: ledger.slice(0, 40),
     logins: logins.filter((row) => row.userId === user.id).slice(0, 20),
     tickets: tickets.filter((ticket) => ticket.userId === user.id),
+    api: activity.filter((event) => event.userId === user.id || event.email === user.email).slice(0, 40),
   });
 }

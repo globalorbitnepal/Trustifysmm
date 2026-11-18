@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Empty, Skeleton } from "@/components/dashboard/OverviewView";
-import { apiDocEndpoints } from "@/data/api-documentation";
-
 export function TicketsView() {
   const [tickets, setTickets] = useState<{ id: string; subject: string; category: string; priority: string; status: string; updatedAt: string }[] | null>(null);
   const [status, setStatus] = useState("");
@@ -382,6 +380,95 @@ export function SecurityView() {
   );
 }
 
+const API_URL = "https://trustifysmm.com/api/v2";
+
+function downloadFile(name: string, text: string, type: string) {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function phpExample(key: string) {
+  const quotedKey = JSON.stringify(key);
+  const dollar = "$";
+  return `<?php
+/**
+ * TrustifySMM API example.
+ * Put this file on any server with PHP and cURL.
+ * Orders use the key below and the charge leaves that wallet.
+ */
+
+${dollar}apiKey = ${quotedKey};
+${dollar}apiUrl = ${JSON.stringify(API_URL)};
+
+function trustify(array ${dollar}params): array {
+    ${dollar}ch = curl_init(${JSON.stringify(API_URL)});
+    curl_setopt_array(${dollar}ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query(array_merge(['key' => ${quotedKey}], ${dollar}params)),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 60,
+    ]);
+    ${dollar}raw = curl_exec(${dollar}ch);
+    curl_close(${dollar}ch);
+    ${dollar}data = json_decode((string) ${dollar}raw, true);
+    return is_array(${dollar}data) ? ${dollar}data : ['error' => 'Invalid response'];
+}
+
+// 1. Wallet balance
+print_r(trustify(['action' => 'balance']));
+
+// 2. Service list. Use the "service" number in the next call.
+// print_r(trustify(['action' => 'services']));
+
+// 3. Place an order. The charge is taken from this key's wallet.
+// print_r(trustify([
+//     'action' => 'add',
+//     'service' => '10001',
+//     'link' => 'https://example.com/your-link',
+//     'quantity' => '100',
+// ]));
+`;
+}
+
+function textExample(key: string) {
+  return `TrustifySMM API
+Endpoint: ${API_URL}
+Method: POST
+Key: ${key}
+
+Every call is form data with key and action.
+An order is charged to the wallet that owns this key.
+
+Balance
+curl -X POST "${API_URL}" -d "key=${key}" -d "action=balance"
+
+Services
+curl -X POST "${API_URL}" -d "key=${key}" -d "action=services"
+
+Add order
+curl -X POST "${API_URL}" \\
+  -d "key=${key}" \\
+  -d "action=add" \\
+  -d "service=10001" \\
+  -d "link=https://example.com/your-link" \\
+  -d "quantity=100"
+
+The response is { "order": 1100 }.
+That number is your order id. The charge has already left the wallet.
+
+Status
+curl -X POST "${API_URL}" -d "key=${key}" -d "action=status" -d "order=1100"
+
+Cancel
+curl -X POST "${API_URL}" -d "key=${key}" -d "action=cancel" -d "orders=1100"
+`;
+}
+
 export function ApiDocsView() {
   const [user, setUser] = useState<User | null>(null);
   const [show, setShow] = useState(false);
@@ -394,34 +481,61 @@ export function ApiDocsView() {
     if (!res.ok || !data.user) { setMessage(data.error || "Request failed."); return; }
     setUser(data.user);
     setShow(action === "regenerate");
-    setMessage(action === "regenerate" ? "New key generated. Copy it now." : "Key revoked. Orders and API calls are blocked until you regenerate.");
+    setMessage(action === "regenerate" ? "New key generated. Download the PHP or text example and use this key." : "Key revoked. Generate a new key before connecting again.");
   }
   if (!user) return <Skeleton />;
   const masked = `${user.apiKey.slice(0, 8)}…${user.apiKey.slice(-4)}`;
+  const visibleKey = user.apiKeyRevoked ? "" : user.apiKey;
   return (
-    <div className="cp-grid">
+    <div className="cp-api">
       <section className="cp-card">
-        <h3>API key</h3>
-        <p>Endpoint <code>https://trustifysmm.com/api/v2</code></p>
-        <p>{user.apiKeyRevoked ? "Revoked" : show ? user.apiKey : masked}</p>
+        <p className="cp-kicker">Your API</p>
+        <h3>Generate a key and connect</h3>
+        <p>The endpoint is <code>{API_URL}</code>. A call with this key places the order on your account and takes the charge from this wallet.</p>
+        <p className="cp-api-key">{user.apiKeyRevoked ? "Revoked. Generate a new key." : show ? user.apiKey : masked}</p>
         <div className="cp-row-actions">
-          <button className="cp-btn-ghost" type="button" onClick={() => setShow((v) => !v)}>{show ? "Hide" : "Reveal"}</button>
-          <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(user.apiKey)}>Copy</button>
-          <button className="cp-btn" type="button" onClick={() => void act("regenerate")}>Regenerate</button>
-          <button className="cp-btn-ghost" type="button" onClick={() => void act("revoke")}>Revoke</button>
+          <button className="cp-btn" type="button" onClick={() => void act("regenerate")}>Generate new key</button>
+          <button className="cp-btn-ghost" type="button" onClick={() => setShow((value) => !value)} disabled={user.apiKeyRevoked}>{show ? "Hide" : "Reveal"}</button>
+          <button className="cp-btn-ghost" type="button" disabled={!visibleKey} onClick={() => void navigator.clipboard.writeText(user.apiKey)}>Copy key</button>
+          <button className="cp-btn-ghost" type="button" disabled={user.apiKeyRevoked} onClick={() => void act("revoke")}>Revoke</button>
         </div>
         {message ? <p>{message}</p> : null}
-        <p className="cp-note">The key authenticates your panel API. It is stored so the server can match requests. Treat it like a password.</p>
       </section>
-      {apiDocEndpoints.map((endpoint) => (
-        <article key={endpoint.id} className="cp-card">
-          <h3>{endpoint.title}</h3>
-          <p>{endpoint.method} {endpoint.path}{endpoint.action ? ` · action=${endpoint.action}` : ""}</p>
-          <p>{endpoint.summary}</p>
-          <pre>{endpoint.curlExample}</pre>
-          <pre>{endpoint.responseExample}</pre>
-        </article>
-      ))}
+
+      <section className="cp-card">
+        <p className="cp-kicker">Install</p>
+        <h3>How to connect</h3>
+        <ol className="cp-api-steps">
+          <li>Generate the key on this page. It belongs to this login only.</li>
+          <li>Download the PHP file or the text example. Both already contain this key.</li>
+          <li>PHP needs cURL. Upload <code>trustifysmm-api.php</code> and open it, or run <code>php trustifysmm-api.php</code>.</li>
+          <li>Send <code>action=services</code> to read the service numbers, then <code>action=add</code> with the service, link and quantity.</li>
+          <li>The response order number is your order. The same amount is removed from the wallet shown in this dashboard.</li>
+        </ol>
+        <div className="cp-row-actions">
+          <button className="cp-btn" type="button" disabled={!visibleKey} onClick={() => downloadFile("trustifysmm-api.php", phpExample(user.apiKey), "application/x-php")}>Download PHP file</button>
+          <button className="cp-btn-ghost" type="button" disabled={!visibleKey} onClick={() => downloadFile("trustifysmm-api.txt", textExample(user.apiKey), "text/plain")}>Download text example</button>
+          <a className="cp-btn-ghost" href="/downloads/trustifysmm-api-client.php" download>Download PHP class</a>
+        </div>
+        <p className="cp-note">The PHP class is the same client without your key filled in. Paste the key into <code>YOUR_API_KEY</code>. Do not send the key to anyone else. A revoked key cannot place orders.</p>
+      </section>
+
+      <section className="cp-card">
+        <h3>Actions</h3>
+        <div className="cp-table-wrap">
+          <table className="cp-table">
+            <thead><tr><th>Action</th><th>What it does</th><th>Required fields</th></tr></thead>
+            <tbody>
+              <tr><td data-label="Action">services</td><td data-label="What it does">Service numbers, names, rates, min and max.</td><td data-label="Required">key, action</td></tr>
+              <tr><td data-label="Action">add</td><td data-label="What it does">Places the order and charges this wallet.</td><td data-label="Required">key, action, service, link, quantity</td></tr>
+              <tr><td data-label="Action">status</td><td data-label="What it does">Charge, status and remains for one of your orders.</td><td data-label="Required">key, action, order</td></tr>
+              <tr><td data-label="Action">balance</td><td data-label="What it does">Wallet balance for this key.</td><td data-label="Required">key, action</td></tr>
+              <tr><td data-label="Action">cancel</td><td data-label="What it does">Cancels one of your orders and returns the charge when the cancel is accepted.</td><td data-label="Required">key, action, orders</td></tr>
+              <tr><td data-label="Action">refill</td><td data-label="What it does">Asks for a refill on one of your orders.</td><td data-label="Required">key, action, order</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }

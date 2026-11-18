@@ -23,7 +23,7 @@ export function pricingToApiServices(data: ServicePricingData): ApiServiceRow[] 
     rate: String(s.ratePer1000),
     min: s.minOrder || "1",
     max: s.maxOrder || "1000000",
-    refill: /refill|365d|lifetime/i.test(s.name + s.description),
+    refill: Boolean(s.refill) || /refill|365d|lifetime/i.test(s.name + s.description),
     cancel: true,
     dripfeed: false,
     description: s.description || "",

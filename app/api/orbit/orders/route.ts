@@ -36,6 +36,7 @@ export async function GET(request: Request) {
       cost,
       margin: cost === null ? null : Math.round((order.charge - cost) * 10000) / 10000,
       status: order.status,
+      channel: order.channel || "dashboard",
       remains: order.remains,
       startCount: order.start_count,
       createdAt: order.createdAt,

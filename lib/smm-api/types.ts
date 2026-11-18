@@ -30,6 +30,8 @@ export type DemoOrder = {
   /** Provider service id, kept so status, cancel and refill always hit the right service. */
   upstreamServiceId?: number;
   upstreamStatus?: string;
+  /** dashboard = placed in the panel. api = placed with the customer's API key. */
+  channel?: "dashboard" | "api";
 };
 
 export type DepositStatusHistory = { status: string; providerStatus?: string; at: string };

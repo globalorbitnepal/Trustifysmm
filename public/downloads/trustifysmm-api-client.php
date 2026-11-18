@@ -192,7 +192,7 @@ final class TrustifySmmApi
 
 if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($_SERVER['argv'][0] ?? '')) {
     $key = getenv('TRUSTIFY_API_KEY') ?: 'YOUR_API_KEY';
-    $api = new TrustifySmmApi($key, getenv('TRUSTIFY_API_URL') ?: 'http://127.0.0.1:3010/api/v2');
+    $api = new TrustifySmmApi($key, getenv('TRUSTIFY_API_URL') ?: 'https://trustifysmm.com/api/v2');
 
     echo "Balance:\n";
     print_r($api->balance());

@@ -276,10 +276,12 @@ export async function createDemoOrder(input: {
   link: string;
   quantity: number;
   charge: number;
+  channel?: "dashboard" | "api";
 }) {
   const placed = await placeOrdersAtomic({
     key: input.key,
     idempotencyKey: "",
+    channel: input.channel ?? "api",
     rows: [input],
   });
   if ("error" in placed && placed.error) return { error: placed.error };
@@ -291,6 +293,7 @@ export async function createDemoOrder(input: {
 export async function placeOrdersAtomic(input: {
   key: string;
   idempotencyKey: string;
+  channel?: "dashboard" | "api";
   rows: { service: number; link: string; quantity: number; charge: number }[];
 }) {
   return withStoreLock(async () => {
@@ -329,6 +332,7 @@ export async function placeOrdersAtomic(input: {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         accountKey: input.key,
+        channel: input.channel ?? "dashboard",
       };
       store.orders.push(order);
       created.push(order);

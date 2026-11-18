@@ -50,6 +50,7 @@ export async function placeCustomerOrders(user: CustomerUser, rows: OrderRowInpu
   const placed = await placeOrdersAtomic({
     key: user.apiKey,
     idempotencyKey,
+    channel: "dashboard",
     rows: priced.map(({ service, link, quantity, charge }) => ({ service, link, quantity, charge })),
   });
   if ("error" in placed) return { error: placed.error, status: 400 };

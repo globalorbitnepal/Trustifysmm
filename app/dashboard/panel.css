@@ -1670,3 +1670,9 @@ html[data-dash="light"] .cp-account-hero,
 @media (max-width: 800px) {
   .cp-help-grid, .cp-help-points { grid-template-columns: 1fr; }
 }
+
+.cp-api { display: grid; gap: 16px; }
+.cp-api h3 { margin: 0 0 8px; }
+.cp-api-key { margin: 12px 0; padding: 12px 14px; border-radius: 12px; background: rgba(124, 58, 237, 0.12); font-family: ui-monospace, monospace; word-break: break-all; }
+.cp-api-steps { margin: 0 0 14px; padding-left: 18px; display: grid; gap: 8px; line-height: 1.5; }
+.cp-api .cp-table-wrap { overflow-x: auto; }

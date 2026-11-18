@@ -38,6 +38,7 @@ const groups: NavGroup[] = [
       { href: "/orbit/customers", label: "All Customers", icon: "customers" },
       { href: "/orbit/wallet", label: "Customer Wallets", icon: "wallet" },
       { href: "/orbit/activity", label: "Customer Activity", icon: "activity" },
+      { href: "/orbit/customer-api", label: "Customer API", icon: "bolt" },
     ],
   },
   {

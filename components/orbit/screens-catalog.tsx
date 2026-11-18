@@ -5,7 +5,8 @@ import { send, usd, useOrbit } from "@/components/orbit/use-orbit";
 
 type Detail = {
   customer: { id: string; email: string; name: string | null; balance: number; suspended: boolean; apiKeyRevoked: boolean; createdAt: string; apiKeyMasked: string };
-  orders: { id: number; service: string; link: string; quantity: number; charge: number; status: string; createdAt: string }[];
+  orders: { id: number; service: string; link: string; quantity: number; charge: number; status: string; channel?: string; createdAt: string }[];
+  api?: { id: string; at: string; action: string; ok: boolean; detail: string; ip: string; orderId: number | null; keyPrefix: string }[];
   ledger: { id: string; type: string; amount: number; description: string; createdAt: string }[];
   logins: { createdAt: string; method: string; ip: string }[];
   tickets: { id: string; subject: string; status: string }[];
@@ -51,8 +52,8 @@ export function CustomerDetailScreen({ id }: { id: string }) {
       {message ? <p>{message}</p> : null}
       <div className="ob-table-wrap">
         <table className="ob-table">
-          <thead><tr><th>Order</th><th>Service</th><th>Qty</th><th>Charge</th><th>Status</th></tr></thead>
-          <tbody>{(data?.orders ?? []).map((order) => <tr key={order.id}><td>#{order.id}</td><td>{order.service}</td><td>{order.quantity}</td><td>{usd(order.charge)}</td><td>{order.status}</td></tr>)}</tbody>
+          <thead><tr><th>Order</th><th>From</th><th>Service</th><th>Qty</th><th>Charge</th><th>Status</th></tr></thead>
+          <tbody>{(data?.orders ?? []).map((order) => <tr key={order.id}><td>#{order.id}</td><td>{order.channel === "api" ? "API" : "Dashboard"}</td><td>{order.service}</td><td>{order.quantity}</td><td>{usd(order.charge)}</td><td>{order.status}</td></tr>)}</tbody>
         </table>
       </div>
       <div className="ob-table-wrap">
@@ -62,6 +63,10 @@ export function CustomerDetailScreen({ id }: { id: string }) {
         </table>
       </div>
       <article className="ob-card">
+        <span>API connections</span>
+        {(data?.api ?? []).length === 0 ? <p>This customer has not generated or called the API yet.</p> : (data?.api ?? []).map((row) => (
+          <p key={row.id}>{row.at.slice(0, 16).replace("T", " ")} · {row.action} · {row.ok ? "OK" : "Failed"} · {row.detail} · {row.keyPrefix}… · {row.ip}</p>
+        ))}
         <span>Logins</span>
         {data?.logins.map((row) => <p key={row.createdAt}>{row.createdAt.slice(0, 16).replace("T", " ")} · {row.method} · {row.ip}</p>)}
         <span>Tickets</span>
