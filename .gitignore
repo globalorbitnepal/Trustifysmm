@@ -5,7 +5,8 @@ node_modules
 /generated/prisma
 
 # Next.js
-.next/
+.next
+.next-old/
 out/
 build/
 

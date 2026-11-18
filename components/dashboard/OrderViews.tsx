@@ -103,7 +103,10 @@ export function NewOrderView() {
       return;
     }
     setPlaced(data.orders[0]);
-    if (typeof data.balance === "number") setBalance(data.balance);
+    if (typeof data.balance === "number") {
+      setBalance(data.balance);
+      window.dispatchEvent(new CustomEvent("trustify-wallet", { detail: data.balance }));
+    }
   }
 
   if (placed && service) {
@@ -179,7 +182,7 @@ export function NewOrderView() {
             <div className="cp-charge">
               <span>Charge</span>
               <strong>${charge.toFixed(4)}</strong>
-              <em>Wallet ${balance.toFixed(2)}</em>
+              <em>Wallet ${balance.toFixed(4)}</em>
             </div>
             <button className="cp-btn cp-btn-wide" type="button" disabled={busy || !service} onClick={() => void place()}>{busy ? "Placing…" : "Place order"}</button>
           </>
@@ -237,14 +240,17 @@ export function MassOrderView() {
       return;
     }
     setResult((data.orders ?? []).map((order) => `#${order.id}`).join(", "));
-    if (typeof data.balance === "number") setBalance(data.balance);
+    if (typeof data.balance === "number") {
+      setBalance(data.balance);
+      window.dispatchEvent(new CustomEvent("trustify-wallet", { detail: data.balance }));
+    }
   }
   return (
     <div className="cp-grid cp-split">
       <section className="cp-card">
         <p className="cp-kicker">Mass order</p>
         <p>One order per line: <code>service_id|link|quantity</code></p>
-        <p className="cp-note">Wallet ${balance.toFixed(2)}. Every line is priced on the server. Nothing is charged unless the whole batch is valid.</p>
+        <p className="cp-note">Wallet ${balance.toFixed(4)}. Every line is priced on the server and taken from the wallet only when the whole batch is accepted.</p>
         {error ? <p className="cp-error">{error}</p> : null}
         {result ? <p className="cp-ok">Placed {result}</p> : null}
         <textarea className="cp-mass" value={text} onChange={(event) => setText(event.target.value)} rows={12} placeholder={"2410|https://instagram.com/p/example|1000"} />

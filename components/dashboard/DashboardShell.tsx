@@ -37,7 +37,7 @@ const NAV: { section: string; items: [string, string, string][] }[] = [
     section: "Support",
     items: [
       ["Support Tickets", "/dashboard/tickets", "ticket"],
-      ["Help Center", "/support", "help"],
+      ["Help Center", "/dashboard/help", "help"],
       ["API Documentation", "/dashboard/api", "code"],
     ],
   },
@@ -64,6 +64,7 @@ const TITLES: Record<string, string> = {
   "/dashboard/transactions": "Transactions",
   "/dashboard/payments": "Payment History",
   "/dashboard/tickets": "Support Tickets",
+  "/dashboard/help": "Help Center",
   "/dashboard/notifications": "Notifications",
   "/dashboard/profile": "My Profile",
   "/dashboard/security": "Security",
@@ -103,6 +104,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       setUnread(data.unread);
     })();
   }, [pathname, router]);
+
+  useEffect(() => {
+    function onWallet(event: Event) {
+      const balance = (event as CustomEvent<number>).detail;
+      if (typeof balance !== "number") return;
+      setUser((current) => (current ? { ...current, balance } : current));
+    }
+    window.addEventListener("trustify-wallet", onWallet);
+    return () => window.removeEventListener("trustify-wallet", onWallet);
+  }, []);
 
   useEffect(() => {
     setOpen(false);
@@ -147,7 +158,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="cp-user-card">
             <Avatar user={user} />
             <div>
-              <strong>${(user?.balance ?? 0).toFixed(2)}</strong>
+              <strong>${(user?.balance ?? 0).toFixed(4)}</strong>
               <span>{name}</span>
             </div>
           </div>
@@ -205,7 +216,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </Link>
             <Link href="/dashboard/add-funds" className="cp-balance">
               <span>Balance</span>
-              <strong>${(user?.balance ?? 0).toFixed(2)}</strong>
+              <strong>${(user?.balance ?? 0).toFixed(4)}</strong>
             </Link>
             <Link href="/dashboard/add-funds" className="cp-add">
               Add Funds
