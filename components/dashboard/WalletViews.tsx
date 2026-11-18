@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CoinLogo } from "@/components/dashboard/CoinLogo";
 import { CryptoDepositQr } from "@/components/dashboard/CryptoDepositQr";
 import { Empty, Skeleton } from "@/components/dashboard/OverviewView";
-import { networkLabel } from "@/lib/nowpayments/network-labels";
+import { networkBadge, networkLabel } from "@/lib/nowpayments/network-labels";
 
 type DepositOption = {
   code: string;
@@ -13,6 +13,8 @@ type DepositOption = {
   symbol: string;
   network: string;
   networkLabel: string;
+  logoUrl?: string | null;
+  minUsd?: number | null;
   popular: boolean;
 };
 
@@ -43,9 +45,13 @@ type Payment = {
   networkLabel?: string | null;
   createdAt: string;
   expiresAt: string | null;
+  quoteCrypto?: string | null;
+  symbol?: string | null;
 };
 
 const PRESETS = [10, 25, 50, 100, 250] as const;
+const PAYMENT_WINDOW_MS = 60 * 60 * 1000;
+const STATUS_POLL_MS = 30_000;
 
 const LABELS: Record<string, string> = {
   pending: "Waiting for payment",
@@ -85,6 +91,8 @@ export function AddFundsView() {
   const [busy, setBusy] = useState(false);
   const [quoting, setQuoting] = useState(false);
   const [polling, setPolling] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
   const minDeposit = gateway?.minDepositUsd ?? 1;
   const maxDeposit = gateway?.maxDepositUsd ?? 50_000;
@@ -121,33 +129,45 @@ export function AddFundsView() {
     );
   }, [options, query]);
 
-  const popular = filtered.filter((row) => row.popular);
-  const others = filtered.filter((row) => !row.popular);
+  const coinGroups = useMemo(() => {
+    const groups: { symbol: string; rows: DepositOption[] }[] = [];
+    for (const row of filtered) {
+      const existing = groups.find((group) => group.symbol === row.symbol);
+      if (existing) existing.rows.push(row);
+      else groups.push({ symbol: row.symbol, rows: [row] });
+    }
+    return groups;
+  }, [filtered]);
 
+  const providerMin = selected?.minUsd ?? null;
+  const effectiveMin = Math.max(minDeposit, providerMin ?? minDeposit);
   const amountNumber = Number(amount);
-  const amountValid = Number.isFinite(amountNumber) && amountNumber >= minDeposit && amountNumber <= maxDeposit;
+  const amountValid = Number.isFinite(amountNumber) && amountNumber >= effectiveMin && amountNumber <= maxDeposit;
 
   useEffect(() => {
     setQuote(null);
     if (!selected || !amountValid) return;
+    const currency = selected.code;
     let cancelled = false;
-    const timer = window.setTimeout(() => {
+    async function loadQuote() {
       setQuoting(true);
-      void fetch(`/api/payments/nowpayments/estimate?currency=${encodeURIComponent(selected.code)}&amount=${amountNumber}`)
-        .then(async (res) => {
-          if (!res.ok) return;
-          const data = (await res.json()) as { estimatedCrypto?: string };
-          if (!cancelled && data.estimatedCrypto) {
-            setQuote({ crypto: data.estimatedCrypto, at: Date.now() });
-          }
-        })
-        .finally(() => {
-          if (!cancelled) setQuoting(false);
-        });
-    }, 600);
+      try {
+        const res = await fetch(
+          `/api/payments/nowpayments/estimate?currency=${encodeURIComponent(currency)}&amount=${amountNumber}`,
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as { estimatedCrypto?: string };
+        if (!cancelled && data.estimatedCrypto) setQuote({ crypto: data.estimatedCrypto, at: Date.now() });
+      } finally {
+        if (!cancelled) setQuoting(false);
+      }
+    }
+    const timer = window.setTimeout(() => void loadQuote(), 400);
+    const refresh = window.setInterval(() => void loadQuote(), STATUS_POLL_MS);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
+      window.clearInterval(refresh);
     };
   }, [selected, amountNumber, amountValid]);
 
@@ -188,9 +208,16 @@ export function AddFundsView() {
   }, []);
 
   useEffect(() => {
+    if (!checkoutOpen) return;
+    setNowTick(Date.now());
+    const timer = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [checkoutOpen]);
+
+  useEffect(() => {
     if (!payment || isTerminal(payment.status)) return;
     const id = payment.id;
-    const timer = window.setInterval(() => void refreshStatus(id, true), 10_000);
+    const timer = window.setInterval(() => void refreshStatus(id, true), STATUS_POLL_MS);
     return () => window.clearInterval(timer);
   }, [payment, refreshStatus]);
 
@@ -201,7 +228,7 @@ export function AddFundsView() {
       return;
     }
     if (!amountValid) {
-      setError(`Enter a USD amount between $${minDeposit} and $${maxDeposit}.`);
+      setError(`Enter a USD amount between $${effectiveMin.toFixed(2)} and $${maxDeposit.toLocaleString()}.`);
       return;
     }
     setBusy(true);
@@ -234,6 +261,8 @@ export function AddFundsView() {
       amountUsd: amountNumber,
       payCurrency: data.pay_currency ?? selected.code,
       payAmount: data.pay_amount ?? null,
+      quoteCrypto: quote?.crypto ?? null,
+      symbol: selected.symbol,
       address: data.pay_address ?? null,
       payUrl: data.payment_url ?? null,
       txHash: null,
@@ -248,6 +277,7 @@ export function AddFundsView() {
     setNote("");
     setHash("");
     setCopied("");
+    setCheckoutOpen(true);
   }
 
   async function copyValue(value: string, label: string) {
@@ -337,32 +367,50 @@ export function AddFundsView() {
                 <p className="cp-deposit-empty">No currency matches “{query}”. Try the symbol or network name.</p>
               ) : (
                 <>
-                  {popular.length ? (
-                    <div className="cp-deposit-group">
-                      <p className="cp-deposit-group-label">Popular</p>
-                      <div className="cp-coin-grid">
-                        {popular.map((row) => (
-                          <CoinButton key={row.code} row={row} active={row.code === coin} onSelect={() => setCoin(row.code)} />
-                        ))}
-                      </div>
+                  <div className="cp-deposit-group">
+                    <p className="cp-deposit-group-label">{query ? "Matching coins" : "Coins"}</p>
+                    <div className="cp-coin-grid">
+                      {coinGroups.map((group) => {
+                        const active = group.rows.some((row) => row.code === coin);
+                        const current = group.rows.find((row) => row.code === coin) ?? group.rows[0];
+                        return (
+                          <div key={group.symbol} className={`cp-coin-card${active ? " is-on" : ""}`}>
+                            <button
+                              type="button"
+                              className="cp-coin"
+                              aria-pressed={active}
+                              onClick={() => setCoin(current.code)}
+                            >
+                              <CoinLogo code={current.code} logoUrl={current.logoUrl} size={40} />
+                              <span className="cp-coin-copy">
+                                <strong>{group.symbol}</strong>
+                                <small>{current.name}</small>
+                              </span>
+                              {active ? <span className="cp-coin-check" aria-hidden>✓</span> : null}
+                            </button>
+                            <div className="cp-net-row" role="group" aria-label={`${group.symbol} network`}>
+                              {group.rows.map((row) => (
+                                <button
+                                  key={row.code}
+                                  type="button"
+                                  className={row.code === coin ? "is-on" : ""}
+                                  onClick={() => setCoin(row.code)}
+                                >
+                                  {networkBadge(row.code, row.network)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ) : null}
-                  {others.length ? (
-                    <div className="cp-deposit-group">
-                      <p className="cp-deposit-group-label">{query ? "Matching currencies" : "All supported currencies"}</p>
-                      <div className="cp-coin-grid">
-                        {others.map((row) => (
-                          <CoinButton key={row.code} row={row} active={row.code === coin} onSelect={() => setCoin(row.code)} />
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
+                  </div>
                 </>
               )}
 
               {selected ? (
                 <div className="cp-deposit-selected">
-                  <CoinLogo code={selected.code} size={44} />
+                  <CoinLogo code={selected.code} logoUrl={selected.logoUrl} size={44} />
                   <div>
                     <strong>
                       {selected.symbol} <span>· {selected.networkLabel}</span>
@@ -379,7 +427,9 @@ export function AddFundsView() {
                 <div>
                   <h3>Enter amount</h3>
                   <p>
-                    Minimum ${minDeposit.toFixed(2)} · Maximum ${maxDeposit.toLocaleString()} per deposit
+                    Account minimum ${minDeposit.toFixed(2)}
+                    {providerMin != null ? ` · This coin’s provider minimum $${providerMin.toFixed(2)}` : ""}
+                    {" "}· Maximum ${maxDeposit.toLocaleString()} · Pay window up to 1 hour
                   </p>
                 </div>
               </header>
@@ -402,6 +452,7 @@ export function AddFundsView() {
                     key={preset}
                     type="button"
                     className={Number(amount) === preset ? "is-on" : ""}
+                    disabled={preset < effectiveMin}
                     onClick={() => setAmount(String(preset))}
                   >
                     ${preset}
@@ -410,7 +461,9 @@ export function AddFundsView() {
               </div>
 
               {!amountValid && amount !== "" ? (
-                <p className="cp-error">Enter a USD amount between ${minDeposit} and ${maxDeposit}.</p>
+                <p className="cp-error">
+                  Enter a USD amount between ${effectiveMin.toFixed(2)} and ${maxDeposit.toLocaleString()}.
+                </p>
               ) : null}
 
               <dl className="cp-deposit-summary">
@@ -433,12 +486,12 @@ export function AddFundsView() {
                   <dd>{selected?.networkLabel ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt>Fees</dt>
-                  <dd>Network fee paid to the blockchain</dd>
+                  <dt>Service fee</dt>
+                  <dd>Paid by you, locked into the crypto total</dd>
                 </div>
               </dl>
               <p className="cp-deposit-note">
-                Estimates use the provider quote and can change until the payment is created.
+                The quote refreshes every 30 seconds. Checkout shows the exact crypto amount, including the provider fee you pay. Your wallet is credited the USD amount above.
               </p>
 
               {error ? <p className="cp-error">{error}</p> : null}
@@ -482,60 +535,78 @@ export function AddFundsView() {
         </aside>
       </div>
 
-      {live && payment ? (
-        <section className="cp-card cp-deposit-checkout" aria-live="polite">
-          <header className="cp-deposit-checkout-head">
-            <div>
-              <p className="cp-kicker">Deposit {payment.id}</p>
-              <h3>{LABELS[payment.status] || payment.status}</h3>
-            </div>
-            <span className={`cp-deposit-status cp-deposit-status--${statusTone(payment.status)}`}>
-              {payment.providerStatus ? payment.providerStatus.replace(/_/g, " ") : payment.status}
-            </span>
-          </header>
+      {live && payment && !checkoutOpen ? (
+        <button type="button" className="cp-btn cp-deposit-resume" onClick={() => setCheckoutOpen(true)}>
+          Open crypto checkout · {payment.id}
+        </button>
+      ) : null}
 
-          {payment.status === "paid" ? (
-            <div className="cp-deposit-success">
-              <CheckIcon />
+      {live && payment && checkoutOpen ? (
+        <div className="cp-deposit-modal" role="presentation" onClick={() => setCheckoutOpen(false)}>
+          <section
+            className="cp-deposit-modal-card cp-deposit-checkout"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="crypto-checkout-title"
+            aria-live="polite"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="cp-deposit-checkout-head">
               <div>
-                <strong>Payment verified — wallet credited</strong>
-                <p>
-                  ${payment.amountUsd.toFixed(2)} was added to your balance.
-                  {payment.nowPaymentId ? ` Provider ref ${payment.nowPaymentId}.` : ""}
-                </p>
+                <p className="cp-kicker">Deposit {payment.id}</p>
+                <h3 id="crypto-checkout-title">{LABELS[payment.status] || payment.status}</h3>
               </div>
-              <Link className="cp-btn" href="/dashboard">
-                Back to dashboard
-              </Link>
-            </div>
-          ) : null}
+              <div className="cp-deposit-head-actions">
+                <span className={`cp-deposit-status cp-deposit-status--${statusTone(payment.status)}`}>
+                  {payment.providerStatus ? payment.providerStatus.replace(/_/g, " ") : payment.status}
+                </span>
+                <button type="button" className="cp-deposit-close" onClick={() => setCheckoutOpen(false)} aria-label="Close checkout">
+                  ×
+                </button>
+              </div>
+            </header>
 
-          <div className="cp-deposit-checkout-grid">
-            <div>
-              <span className="cp-label">You send</span>
-              <p className="cp-deposit-big">
-                {payment.payAmount || "—"} {payment.payCurrency?.toUpperCase()}
-              </p>
-            </div>
-            <div>
-              <span className="cp-label">Credited (USD)</span>
-              <p className="cp-deposit-big">${payment.amountUsd.toFixed(2)}</p>
-            </div>
-            <div>
-              <span className="cp-label">Network</span>
-              <p className="cp-deposit-big">{payment.networkLabel || payment.network || "—"}</p>
-            </div>
-            {payment.expiresAt ? (
-              <div>
-                <span className="cp-label">Expires</span>
-                <p className="cp-deposit-big">{new Date(payment.expiresAt).toLocaleString()}</p>
+            {payment.status === "paid" ? (
+              <div className="cp-deposit-success">
+                <CheckIcon />
+                <div>
+                  <strong>Payment successful</strong>
+                  <p>
+                    ${payment.amountUsd.toFixed(2)} was added to your balance.
+                    {payment.nowPaymentId ? ` Provider ref ${payment.nowPaymentId}.` : ""}
+                  </p>
+                </div>
+                <Link className="cp-btn" href="/dashboard">
+                  Leave this page
+                </Link>
               </div>
             ) : null}
-          </div>
 
-          {payment.address ? (
-            <>
-              <CryptoDepositQr value={payment.address} label="Scan with your wallet" />
+            <div className="cp-checkout-layout">
+              {payment.address ? <CryptoDepositQr value={payment.address} label="Scan deposit address" /> : null}
+              <div className="cp-checkout-facts">
+                <div>
+                  <span className="cp-label">You send (includes your fee)</span>
+                  <p className="cp-deposit-big">
+                    {payment.payAmount || "—"} {payment.symbol || payment.payCurrency?.toUpperCase()}
+                  </p>
+                </div>
+                <div>
+                  <span className="cp-label">Wallet credit</span>
+                  <p className="cp-deposit-big">${payment.amountUsd.toFixed(2)} USD</p>
+                </div>
+                <div>
+                  <span className="cp-label">Network</span>
+                  <p className="cp-deposit-big">{payment.networkLabel || payment.network || "—"}</p>
+                </div>
+                <div>
+                  <span className="cp-label">Time left</span>
+                  <p className="cp-deposit-big">{formatWindow(payment, nowTick)}</p>
+                </div>
+              </div>
+            </div>
+
+            {payment.address ? (
               <div className="cp-deposit-copy">
                 <span className="cp-label">Deposit address</span>
                 <div>
@@ -545,95 +616,89 @@ export function AddFundsView() {
                   </button>
                 </div>
               </div>
-            </>
-          ) : null}
-
-          {payment.payAmount ? (
-            <div className="cp-deposit-copy">
-              <span className="cp-label">Exact amount</span>
-              <div>
-                <code>
-                  {payment.payAmount} {payment.payCurrency?.toUpperCase()}
-                </code>
-                <button type="button" className="cp-btn-ghost" onClick={() => void copyValue(payment.payAmount || "", "amount")}>
-                  {copied === "amount" ? "Copied" : "Copy amount"}
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {payment.nowPaymentId ? (
-            <div className="cp-deposit-copy">
-              <span className="cp-label">Provider payment ID</span>
-              <div>
-                <code>{payment.nowPaymentId}</code>
-                <button type="button" className="cp-btn-ghost" onClick={() => void copyValue(payment.nowPaymentId || "", "payment")}>
-                  {copied === "payment" ? "Copied" : "Copy ID"}
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          <p className="cp-deposit-warning">
-            Send only {payment.payCurrency?.toUpperCase()} through {payment.networkLabel || payment.network}. Sending another asset or
-            network may result in permanent loss of funds.
-          </p>
-
-          <div className="cp-deposit-checkout-actions">
-            {payment.payUrl ? (
-              <a className="cp-btn" href={payment.payUrl} target="_blank" rel="noopener noreferrer">
-                Open provider checkout
-              </a>
             ) : null}
-            <button
-              type="button"
-              className="cp-btn-ghost"
-              disabled={polling || isTerminal(payment.status)}
-              onClick={() => void refreshStatus(payment.id)}
-            >
-              {polling ? "Checking…" : "Refresh status"}
-            </button>
-            {isTerminal(payment.status) ? (
-              <button type="button" className="cp-btn" onClick={() => setPayment(null)}>
-                Create another deposit
-              </button>
-            ) : null}
-          </div>
 
-          {payment.status !== "paid" ? (
-            <>
-              <label className="cp-field">
-                <span>Transaction hash (optional — does not credit by itself)</span>
-                <input value={hash} onChange={(event) => setHash(event.target.value)} placeholder="0x… or chain tx id" />
-              </label>
-              <button className="cp-btn-ghost" type="button" onClick={() => void submitHash()}>
-                Submit hash for tracking
+            {payment.payAmount ? (
+              <div className="cp-deposit-copy">
+                <span className="cp-label">Exact crypto amount</span>
+                <div>
+                  <code>
+                    {payment.payAmount} {payment.symbol || payment.payCurrency?.toUpperCase()}
+                  </code>
+                  <button type="button" className="cp-btn-ghost" onClick={() => void copyValue(payment.payAmount || "", "amount")}>
+                    {copied === "amount" ? "Copied" : "Copy amount"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            <p className="cp-deposit-warning">
+              Send only {payment.symbol || payment.payCurrency?.toUpperCase()} on {payment.networkLabel || payment.network}. The amount
+              includes the provider service fee, which you pay. A different asset or network can be lost. Status refreshes every 30
+              seconds. The payment window is at most 1 hour.
+            </p>
+
+            <div className="cp-deposit-checkout-actions">
+              <button
+                type="button"
+                className="cp-btn-ghost"
+                disabled={polling || isTerminal(payment.status)}
+                onClick={() => void refreshStatus(payment.id)}
+              >
+                {polling ? "Checking…" : "Refresh status"}
               </button>
-              {note ? <p className="cp-ok">{note}</p> : null}
-            </>
-          ) : null}
-        </section>
+              {payment.status === "paid" ? (
+                <Link className="cp-btn" href="/dashboard">
+                  Leave this page
+                </Link>
+              ) : null}
+              {isTerminal(payment.status) ? (
+                <button
+                  type="button"
+                  className="cp-btn"
+                  onClick={() => {
+                    setPayment(null);
+                    setCheckoutOpen(false);
+                  }}
+                >
+                  New deposit
+                </button>
+              ) : null}
+            </div>
+
+            {payment.status !== "paid" ? (
+              <details className="cp-deposit-hash">
+                <summary>Add a transaction hash for tracking</summary>
+                <label className="cp-field">
+                  <span>A hash does not credit the wallet by itself</span>
+                  <input value={hash} onChange={(event) => setHash(event.target.value)} placeholder="Transaction hash" />
+                </label>
+                <button className="cp-btn-ghost" type="button" onClick={() => void submitHash()}>
+                  Save hash
+                </button>
+                {note ? <p className="cp-ok">{note}</p> : null}
+              </details>
+            ) : null}
+          </section>
+        </div>
       ) : null}
     </div>
   );
 }
 
-function CoinButton({ row, active, onSelect }: { row: DepositOption; active: boolean; onSelect: () => void }) {
-  return (
-    <button
-      type="button"
-      className={`cp-coin${active ? " is-on" : ""}`}
-      aria-pressed={active}
-      onClick={onSelect}
-    >
-      <CoinLogo code={row.code} size={38} />
-      <span className="cp-coin-copy">
-        <strong>{row.symbol}</strong>
-        <small>{row.networkLabel}</small>
-      </span>
-      {active ? <span className="cp-coin-check" aria-hidden>✓</span> : null}
-    </button>
-  );
+function formatWindow(payment: Payment, now: number) {
+  const created = new Date(payment.createdAt).getTime();
+  const cap = Number.isFinite(created) ? created + PAYMENT_WINDOW_MS : now + PAYMENT_WINDOW_MS;
+  const providerEnd = payment.expiresAt ? new Date(payment.expiresAt).getTime() : cap;
+  const end = Math.min(Number.isFinite(providerEnd) ? providerEnd : cap, cap);
+  const left = end - now;
+  if (left <= 0) return "Window ended";
+  const total = Math.floor(left / 1000);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  const clock = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return hours > 0 ? `${hours}:${clock}` : clock;
 }
 
 function trimCrypto(value: string) {

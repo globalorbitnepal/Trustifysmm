@@ -1,3 +1,4 @@
+import { minNowPaymentAmount, providerMinUsd } from "@/lib/nowpayments/client";
 import { loadNowPaymentsConfig } from "@/lib/nowpayments/config";
 import { networkLabel } from "@/lib/nowpayments/network-labels";
 
@@ -8,6 +9,8 @@ export type DepositOption = {
   network: string;
   networkLabel: string;
   logoUrl: string | null;
+  /** Live provider minimum in USD, already rounded up to cents. Null when the provider did not answer. */
+  minUsd: number | null;
   popular: boolean;
 };
 
@@ -27,11 +30,11 @@ const POPULAR_CODES = new Set([
   "usdterc20",
   "usdtbsc",
   "usdc",
-  "usdcmatic",
   "btc",
   "eth",
+  "bnbbsc",
+  "sol",
   "ltc",
-  "doge",
   "trx",
 ]);
 
@@ -60,6 +63,22 @@ export function networkLabelFor(codeOrNetwork?: string | null) {
  *
  * Step 2 matters: deriving from the name turned "Bitcoin" into "BITCOIN" instead of "BTC".
  */
+export function providerLogoUrl(logo?: string | null) {
+  const raw = (logo ?? "").trim();
+  if (!raw) return null;
+  if (raw.startsWith("/images/coins/")) return `https://nowpayments.io${raw}`;
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.toLowerCase();
+    if (url.protocol === "https:" && (host === "nowpayments.io" || host.endsWith(".nowpayments.io"))) {
+      return url.toString();
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 function symbolFor(code: string, name?: string) {
   if (SYMBOLS[code]) return SYMBOLS[code];
   // Provider codes for major coins are already the ticker.
@@ -71,7 +90,17 @@ function symbolFor(code: string, name?: string) {
 
 type Cache = { at: number; currencies: ProviderCurrency[] };
 let cache: Cache | null = null;
+const minCache = new Map<string, { at: number; usd: number | null }>();
 const CACHE_MS = 10 * 60 * 1000;
+
+async function fetchMinUsd(code: string): Promise<number | null> {
+  const hit = minCache.get(code);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.usd;
+  const quote = await minNowPaymentAmount(code);
+  const usd = quote.ok ? providerMinUsd(quote.data) : null;
+  minCache.set(code, { at: Date.now(), usd });
+  return usd;
+}
 
 async function fetchProviderCurrencies(): Promise<ProviderCurrency[]> {
   const cfg = loadNowPaymentsConfig();
@@ -115,11 +144,13 @@ export async function listDepositOptions(): Promise<DepositOption[]> {
       symbol: symbolFor(code, row?.name),
       network,
       networkLabel: networkLabel(network),
-      logoUrl: row?.logo_url ?? null,
+      logoUrl: providerLogoUrl(row?.logo_url),
+      minUsd: null,
       popular: POPULAR_CODES.has(code),
     });
   }
-  return options;
+  const mins = await Promise.all(options.map((row) => fetchMinUsd(row.code)));
+  return options.map((row, index) => ({ ...row, minUsd: mins[index] ?? null }));
 }
 
 export async function findDepositOption(code: string) {

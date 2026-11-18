@@ -63,6 +63,12 @@ export async function createNowPayment(input: {
       ipn_callback_url: input.ipnCallbackUrl,
       order_id: input.orderId,
       order_description: input.orderDescription,
+      /*
+       * Customer pays the provider service fee. NOWPayments requires fixed rate for this,
+       * and the returned pay_amount is the exact crypto the customer must send.
+       */
+      is_fixed_rate: true,
+      is_fee_paid_by_user: true,
     }),
   });
 }
@@ -84,11 +90,19 @@ export async function estimateNowPayment(amountUsd: number, payCurrency: string)
   return npFetch<EstimateResponse>(`/v1/estimate?${query.toString()}`);
 }
 
+export function providerMinUsd(data: MinAmountResponse): number | null {
+  const n = Number(data.fiat_equivalent ?? data.min_amount);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.ceil(n * 100 - 1e-6) / 100;
+}
+
 export async function minNowPaymentAmount(payCurrency: string) {
   const query = new URLSearchParams({
     currency_from: "usd",
     currency_to: payCurrency,
     fiat_equivalent: "usd",
+    is_fixed_rate: "true",
+    is_fee_paid_by_user: "true",
   });
   return npFetch<MinAmountResponse>(`/v1/min-amount?${query.toString()}`);
 }

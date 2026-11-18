@@ -23,3 +23,18 @@ export function networkLabel(network?: string | null) {
   if (!key) return "Network not reported";
   return NETWORK_LABELS[key] ?? key.toUpperCase();
 }
+
+/** Short badge shown after the coin logo. USDT on BSC is BEP20, not a second coin. */
+export function networkBadge(code: string, network?: string | null) {
+  const n = (network ?? "").trim().toLowerCase();
+  const c = code.trim().toLowerCase();
+  const token = c.startsWith("usdt") || c.startsWith("usdc");
+  if (token || c.startsWith("bnb")) {
+    if (n === "trx") return "TRC20";
+    if (n === "eth") return "ERC20";
+    if (n === "bsc") return "BEP20";
+    if (n === "matic") return "Polygon";
+    if (n === "sol") return "Solana";
+  }
+  return networkLabel(n);
+}

@@ -46,6 +46,31 @@ describe("NOWPayments deposit options", () => {
     expect(erc?.network).toBe("eth");
     expect(trc?.networkLabel).not.toBe(erc?.networkLabel);
     expect(options.find((row) => row.code === "btc")?.networkLabel).toBe("Bitcoin");
+    expect(options.find((row) => row.code === "btc")?.symbol).toBe("BTC");
+  });
+
+  it("keeps BNB and SOL when the provider enables them, with separate networks", async () => {
+    setEnv("usdtbsc,bnbbsc,sol");
+    mockProvider([
+      { code: "USDTBSC", name: "Tether USD (BSC)", enable: true, network: "bsc", logo_url: "/images/coins/usdtbsc.svg" },
+      { code: "BNBBSC", name: "Binance Coin (BSC)", enable: true, network: "bsc", logo_url: "/images/coins/bnbbsc.svg" },
+      { code: "SOL", name: "Solana", enable: true, network: "sol", logo_url: "https://evil.example/sol.svg" },
+    ]);
+    const { listDepositOptions, providerLogoUrl } = await import("@/lib/nowpayments/currencies");
+    const { networkBadge } = await import("@/lib/nowpayments/network-labels");
+    const options = await listDepositOptions();
+    const usdt = options.find((row) => row.code === "usdtbsc");
+    const bnb = options.find((row) => row.code === "bnbbsc");
+    const sol = options.find((row) => row.code === "sol");
+    expect(usdt?.symbol).toBe("USDT");
+    expect(networkBadge("usdtbsc", "bsc")).toBe("BEP20");
+    expect(bnb?.symbol).toBe("BNB");
+    expect(bnb?.networkLabel).toBe("BNB Smart Chain (BEP20)");
+    expect(sol?.symbol).toBe("SOL");
+    expect(sol?.network).toBe("sol");
+    expect(usdt?.logoUrl).toBe("https://nowpayments.io/images/coins/usdtbsc.svg");
+    expect(providerLogoUrl("https://evil.example/sol.svg")).toBeNull();
+    expect(sol?.logoUrl).toBeNull();
   });
 
   it("drops currencies the provider reports as disabled or missing", async () => {

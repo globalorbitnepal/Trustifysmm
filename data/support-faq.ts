@@ -21,7 +21,7 @@ export const supportFaqCategories: SupportFaqCategory[] = [
       },
       {
         q: "What is the minimum deposit or order?",
-        a: "Minimum order size depends on each service’s min field in the catalog — often 10–100 units. For balance top-ups, Banker invoices start at $1 USD in demo mode; production crypto gateways may set higher practical minimums because of network fees. Check your checkout screen or invoice response for the exact number.",
+        a: "Minimum order size depends on each service’s min field in the catalog — often 10–100 units. Balance top-ups start at $10 USD. A coin can require more when the payment provider’s live minimum is higher, and that amount is shown before checkout.",
       },
       {
         q: "Do you offer a test or trial balance?",

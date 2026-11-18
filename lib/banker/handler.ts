@@ -10,7 +10,8 @@ import {
 import type { BankerInvoice, DepositStatusHistory } from "@/lib/smm-api/types";
 import { addNotification } from "@/lib/customer/panel-store";
 import { getUserByApiKey, syncCustomerBalanceFromWallet } from "@/lib/customer/user-store";
-import { createNowPayment, getNowPaymentStatus } from "@/lib/nowpayments/client";
+import { createNowPayment, getNowPaymentStatus, minNowPaymentAmount, providerMinUsd } from "@/lib/nowpayments/client";
+import { findDepositOption } from "@/lib/nowpayments/currencies";
 import { loadNowPaymentsConfig, publicGatewayConfig } from "@/lib/nowpayments/config";
 import { evaluateNowPaymentsCredit } from "@/lib/nowpayments/credit-policy";
 import { mapProviderToInternal, providerStatusCreditsWallet } from "@/lib/nowpayments/status";
@@ -74,7 +75,15 @@ export async function createBankerInvoice(input: {
   if (input.requireLive) {
     if (!allowed.live) return { error: "Crypto payments are not configured yet." } as const;
     if (!allowed.currencies.includes(payCurrency)) return { error: "That coin is not enabled." } as const;
+    const minimum = await minNowPaymentAmount(payCurrency);
+    const providerMin = minimum.ok ? providerMinUsd(minimum.data) : null;
+    if (providerMin != null && amount + 1e-9 < providerMin) {
+      return {
+        error: `This coin’s provider minimum is $${providerMin.toFixed(2)} USD. The account minimum is $${cfg.minDepositUsd.toFixed(2)}.`,
+      } as const;
+    }
   }
+  const option = cfg.apiKey ? await findDepositOption(payCurrency) : null;
 
   const id = newInvoiceId();
   const now = new Date().toISOString();
@@ -113,7 +122,7 @@ export async function createBankerInvoice(input: {
         address: data.pay_address,
         payCurrency: data.pay_currency ?? payCurrency,
         payAmount: data.pay_amount != null ? String(data.pay_amount) : undefined,
-        network: data.network,
+        network: data.network || option?.network,
         expiresAt: data.expiration_estimate_date ?? new Date(Date.now() + expiryMs).toISOString(),
         statusHistory: pushHistory(invoice, "pending", data.payment_status),
       };

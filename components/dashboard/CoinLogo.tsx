@@ -64,14 +64,30 @@ export function COIN_SYMBOL(code: string) {
  * Coin logo. Uses the provider logo when the URL is a relative NOWPayments asset,
  * otherwise a verified brand path from simple-icons. Never falls back to an emoji.
  */
+function safeProviderLogo(logoUrl?: string | null) {
+  const raw = (logoUrl ?? "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("/images/coins/")) return `https://nowpayments.io${raw}`;
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.toLowerCase();
+    if (url.protocol === "https:" && (host === "nowpayments.io" || host.endsWith(".nowpayments.io"))) return url.toString();
+  } catch {
+    return "";
+  }
+  return "";
+}
+
 export function CoinLogo({
   code,
   size = 40,
+  logoUrl,
   className,
   style,
 }: {
   code: string;
   size?: number;
+  logoUrl?: string | null;
   className?: string;
   style?: CSSProperties;
 }) {
@@ -86,8 +102,17 @@ export function CoinLogo({
     flexShrink: 0,
     background: `${color}1f`,
     border: `1px solid ${color}59`,
+    overflow: "hidden",
     ...style,
   };
+  const remote = safeProviderLogo(logoUrl);
+  if (remote) {
+    return (
+      <span className={className} style={boxStyle} aria-hidden>
+        <img src={remote} alt="" width={size} height={size} style={{ width: size, height: size, objectFit: "cover" }} />
+      </span>
+    );
+  }
 
   if (key === "usdc") {
     return (
