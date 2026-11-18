@@ -75,8 +75,12 @@ export function livePricingData(): ServicePricingData {
   for (const row of upstream) {
     if (admin.hiddenIds.includes(row.localId) || inactive.has(row.category)) continue;
     if (services.some((service) => service.id === row.localId)) continue;
+    /*
+     * A Server API row already carries the price set in Service API, including its markup.
+     * Applying the site markup again would charge the customer twice.
+     */
     const priced = upstreamAsPricing(row);
-    priced.ratePer1000 = priceFor(priced, overrides, markup);
+    priced.ratePer1000 = Math.round(row.ratePer1000 * 10000) / 10000;
     services.push(priced);
   }
 

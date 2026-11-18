@@ -16,7 +16,7 @@ export async function forwardOrderToServer(order: DemoOrder) {
   }
   const provider = await getProviderSecret(mapped.providerId);
   if (!provider?.enabled || !provider.apiKey.trim()) {
-    return { error: "Server API is not connected. The order was not sent." };
+    return { error: "Ordering is temporarily unavailable. Your wallet was not charged for this order." };
   }
   const fields: Record<string, string> = {
     action: "add",
@@ -27,7 +27,9 @@ export async function forwardOrderToServer(order: DemoOrder) {
   const result = await panelPost(provider, fields);
   const upstreamId = result.data.order != null ? String(result.data.order) : "";
   if (!result.ok || !upstreamId) {
-    return { error: result.error || "The server API did not accept the order." };
+    /* The provider's own wording never reaches the customer. The detail stays in the server log. */
+    console.error("order route rejected", order.order, result.error);
+    return { error: "The order could not be started right now. Your wallet was refunded." };
   }
   await attachUpstreamOrder(order.order, upstreamId, mapped.upstreamId);
   return { skipped: false as const, upstreamOrderId: upstreamId };

@@ -10,13 +10,26 @@ export function money(value: number) {
   return Math.round(value * 10000) / 10000;
 }
 
+/**
+ * Charge for a quantity, never rounding a real order down to nothing.
+ * A cheap service with a small minimum would otherwise round to $0.0000 and let a customer
+ * take delivery for free, so a positive quantity always costs at least one ten-thousandth.
+ */
+export function chargeFor(service: PricingService, quantity: number) {
+  const raw = (service.ratePer1000 * quantity) / 1000;
+  if (!Number.isFinite(raw) || raw <= 0) return 0;
+  /*
+   * Work in ten-thousandths. The multiplication by 1e4 is rounded first so binary float noise
+   * (0.19470000000000002) cannot push an exact price up by one unit; ceil then guarantees the
+   * charge never falls below the real cost. 0.0001 is the smallest charge for a live order.
+   */
+  const units = Math.round(raw * 1e4 * 1e6) / 1e6;
+  return Math.max(Math.ceil(units) / 1e4, 0.0001);
+}
+
 export function parseLimit(value: string) {
   const n = Number.parseInt(value.replace(/[^\d]/g, ""), 10);
   return Number.isFinite(n) ? n : NaN;
-}
-
-export function chargeFor(service: PricingService, quantity: number) {
-  return money((service.ratePer1000 * quantity) / 1000);
 }
 
 export function validTargetUrl(link: string) {
@@ -80,7 +93,7 @@ export function publicService(service: PricingService) {
     max: parseLimit(service.maxOrder),
     avgTime: service.avgTime || "",
     status: "active" as const,
-    refill: /refill|365d|lifetime/i.test(`${service.name} ${service.description}`),
+    refill: service.refill ?? /refill|365d|lifetime/i.test(`${service.name} ${service.description}`),
     cancel: true,
   };
 }

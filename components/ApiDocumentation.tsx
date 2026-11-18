@@ -78,8 +78,8 @@ export function ApiDocumentation() {
             </div>
           </dl>
           <p className="api-docs-note">
-            Copy your API key after <Link href="/signup">sign up</Link> → Account → API. For live production,
-            set <code>SMM_UPSTREAM_API_URL</code> on the server to forward requests to your master panel (optional).
+            Copy your API key after <Link href="/signup">sign up</Link> → Account → API, then send it with every
+            request. Keep the key secret and regenerate it if it is ever shared.
           </p>
         </section>
 

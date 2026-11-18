@@ -58,7 +58,7 @@ export async function placeCustomerOrders(user: CustomerUser, rows: OrderRowInpu
     for (const order of placed.orders) {
       const forwarded = await forwardOrderToServer(order);
       if ("error" in forwarded && forwarded.error) {
-        await refundOrder(order.order, `Server API rejected order #${order.order}. ${forwarded.error}`);
+        await refundOrder(order.order, `Order #${order.order} could not be started. Charge returned.`);
         return { error: forwarded.error, status: 502 };
       }
       const meta = priced.find((row) => row.service === order.service && row.link === order.link);

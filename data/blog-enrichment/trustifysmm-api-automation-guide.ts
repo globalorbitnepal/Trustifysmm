@@ -32,7 +32,7 @@ export const enrichmentApiAutomation: BlogEnrichment = {
   faq: [
   {
     "q": "What is the TrustifySMM API base URL?",
-    "a": "Use /api/v2 on your site domain with POST form bodies or JSON. Production setups may set SMM_UPSTREAM_API_URL to forward to a master panel while keeping your brand endpoints."
+    "a": "Use /api/v2 on your site domain with POST form bodies or JSON. Your storefront keeps its own API keys per client while the catalogue and delivery stay fully white-label."
   },
   {
     "q": "How do I avoid duplicate orders?",

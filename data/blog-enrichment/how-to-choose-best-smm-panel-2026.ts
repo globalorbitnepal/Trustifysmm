@@ -43,7 +43,7 @@ export const enrichmentChoosePanel: BlogEnrichment = {
   },
   {
     "type": "p",
-    "text": "State delivery windows as estimates, not guarantees, unless you control fulfillment end-to-end. Link refill policy to upstream service titles."
+    "text": "State delivery windows as estimates, not guarantees, unless you control fulfillment end-to-end. Link refill policy to the service title."
   },
   {
     "type": "p",
@@ -99,7 +99,7 @@ export const enrichmentChoosePanel: BlogEnrichment = {
   },
   {
     "q": "How does TrustifySMM compare on API?",
-    "a": "TrustifySMM documents POST /api/v2 for services, add, status, multi_status and balance, plus Banker endpoints for invoices. You can download a full PHP client and proxy to upstream production panel via environment variables when ready."
+    "a": "TrustifySMM documents POST /api/v2 for services, add, status, multi_status and balance, plus Banker endpoints for invoices. You can download a full PHP client and connect it to your account key in minutes."
   },
   {
     "q": "What refill terms should I look for?",

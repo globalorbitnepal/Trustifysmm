@@ -32,7 +32,7 @@ export const enrichmentAgencyPricing: BlogEnrichment = {
   },
   {
     "q": "How do I white-label TrustifySMM?",
-    "a": "Use your domain storefront and API keys per client. Never expose upstream panel branding in emails or PDFs."
+    "a": "Use your domain storefront and API keys per client. Never expose supplier branding in emails or PDFs."
   },
   {
     "q": "Should I publish retail prices?",

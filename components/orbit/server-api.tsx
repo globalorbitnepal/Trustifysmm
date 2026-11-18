@@ -7,7 +7,9 @@ type Row = {
   id: number;
   localId: number;
   name: string;
+  customerName: string;
   category: string;
+  categoryLabel: string;
   type: string;
   costPer1000: number;
   ratePer1000: number;
@@ -25,6 +27,7 @@ type Summary = {
   serviceCount: number;
   categoryCount: number;
   categories: { name: string; count: number }[];
+  platformRows: { id: string; label: string; count: number; categories: { name: string; label: string; count: number }[] }[];
   category: string;
   services: Row[];
   orders: { id: number; upstreamOrderId: string | null; upstreamServiceId: number | null; customer: string; service: string; quantity: number; charge: number; status: string; createdAt: string }[];
@@ -78,7 +81,7 @@ export function ServerApiScreen() {
         <div>
           <span className="ob-hero-tag">SMM · Service API</span>
           <h2>HonestSMM</h2>
-          <p>Every category and service comes from the Server API. Editing a price here is the price the customer pays.</p>
+          <p>Every category and service comes from the Server API. Editing a price here is the price the customer pays. The Customer ID column is the code customers see.</p>
         </div>
         <div className="ob-banker-stats">
           <div className="ob-banker-stat"><span>Services</span><strong>{data?.serviceCount ?? 0}</strong></div>
@@ -104,15 +107,23 @@ export function ServerApiScreen() {
       </form>
 
       <div className="ob-split">
-        <article className="ob-card" style={{ maxHeight: 640, overflow: "auto" }}>
-          <h3>Categories</h3>
-          <div className="ob-toolbar" style={{ flexDirection: "column", alignItems: "stretch" }}>
-            {(data?.categories ?? []).map((item) => (
-              <button key={item.name} type="button" className={`ob-btn${active === item.name ? " primary" : ""}`} onClick={() => { setCategory(item.name); setEditing(null); }}>
-                {item.name} · {item.count}
-              </button>
-            ))}
-          </div>
+        <article className="ob-card" style={{ maxHeight: 700, overflow: "auto" }}>
+          <h3>Categories by platform</h3>
+          <p className="ob-muted">Open a platform, then pick the category. The same grouping the customer sees.</p>
+          {(data?.platformRows ?? []).map((platform) => (
+            <details key={platform.id} open={platform.categories.some((item) => item.name === active)} style={{ marginBottom: 8 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 600, padding: "6px 0" }}>
+                {platform.label} · {platform.categories.length} categories · {platform.count} services
+              </summary>
+              <div className="ob-toolbar" style={{ flexDirection: "column", alignItems: "stretch", marginTop: 6 }}>
+                {platform.categories.map((item) => (
+                  <button key={item.name} type="button" className={`ob-btn${active === item.name ? " primary" : ""}`} onClick={() => { setCategory(item.name); setEditing(null); }}>
+                    {item.label} · {item.count}
+                  </button>
+                ))}
+              </div>
+            </details>
+          ))}
         </article>
 
         <div className="ob-card" style={{ padding: 0 }}>
@@ -121,7 +132,8 @@ export function ServerApiScreen() {
             style={{ padding: "14px 16px" }}
             onSubmit={(event) => { event.preventDefault(); void post({ action: "category-price", category: active, price: categoryPrice === "" ? null : Number(categoryPrice) }, "category-price"); }}
           >
-            <strong style={{ flex: "1 1 100%" }}>{active || "Category"}</strong>
+            <strong style={{ flex: "1 1 100%" }}>{services[0]?.categoryLabel ?? (active || "Category")}</strong>
+            <span className="ob-muted" style={{ flex: "1 1 100%" }}>Customers see the category as: {services[0]?.categoryLabel ?? (active || "—")}</span>
             <label style={{ flex: 1 }}>
               Category server price per 1k
               <input value={categoryPrice} onChange={(event) => setCategoryPrice(event.target.value)} placeholder={data?.categoryPrice != null ? String(data.categoryPrice) : "Automatic"} inputMode="decimal" />
@@ -134,6 +146,7 @@ export function ServerApiScreen() {
               <thead>
                 <tr>
                   <th>Server ID</th>
+                  <th>Customer ID</th>
                   <th>Service</th>
                   <th>Real rate / 1k</th>
                   <th>Your price / 1k</th>
@@ -146,7 +159,11 @@ export function ServerApiScreen() {
                 {services.length ? services.map((row) => (
                   <tr key={row.localId}>
                     <td>{row.id}</td>
-                    <td>{row.name}</td>
+                    <td>{row.localId}</td>
+                    <td>
+                      {row.customerName}
+                      <div className="ob-muted">Server name: {row.name}</div>
+                    </td>
                     <td>${row.costPer1000.toFixed(4)}</td>
                     <td>
                       {editing === row.localId ? (
@@ -183,7 +200,7 @@ export function ServerApiScreen() {
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={7}>Sync services to load the real HonestSMM categories.</td></tr>
+                  <tr><td colSpan={8}>Sync services to load the real HonestSMM categories.</td></tr>
                 )}
               </tbody>
             </table>

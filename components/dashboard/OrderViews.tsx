@@ -41,7 +41,8 @@ export function NewOrderView() {
     if (platform) params.set("platform", platform);
     if (group) params.set("group", group);
     if (q) params.set("q", q);
-    if (platform || group || q) params.set("limit", "2000");
+    // The full catalog is needed so every synced service can be chosen, not just the first page.
+    params.set("limit", "2000");
     const handle = setTimeout(() => {
       void fetch(`/api/dashboard/catalog?${params}`).then(async (res) => {
         if (res.ok) {
@@ -77,7 +78,13 @@ export function NewOrderView() {
   }, []);
 
   const quantity = Number(qty);
-  const charge = service && Number.isFinite(quantity) ? (service.ratePer1000 * quantity) / 1000 : 0;
+  const charge = service && Number.isFinite(quantity)
+    ? (() => {
+        const raw = (service.ratePer1000 * quantity) / 1000;
+        if (raw <= 0) return 0;
+        return Math.max(Math.ceil(Math.round(raw * 1e4 * 1e6) / 1e6) / 1e4, 0.0001);
+      })()
+    : 0;
 
   async function place() {
     if (!service) return;
@@ -184,7 +191,7 @@ export function NewOrderView() {
           <dl className="cp-spec">
             <div><dt>Service</dt><dd>#{service.id}</dd></div>
             <div><dt>Rate</dt><dd>${service.ratePer1000} / 1,000</dd></div>
-            <div><dt>Start time</dt><dd>{service.avgTime || "Shown after the provider accepts"}</dd></div>
+            <div><dt>Start time</dt><dd>{service.avgTime || "Starts after the order is accepted"}</dd></div>
             <div><dt>Average time</dt><dd>{service.avgTime || "—"}</dd></div>
             <div><dt>Min / max</dt><dd>{service.min.toLocaleString()} – {service.max.toLocaleString()}</dd></div>
             <div><dt>Status</dt><dd>{service.status}</dd></div>
@@ -336,7 +343,7 @@ export function OrdersView({ history = false }: { history?: boolean }) {
 
 export function OrderDetailView({ id }: { id: string }) {
   const [order, setOrder] = useState<{
-    id: number; upstreamOrderId: string | null; serviceName: string; serviceId: number; platformLabel: string; link: string; quantity: number;
+    id: number; serviceName: string; serviceId: number; platformLabel: string; link: string; quantity: number;
     charge: number; status: string; remains: number; startCount: number | null; progress: number | null;
     createdAt: string; updatedAt: string; refill: boolean; cancel: boolean;
   } | null>(null);
@@ -359,7 +366,7 @@ export function OrderDetailView({ id }: { id: string }) {
       if (next?.order) setOrder(next.order);
       return;
     }
-    setMessage("Refill request sent to the provider.");
+    setMessage("Refill request sent.");
   }
   if (!order) return <Skeleton />;
   return (
@@ -367,7 +374,6 @@ export function OrderDetailView({ id }: { id: string }) {
       <p className="cp-kicker">Order #{order.id}</p>
       <h2>{order.serviceName}</h2>
       <p>{order.platformLabel} · Service {order.serviceId}</p>
-      {order.upstreamOrderId ? <p className="cp-note">Server API order {order.upstreamOrderId}</p> : null}
       <p>Target {order.link}</p>
       <p>Quantity {order.quantity}</p>
       <p>Start count {order.startCount ?? "Not reported yet"}</p>
@@ -376,7 +382,7 @@ export function OrderDetailView({ id }: { id: string }) {
       <p>Status <Badge status={order.status} /></p>
       <p>Created {order.createdAt}</p>
       <p>Updated {order.updatedAt}</p>
-      {order.progress == null ? <p className="cp-note">Delivery progress is shown only after the provider reports a start count or remaining quantity.</p> : <p>Reported progress {order.progress}%</p>}
+      {order.progress == null ? <p className="cp-note">Delivery progress is shown only after a start count or remaining quantity is reported.</p> : <p>Reported progress {order.progress}%</p>}
       <div className="cp-row-actions">
         {order.refill ? <button className="cp-btn-ghost" type="button" onClick={() => void act("refill")}>Request refill</button> : null}
         {order.cancel ? <button className="cp-btn-ghost" type="button" onClick={() => void act("cancel")}>Request cancel</button> : null}
@@ -397,6 +403,7 @@ export function ServicesView({ favoritesOnly = false }: { favoritesOnly?: boolea
     if (platform) params.set("platform", platform);
     if (group) params.set("group", group);
     if (q) params.set("q", q);
+    if (!favoritesOnly) params.set("limit", "2000");
     const handle = setTimeout(() => {
       void fetch(`/api/dashboard/catalog?${params}`).then(async (res) => {
         if (res.ok) setCatalog((await res.json()) as Catalog);

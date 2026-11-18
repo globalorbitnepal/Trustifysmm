@@ -216,7 +216,7 @@ export const blogPosts: BlogPostDraft[] = [
       "Markup formulas, tiered retail cards, API volume discounts and how to use public Rate Deck data to quote enterprise SMM retainers.",
     focusKeywords: ["whitelabel smm panel", "smm agency pricing", "smm reseller margin", "smm rate deck"],
     excerpt:
-      "Wholesale rate per 1K is not your retail price. Build tiers, usage caps and maintenance fees using TrustifySMM’s public catalog as your floor.",
+      "Your published rate per 1K is not your retail price. Build tiers, usage caps and maintenance fees using TrustifySMM’s public catalog as your floor.",
     publishedAt: "2026-01-15T11:00:00.000Z",
     updatedAt: "2026-02-25T11:00:00.000Z",
     author: "Amit Verma",

@@ -3,12 +3,34 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { PricingService } from "@/data/service-pricing-types";
 import { getProviderSecret, type ProviderRecord } from "@/lib/orbit/providers";
+import { sortPlatformIds } from "@/lib/catalog-platform-order";
 import { panelPost } from "@/lib/smm-upstream/panel";
+import { publicDescription, publicText } from "@/lib/smm-upstream/public-text";
+
+const PLATFORM_LABELS: Record<string, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  telegram: "Telegram",
+  x: "X (Twitter)",
+  threads: "Threads",
+  whatsapp: "WhatsApp",
+  snapchat: "Snapchat",
+  linkedin: "LinkedIn",
+  spotify: "Spotify",
+  pinterest: "Pinterest",
+  other: "Other Services",
+};
 import { listAllOrders } from "@/lib/smm-api/demo-store";
 import { listCustomers } from "@/lib/customer/user-store";
 
 const FILE = path.join(process.cwd(), "data", "runtime", "upstream-catalog.json");
-const LOCAL_ID_BASE = 9_000_000;
+/**
+ * Customer-facing service codes start here. They are assigned in sync order and never
+ * derived from the provider id, so nothing on the site can be reversed into a server id.
+ */
+const FIRST_LOCAL_ID = 10_001;
 
 export type UpstreamService = {
   localId: number;
@@ -35,6 +57,10 @@ type CatalogFile = {
   priceOverrides?: Record<string, number>;
   /** Price applied to every service in a category before per-service edits. */
   categoryPrices?: Record<string, number>;
+  /** Next customer-facing service code to hand out. */
+  nextLocalId?: number;
+  /** Upstream service id to the customer-facing code, kept so a sync never changes it. */
+  codes?: Record<string, number>;
 };
 
 /** Customer price for one row: manual service price, then category price, then markup. */
@@ -46,6 +72,12 @@ export function effectiveRate(row: UpstreamService, file: { markupPercent: numbe
     return Math.round(category * (1 + (file.markupPercent || 0) / 100) * 10000) / 10000;
   }
   return sellRatePer1000(row.costPer1000, file.markupPercent);
+}
+
+/** Manual price for a service code, falling back to a legacy server-id key. */
+function manualPrice(file: CatalogFile, localId: number) {
+  const direct = file.priceOverrides?.[String(localId)];
+  return typeof direct === "number" ? direct : undefined;
 }
 
 export function sellRatePer1000(cost: number, markupPercent: number) {
@@ -78,6 +110,7 @@ function empty(): CatalogFile {
 function withPrices(file: CatalogFile): CatalogFile {
   file.priceOverrides ??= {};
   file.categoryPrices ??= {};
+  file.codes ??= {};
   return file;
 }
 
@@ -99,15 +132,16 @@ export function upstreamCatalogStamp() {
 export function upstreamAsPricing(row: UpstreamService): PricingService {
   return {
     id: row.localId,
-    name: row.name,
-    category: row.category,
+    name: publicText(row.name) || `Service ${row.localId}`,
+    category: publicText(row.category) || "Other",
     platform: row.platform,
-    group: row.category,
+    group: publicText(row.category) || "Other",
     ratePer1000: row.ratePer1000,
     minOrder: String(row.min),
     maxOrder: String(row.max),
-    avgTime: "After the server accepts the order",
-    description: `${row.type}. Provider rate $${row.costPer1000.toFixed(4)} per 1,000. The listed rate includes the Server API markup.`,
+    avgTime: "Starts after the order is accepted",
+    description: publicDescription(row.type),
+    refill: row.refill,
   };
 }
 
@@ -179,6 +213,10 @@ export async function syncProviderCatalog(provider: ProviderRecord) {
   const previous = withPrices(await readCatalogFile());
   const markup = provider.markupPercent ?? previous.markupPercent ?? 30;
   const services: UpstreamService[] = [];
+  const codes: Record<string, number> = { ...previous.codes };
+  const used = new Set(Object.values(codes));
+  let nextCode = Math.max(previous.nextLocalId ?? FIRST_LOCAL_ID, FIRST_LOCAL_ID);
+
   for (const row of rows) {
     const upstreamId = Number(row.service);
     const cost = Number(row.rate);
@@ -186,11 +224,23 @@ export async function syncProviderCatalog(provider: ProviderRecord) {
     const max = Number(row.max);
     if (!Number.isFinite(upstreamId) || !Number.isFinite(cost)) continue;
     const category = String(row.category || "Other").trim() || "Other";
+    const name = String(row.name || "").trim();
+    /* The provider lists section dividers (`-----`, `\\\\\\`, emoji rules) as services. They are
+     * layout, not something a customer can buy, so they never enter the catalog. */
+    if (!/[\p{L}\p{N}]/u.test(name)) continue;
+    let localId = codes[String(upstreamId)];
+    if (!localId) {
+      while (used.has(nextCode)) nextCode += 1;
+      localId = nextCode;
+      used.add(localId);
+      nextCode += 1;
+      codes[String(upstreamId)] = localId;
+    }
     services.push({
-      localId: LOCAL_ID_BASE + upstreamId,
+      localId,
       providerId: provider.id,
       upstreamId,
-      name: String(row.name || `Service ${upstreamId}`).trim(),
+      name: name || `Service ${upstreamId}`,
       category,
       platform: platformFromCategory(category),
       type: String(row.type || "Default"),
@@ -202,13 +252,23 @@ export async function syncProviderCatalog(provider: ProviderRecord) {
       cancel: Boolean(row.cancel),
     });
   }
+  /* Prices follow the code, so a manual price stays on the same service after a sync. */
+  const previousCodeByUpstream = new Map(previous.services.map((row) => [row.localId, row.upstreamId]));
+  const priceOverrides: Record<string, number> = {};
+  for (const [oldLocalId, price] of Object.entries(previous.priceOverrides ?? {})) {
+    const upstreamId = previousCodeByUpstream.get(Number(oldLocalId));
+    const code = upstreamId !== undefined ? codes[String(upstreamId)] : undefined;
+    priceOverrides[String(code ?? oldLocalId)] = price;
+  }
   const file: CatalogFile = {
     syncedAt: new Date().toISOString(),
     providerId: provider.id,
     markupPercent: markup,
     services,
-    priceOverrides: previous.priceOverrides,
+    priceOverrides,
     categoryPrices: previous.categoryPrices,
+    codes,
+    nextLocalId: nextCode,
   };
   for (const row of file.services) row.ratePer1000 = effectiveRate(row, file);
   await writeCatalog(file);
@@ -224,14 +284,38 @@ export async function serverApiSummary(category?: string) {
   const categories = [...counts.entries()]
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const selected = category && counts.has(category) ? category : categories[0]?.name ?? "";
+
+  /*
+   * The same platform grouping the customer dashboard uses, so a category is never
+   * listed on its own without the platform it belongs to.
+   */
+  const platformOf = new Map(file.services.map((row) => [row.category, row.platform]));
+  const platformGroups = new Map<string, { name: string; label: string; count: number }[]>();
+  for (const row of categories) {
+    const key = platformOf.get(row.name) ?? "other";
+    const list = platformGroups.get(key) ?? [];
+    /* `name` is what the API stores, `label` is exactly what the customer reads. */
+    list.push({ name: row.name, label: publicText(row.name) || "Other", count: row.count });
+    platformGroups.set(key, list);
+  }
+  const platformRows = sortPlatformIds([...platformGroups.keys()]).map((id) => ({
+    id,
+    label: PLATFORM_LABELS[id] ?? "Other Services",
+    count: (platformGroups.get(id) ?? []).reduce((sum, row) => sum + row.count, 0),
+    categories: platformGroups.get(id) ?? [],
+  }));
+  /* Default to the first platform's first category, which is what the customer sees first. */
+  const firstCategory = platformRows[0]?.categories[0]?.name ?? "";
+  const selected = category && counts.has(category) ? category : firstCategory;
   const services = file.services
     .filter((row) => row.category === selected)
     .map((row) => ({
       id: row.upstreamId,
       localId: row.localId,
       name: row.name,
+      customerName: publicText(row.name) || `Service ${row.localId}`,
       category: row.category,
+      categoryLabel: publicText(row.category) || "Other",
       type: row.type,
       costPer1000: row.costPer1000,
       ratePer1000: row.ratePer1000,
@@ -257,7 +341,7 @@ export async function serverApiSummary(category?: string) {
         upstreamOrderId: order.upstreamOrderId ?? null,
         upstreamServiceId: mapped?.upstreamId ?? order.upstreamServiceId ?? null,
         customer: emailByKey.get(order.accountKey ?? "") ?? "Unlinked",
-        service: mapped?.name ?? `Service ${order.service}`,
+        service: publicText(mapped?.name ?? "") || `Service ${order.service}`,
         quantity: order.quantity,
         charge: order.charge,
         status: order.status,
@@ -282,6 +366,7 @@ export async function serverApiSummary(category?: string) {
     serviceCount: file.services.length,
     categoryCount: categories.length,
     categories,
+    platformRows,
     category: selected,
     services,
     orders,

@@ -9,6 +9,8 @@ export type PricingService = {
   maxOrder: string;
   avgTime: string;
   description: string;
+  /** True when the service supports refills. Set by the synced catalog. */
+  refill?: boolean;
 };
 
 export type ServicePricingData = {

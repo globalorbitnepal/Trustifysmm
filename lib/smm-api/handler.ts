@@ -1,5 +1,5 @@
 import { livePricingData } from "@/lib/orbit/live-catalog";
-import { findPricingService, pricingToApiServices } from "@/lib/smm-api/catalog";
+import { findPricingService, panelChargeFor, pricingToApiServices } from "@/lib/smm-api/catalog";
 import {
   createDemoOrder,
   getAccountByKey,
@@ -60,7 +60,7 @@ export async function handleSmmApi(params: SmmApiParams): Promise<unknown> {
       }
       const svc = findPricingService(livePricingData(), serviceId);
       if (!svc) return { error: "Service not found" };
-      const charge = (svc.ratePer1000 * quantity) / 1000;
+      const charge = panelChargeFor(svc.ratePer1000, quantity);
       const result = await createDemoOrder({
         key,
         service: serviceId,
@@ -71,7 +71,7 @@ export async function handleSmmApi(params: SmmApiParams): Promise<unknown> {
       if ("error" in result) return result;
       const forwarded = await forwardOrderToServer(result.order);
       if ("error" in forwarded && forwarded.error) {
-        await refundOrder(result.order.order, `Server API rejected order #${result.order.order}. ${forwarded.error}`);
+        await refundOrder(result.order.order, `Order #${result.order.order} could not be started. Charge returned.`);
         return { error: forwarded.error };
       }
       return { order: result.order.order };
@@ -100,7 +100,7 @@ export async function handleSmmApi(params: SmmApiParams): Promise<unknown> {
     }
 
     case "refill":
-      return { error: "Refill is not enabled on demo API. Connect SMM_UPSTREAM_API_URL for live panel." };
+      return { error: "Refill is not available for this order." };
 
     case "refill_status":
       return { error: "Refill status is not enabled on demo API." };

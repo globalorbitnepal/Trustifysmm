@@ -19,10 +19,16 @@ export async function panelPost(provider: ProviderRecord, fields: Record<string,
   } catch {
     return { ok: false as const, error: "The server API did not return JSON.", data: {} as PanelResponse };
   }
-  const record = (data && typeof data === "object" ? data : {}) as PanelResponse;
-  const error = typeof record.error === "string" ? record.error : "";
+  const record = (data && typeof data === "object" && !Array.isArray(data) ? data : {}) as PanelResponse;
+  /*
+   * Some Server API actions answer with a list (`cancel` returns `[{order, cancel}]`). Any
+   * element carrying `error` means the whole call failed.
+   */
+  const list = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
+  const listError = list.map((row) => (typeof row.error === "string" ? row.error : "")).find(Boolean) ?? "";
+  const error = typeof record.error === "string" ? record.error : listError;
   if (!response.ok || error) {
-    return { ok: false as const, error: error || `Server API returned ${response.status}.`, data: record };
+    return { ok: false as const, error: error || `Server API returned ${response.status}.`, data: record, list };
   }
-  return { ok: true as const, error: "", data: record };
+  return { ok: true as const, error: "", data: record, list };
 }

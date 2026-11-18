@@ -42,7 +42,7 @@ export const defaultPageExtras: Record<string, PageExtras> = {
       },
       {
         heading: "Rate limits & reliability",
-        text: "The panel API is built for automation. Requests are queued per account and retried automatically on upstream timeouts. Use the multi-status endpoint for bulk polling instead of looping single-status calls.",
+        text: "The panel API is built for automation. Requests are queued per account and retried automatically after a network timeout. Use the multi-status endpoint for bulk polling instead of looping single-status calls.",
       },
       {
         heading: "Banker balance automation",

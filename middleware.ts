@@ -21,6 +21,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!pathname.startsWith("/orbit") && !pathname.startsWith("/api/orbit")) {
+    /* The internal refresh authenticates with its own token inside the route. */
     return pass();
   }
 

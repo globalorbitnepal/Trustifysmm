@@ -4,10 +4,13 @@ import type { DemoOrder } from "@/lib/smm-api/types";
 export function presentOrder(order: DemoOrder) {
   const service = findService(order.service);
   const reported = order.remains < order.quantity;
-  const synced = Boolean(order.upstreamOrderId);
+  const routed = Boolean(order.upstreamOrderId);
+  /*
+   * Only the customer's own order number leaves this function. The reference used for the
+   * fulfilment connection stays on the server so the order page cannot reveal it.
+   */
   return {
     id: order.order,
-    upstreamOrderId: order.upstreamOrderId ?? null,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt ?? order.createdAt,
     serviceId: order.service,
@@ -22,7 +25,7 @@ export function presentOrder(order: DemoOrder) {
     remains: order.remains,
     startCount: order.start_count > 0 ? order.start_count : null,
     progress: reported ? Math.round(((order.quantity - order.remains) / order.quantity) * 100) : null,
-    refill: Boolean(service && /refill|365d|lifetime/i.test(`${service.name} ${service.description}`) && synced),
-    cancel: Boolean(synced && order.status !== "Canceled" && order.status !== "Refunded"),
+    refill: Boolean(routed && (service?.refill || (service && /refill|365d|lifetime/i.test(`${service.name} ${service.description}`)))),
+    cancel: Boolean(routed && order.status !== "Canceled" && order.status !== "Refunded"),
   };
 }

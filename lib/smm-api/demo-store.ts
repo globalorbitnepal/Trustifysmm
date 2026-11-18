@@ -134,6 +134,16 @@ async function persist(store: StoreFile) {
   await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
 
+/**
+ * Resolve a wallet from an API key. Accounts store only `keyHash`, so comparing `account.key`
+ * directly silently fails on every migrated account. This compares hashes in constant time.
+ */
+function accountByKey(store: StoreFile, key: string): DemoAccount | null {
+  const presented = (key ?? "").trim();
+  if (!presented) return null;
+  return store.accounts.find((row) => keyMatchesRecord(presented, row)) ?? null;
+}
+
 /** Transparently upgrade a legacy plaintext `key` to `keyHash` on read. */
 async function migrateLegacyKey(store: StoreFile, account: DemoAccount) {
   if (!needsHashMigration(account)) return;
@@ -191,13 +201,12 @@ export async function ensureDemoAccount(input: { email: string; key: string; bal
   }
   if (byEmail) {
     byEmail.keyHash = keyHash;
-    // Demo accounts must never persist plaintext key material.
-    if (!byEmail.demo) byEmail.key = input.key;
+    // Plaintext key material is never persisted for a wallet.
+    delete byEmail.key;
     await persist(store);
     return byEmail;
   }
   const account: DemoAccount = {
-    key: input.key,
     keyHash,
     email: input.email,
     balance: input.balance,
@@ -227,7 +236,7 @@ export async function addBalance(
 ) {
   return withStoreLock(async () => {
     const store = await ensureStore();
-    const account = store.accounts.find((a) => a.key === key);
+    const account = accountByKey(store, key);
     if (!account) return null;
     account.balance = Math.round((account.balance + amountUsd) * 10000) / 10000;
     if (account.balance < 0) account.balance = 0;
@@ -269,7 +278,7 @@ export async function placeOrdersAtomic(input: {
 }) {
   return withStoreLock(async () => {
     const store = await ensureStore();
-    const account = store.accounts.find((a) => a.key === input.key);
+    const account = accountByKey(store, input.key);
     if (!account) return { error: "Invalid API key" as const };
     if (account.revoked) return { error: "API key is revoked" as const };
 
@@ -391,7 +400,7 @@ export async function adjustAccount(
 ) {
   return withStoreLock(async () => {
     const store = await ensureStore();
-    const account = store.accounts.find((row) => row.key === key);
+    const account = accountByKey(store, key);
     if (!account) return { error: "Wallet not found." as const };
     const amount = Math.round(delta * 10000) / 10000;
     if (!Number.isFinite(amount) || amount === 0) return { error: "Enter an amount greater than zero." as const };
@@ -429,7 +438,7 @@ export async function adjustAccountExact(
     if (store.transactions.some((row) => row.ref === ref)) {
       return { error: "This adjustment was already recorded." as const };
     }
-    const account = store.accounts.find((row) => row.key === key);
+    const account = accountByKey(store, key);
     if (!account) return { error: "Wallet not found." as const };
     const current = decimalToScaled(account.balance, 2);
     if (current === null) return { error: "Wallet balance is not a valid USD amount." as const };
@@ -472,7 +481,7 @@ export async function refundOrder(orderId: number, description: string) {
     if (!order) return { error: "Order not found." as const };
     if (!order.accountKey) return { error: "This order is not linked to a customer wallet." as const };
     if (order.status === "Refunded") return { error: "This order is already refunded." as const };
-    const account = store.accounts.find((row) => row.key === order.accountKey);
+    const account = accountByKey(store, order.accountKey ?? "");
     if (!account) return { error: "Wallet not found." as const };
     const amount = Math.round(order.charge * 10000) / 10000;
     if (amount < 0) return { error: "Invalid charge." as const };
@@ -495,7 +504,7 @@ export async function refundOrder(orderId: number, description: string) {
 export async function setAccountBalance(key: string, nextBalance: number, description: string) {
   return withStoreLock(async () => {
     const store = await ensureStore();
-    const account = store.accounts.find((row) => row.key === key);
+    const account = accountByKey(store, key);
     if (!account) return null;
     const next = Math.round(nextBalance * 10000) / 10000;
     if (!Number.isFinite(next) || next < 0) return null;
@@ -523,9 +532,14 @@ export async function listInvoicesForKey(key: string) {
 export async function rotateAccountKey(oldKey: string, newKey: string) {
   return withStoreLock(async () => {
     const store = await ensureStore();
-    const account = store.accounts.find((row) => row.key === oldKey);
+    const account = accountByKey(store, oldKey);
     if (!account) return null;
-    account.key = newKey;
+    /*
+     * Keys are stored hashed, so rotation replaces the hash. Orders and ledger rows keep the
+     * plaintext key they were created with as their owner reference, so those move too.
+     */
+    delete account.key;
+    account.keyHash = hashApiKey(newKey);
     account.revoked = false;
     for (const order of store.orders) if (order.accountKey === oldKey) order.accountKey = newKey;
     for (const invoice of store.invoices) if (invoice.apiKey === oldKey) invoice.apiKey = newKey;
@@ -539,7 +553,7 @@ export async function rotateAccountKey(oldKey: string, newKey: string) {
 export async function setAccountRevoked(key: string, revoked: boolean) {
   return withStoreLock(async () => {
     const store = await ensureStore();
-    const account = store.accounts.find((row) => row.key === key);
+    const account = accountByKey(store, key);
     if (!account) return null;
     account.revoked = revoked;
     await persist(store);

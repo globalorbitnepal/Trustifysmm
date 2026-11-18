@@ -36,7 +36,7 @@ export const supportFaqCategories: SupportFaqCategory[] = [
     items: [
       {
         q: "How fast do orders start?",
-        a: "Most services show an average start time in the catalog. Automation can begin within minutes for popular SKUs; some premium or geo-targeted services queue longer during peak hours. API status moves from Pending to Processing when the upstream accepts the job. Weekend starts may be slower on niche categories.",
+        a: "Most services show an average start time in the catalog. Automation can begin within minutes for popular SKUs; some premium or geo-targeted services queue longer during peak hours. API status moves from Pending to Processing as soon as delivery starts. Weekend starts may be slower on niche categories.",
       },
       {
         q: "What do order statuses mean in the panel and API?",
@@ -121,7 +121,7 @@ export const supportFaqCategories: SupportFaqCategory[] = [
       },
       {
         q: "Why do I get Invalid API key?",
-        a: "Ensure you send the key parameter on every call, use the active key from Account → API, and avoid trimming or encoding errors. Production may forward to SMM_UPSTREAM_API_URL — keys must be valid on the upstream panel.",
+        a: "Ensure you send the key parameter on every call, use the active key from Account → API, and avoid trimming or encoding errors. If a key was regenerated, update your script with the new value before the next request.",
       },
       {
         q: "Why do I get Not enough funds?",

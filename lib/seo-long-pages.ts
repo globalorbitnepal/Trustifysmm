@@ -30,7 +30,7 @@ export const platformsPage = {
     {
       heading: "Snapchat, Threads, LinkedIn, Spotify, Pinterest and Other",
       paragraphs: [
-        "Smaller catalogs still matter for agencies. Snapchat, Threads, LinkedIn, Spotify and Pinterest appear when the upstream catalog has active services. Anything that does not map to a named platform is grouped under Other Services so it never hides the main networks.",
+        "Smaller catalogs still matter for agencies. Snapchat, Threads, LinkedIn, Spotify and Pinterest appear as those networks gain active services. Anything that does not map to a named platform is grouped under Other Services so it never hides the main networks.",
         "If a platform you need is missing, it is not hidden — it is not currently supplied. Check Services again after catalog syncs, or ask support which service ID is the closest match.",
       ],
     },
