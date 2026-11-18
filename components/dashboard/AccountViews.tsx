@@ -448,7 +448,7 @@ export function SecurityView() {
             <p className="cp-auth-status">{enabled ? "Enabled" : "Not enabled"}{enabled && info.twoFactor.activatedAt ? ` · ${formatWhen(info.twoFactor.activatedAt)}` : ""}</p>
           </div>
         </div>
-        <p className="cp-auth-lead">Every new sign-in asks for the 6-digit code from Google Authenticator. Scan the QR code or copy the setup key. Both use the same account.</p>
+        <p className="cp-auth-lead">Every new sign-in asks for the 6-digit code from Google Authenticator. Scan the QR code or copy the setup key. The app saves the account as TrustifySMM.</p>
         {!enabled && !secret ? (
           <form className="cp-auth-enable" onSubmit={(event) => void startSetup(event)}>
             {info.hasPassword ? (
@@ -460,12 +460,17 @@ export function SecurityView() {
         {secret ? (
           <form className="cp-auth-setup" onSubmit={(event) => void confirmSetup(event)}>
             <div className="cp-auth-pair">
-              {qr ? <img className="cp-auth-qr" src={qr} alt="Setup QR code for Google Authenticator" width={240} height={240} /> : null}
+              {qr ? (
+                <figure className="cp-auth-qr-wrap">
+                  <img className="cp-auth-qr" src={qr} alt="Setup QR code for Google Authenticator" width={280} height={280} />
+                  <figcaption>TrustifySMM</figcaption>
+                </figure>
+              ) : null}
               <div>
                 <ol>
-                  <li>Open Google Authenticator and scan the QR code.</li>
-                  <li>Or choose Enter a setup key, account name TrustifySMM, and paste the key. Choose Time-based.</li>
-                  <li>Enter the 6-digit code from the app. Authenticator turns on only after it matches.</li>
+                  <li>Open Google Authenticator and scan the QR code. The new entry is named TrustifySMM.</li>
+                  <li>Or choose Enter a setup key. Type TrustifySMM as the account name, paste the key, and choose Time-based.</li>
+                  <li>Enter the 6-digit code from the TrustifySMM entry. Authenticator turns on only after it matches.</li>
                 </ol>
                 <p className="cp-api-key">{secret}</p>
                 <button className="cp-btn-ghost" type="button" onClick={() => void navigator.clipboard.writeText(secret)}>Copy setup key</button>

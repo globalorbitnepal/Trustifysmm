@@ -27,16 +27,23 @@ export function generateTotpSecret() {
   return base32Encode(randomBytes(20));
 }
 
+export const AUTHENTICATOR_ISSUER = "TrustifySMM";
+
+/**
+ * Google Authenticator shows the text before the colon as the account name.
+ * The colon must stay literal. Encoding the whole label hides the name on older apps.
+ */
 export function provisioningUri(secret: string, email: string) {
-  const label = encodeURIComponent(`TrustifySMM:${email}`);
-  const query = new URLSearchParams({
-    secret,
-    issuer: "TrustifySMM",
-    algorithm: "SHA1",
-    digits: String(DIGITS),
-    period: String(STEP_SECONDS),
-  });
-  return `otpauth://totp/${label}?${query.toString()}`;
+  const issuer = AUTHENTICATOR_ISSUER;
+  const label = `${encodeURIComponent(issuer)}:${encodeURIComponent(email)}`;
+  const query = [
+    `secret=${encodeURIComponent(secret)}`,
+    `issuer=${encodeURIComponent(issuer)}`,
+    "algorithm=SHA1",
+    `digits=${DIGITS}`,
+    `period=${STEP_SECONDS}`,
+  ].join("&");
+  return `otpauth://totp/${label}?${query}`;
 }
 
 export function hotp(secretBase32: string, counter: number) {

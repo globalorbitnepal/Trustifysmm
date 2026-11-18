@@ -66,10 +66,14 @@ describe("authenticator codes", () => {
     expect(enc).toBeTruthy();
     expect(enc).not.toContain(secret);
     expect(decryptSecret(enc!)).toBe(secret);
-    expect(provisioningUri(secret, "a@b.com")).toContain("algorithm=SHA1");
+    expect(provisioningUri("JBSWY3DPEHPK3PXP", "a@b.com")).toBe(
+      "otpauth://totp/TrustifySMM:a%40b.com?secret=JBSWY3DPEHPK3PXP&issuer=TrustifySMM&algorithm=SHA1&digits=6&period=30",
+    );
+    expect(provisioningUri(secret, "a@b.com")).not.toMatch(/nowpayment/i);
     const image = await setupQr(secret, "a@b.com");
+    expect(image.uri).toContain("TrustifySMM:");
     expect(image.uri).toContain(secret);
-    expect(image.uri.startsWith("otpauth://totp/")).toBe(true);
+    expect(image.uri.startsWith("otpauth://totp/TrustifySMM:")).toBe(true);
     expect(image.qr.startsWith("data:image/png;base64,")).toBe(true);
     expect(image.qr.length).toBeGreaterThan(2000);
   });
