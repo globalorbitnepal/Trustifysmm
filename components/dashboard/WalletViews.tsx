@@ -47,9 +47,10 @@ type Payment = {
   expiresAt: string | null;
   quoteCrypto?: string | null;
   symbol?: string | null;
+  logoUrl?: string | null;
 };
 
-const PRESETS = [10, 25, 50, 100, 250] as const;
+const PRESETS = [10, 25, 50, 100, 250, 500] as const;
 const PAYMENT_WINDOW_MS = 60 * 60 * 1000;
 const STATUS_POLL_MS = 30_000;
 
@@ -94,7 +95,7 @@ export function AddFundsView() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
-  const minDeposit = gateway?.minDepositUsd ?? 1;
+  const minDeposit = gateway?.minDepositUsd ?? 10;
   const maxDeposit = gateway?.maxDepositUsd ?? 50_000;
 
   useEffect(() => {
@@ -263,6 +264,7 @@ export function AddFundsView() {
       payAmount: data.pay_amount ?? null,
       quoteCrypto: quote?.crypto ?? null,
       symbol: selected.symbol,
+      logoUrl: selected.logoUrl,
       address: data.pay_address ?? null,
       payUrl: data.payment_url ?? null,
       txHash: null,
@@ -305,135 +307,54 @@ export function AddFundsView() {
   if (!ready) return <Skeleton rows={3} />;
 
   const live = Boolean(gateway?.live && options.length);
+  const activeGroup = coinGroups.find((group) => group.rows.some((row) => row.code === coin)) ?? null;
+  const step = payment?.status === "paid" ? 4 : checkoutOpen ? 3 : selected ? 2 : 1;
+  const quoteLabel = quoting ? "Quoting…" : quote ? `${trimCrypto(quote.crypto)} ${selected?.symbol ?? ""}` : "—";
 
   return (
-    <div className="cp-funds cp-deposit">
-      <section className="cp-card cp-deposit-head">
+    <div className="cp-funds cp-deposit cp-banker">
+      <header className="cp-banker-head">
+        <div className="cp-banker-mark" aria-hidden>
+          <WalletGlyph />
+        </div>
         <div>
-          <p className="cp-kicker">Banker · crypto wallet</p>
           <h2 className="cp-deposit-title">Add funds</h2>
-          <p className="cp-deposit-balance">
-            Available balance <strong>${balance.toFixed(2)}</strong> <span>USD</span>
+          <p className="cp-banker-lede">Top up your wallet with cryptocurrency. Balance ${balance.toFixed(2)} USD.</p>
+        </div>
+        <span className={`cp-deposit-pill${live ? " is-live" : " is-off"}`}>{live ? "Provider online" : "Provider unavailable"}</span>
+      </header>
+
+      <ol className="cp-banker-steps">
+        {[
+          [1, "Select amount"],
+          [2, "Choose crypto"],
+          [3, "Payment"],
+          [4, "Complete"],
+        ].map(([id, label], index, rows) => (
+          <li key={id} className={step >= Number(id) ? "is-on" : ""}>
+            <span>{step > Number(id) ? "✓" : id}</span>
+            <em>{label}</em>
+            {index < rows.length - 1 ? <i /> : null}
+          </li>
+        ))}
+      </ol>
+
+      {!live ? (
+        <section className="cp-card cp-glass cp-funds-offline">
+          <h3>Crypto deposits are unavailable</h3>
+          <p>
+            {gateway?.error ||
+              "The payment provider is not configured or returned no enabled currencies. No balance is added without provider confirmation."}
           </p>
-        </div>
-        <div className="cp-deposit-head-side">
-          <span className={`cp-deposit-pill${live ? " is-live" : " is-off"}`}>
-            {live ? "Provider online" : "Provider unavailable"}
-          </span>
-          <span className="cp-deposit-pill is-muted">Secure crypto payments · NOWPayments</span>
-        </div>
-      </section>
-
-      <div className="cp-deposit-grid">
-        <section className="cp-card cp-deposit-panel">
-          {!live ? (
-            <div className="cp-funds-offline">
-              <h3>Crypto deposits are unavailable</h3>
-              <p>
-                {gateway?.error ||
-                  "The payment provider is not configured or returned no enabled currencies. No balance is added without provider confirmation."}
-              </p>
-              <ul className="cp-funds-trust">
-                <li>Funds credit only after provider verification</li>
-                <li>Manual screenshots never add balance</li>
-                <li>Full audit trail in Payment History</li>
-              </ul>
-              <Link className="cp-btn-ghost" href="/dashboard/payments">
-                View payment history
-              </Link>
-            </div>
-          ) : (
-            <>
-              <header className="cp-deposit-step">
-                <span>1</span>
-                <div>
-                  <h3>Choose coin &amp; network</h3>
-                  <p>Each network is a separate payment currency. Sending on the wrong network can lose funds.</p>
-                </div>
-              </header>
-
-              <label className="cp-deposit-search">
-                <SearchIcon />
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search coin, symbol, or network…"
-                  autoComplete="off"
-                />
-              </label>
-
-              {filtered.length === 0 ? (
-                <p className="cp-deposit-empty">No currency matches “{query}”. Try the symbol or network name.</p>
-              ) : (
-                <>
-                  <div className="cp-deposit-group">
-                    <p className="cp-deposit-group-label">{query ? "Matching coins" : "Coins"}</p>
-                    <div className="cp-coin-grid">
-                      {coinGroups.map((group) => {
-                        const active = group.rows.some((row) => row.code === coin);
-                        const current = group.rows.find((row) => row.code === coin) ?? group.rows[0];
-                        return (
-                          <div key={group.symbol} className={`cp-coin-card${active ? " is-on" : ""}`}>
-                            <button
-                              type="button"
-                              className="cp-coin"
-                              aria-pressed={active}
-                              onClick={() => setCoin(current.code)}
-                            >
-                              <CoinLogo code={current.code} logoUrl={current.logoUrl} size={40} />
-                              <span className="cp-coin-copy">
-                                <strong>{group.symbol}</strong>
-                                <small>{current.name}</small>
-                              </span>
-                              {active ? <span className="cp-coin-check" aria-hidden>✓</span> : null}
-                            </button>
-                            <div className="cp-net-row" role="group" aria-label={`${group.symbol} network`}>
-                              {group.rows.map((row) => (
-                                <button
-                                  key={row.code}
-                                  type="button"
-                                  className={row.code === coin ? "is-on" : ""}
-                                  onClick={() => setCoin(row.code)}
-                                >
-                                  {networkBadge(row.code, row.network)}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {selected ? (
-                <div className="cp-deposit-selected">
-                  <CoinLogo code={selected.code} logoUrl={selected.logoUrl} size={44} />
-                  <div>
-                    <strong>
-                      {selected.symbol} <span>· {selected.networkLabel}</span>
-                    </strong>
-                    <small>
-                      Provider currency <code>{selected.code}</code>
-                    </small>
-                  </div>
-                </div>
-              ) : null}
-
-              <header className="cp-deposit-step">
-                <span>2</span>
-                <div>
-                  <h3>Enter amount</h3>
-                  <p>
-                    Account minimum ${minDeposit.toFixed(2)}
-                    {providerMin != null ? ` · This coin’s provider minimum $${providerMin.toFixed(2)}` : ""}
-                    {" "}· Maximum ${maxDeposit.toLocaleString()} · Pay window up to 1 hour
-                  </p>
-                </div>
-              </header>
-
+          <Link className="cp-btn-ghost" href="/dashboard/payments">
+            View payment history
+          </Link>
+        </section>
+      ) : (
+        <div className="cp-banker-grid">
+          <div className="cp-banker-main">
+            <section className="cp-card cp-glass cp-banker-card">
+              <h3><span>1</span> Enter amount (USD)</h3>
               <label className="cp-deposit-amount">
                 <span>$</span>
                 <input
@@ -445,7 +366,6 @@ export function AddFundsView() {
                 />
                 <em>USD</em>
               </label>
-
               <div className="cp-deposit-presets">
                 {PRESETS.map((preset) => (
                   <button
@@ -453,87 +373,124 @@ export function AddFundsView() {
                     type="button"
                     className={Number(amount) === preset ? "is-on" : ""}
                     disabled={preset < effectiveMin}
+                    title={preset < effectiveMin ? `This coin requires at least $${effectiveMin.toFixed(2)}` : undefined}
                     onClick={() => setAmount(String(preset))}
                   >
                     ${preset}
                   </button>
                 ))}
               </div>
-
-              {!amountValid && amount !== "" ? (
-                <p className="cp-error">
-                  Enter a USD amount between ${effectiveMin.toFixed(2)} and ${maxDeposit.toLocaleString()}.
-                </p>
-              ) : null}
-
-              <dl className="cp-deposit-summary">
-                <div>
-                  <dt>You pay</dt>
-                  <dd>${Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : "0.00"} USD</dd>
-                </div>
-                <div>
-                  <dt>Estimated crypto</dt>
-                  <dd>
-                    {quoting
-                      ? "Quoting…"
-                      : quote
-                        ? `${trimCrypto(quote.crypto)} ${selected?.symbol ?? ""}`
-                        : "Enter a valid amount"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Network</dt>
-                  <dd>{selected?.networkLabel ?? "—"}</dd>
-                </div>
-                <div>
-                  <dt>Service fee</dt>
-                  <dd>Paid by you, locked into the crypto total</dd>
-                </div>
-              </dl>
-              <p className="cp-deposit-note">
-                The quote refreshes every 30 seconds. Checkout shows the exact crypto amount, including the provider fee you pay. Your wallet is credited the USD amount above.
+              <p className="cp-banker-min">
+                Account minimum ${minDeposit.toFixed(2)}
+                {providerMin != null ? ` · ${selected?.symbol ?? "This coin"} provider minimum $${providerMin.toFixed(2)}` : ""}
+                {" "}· Maximum ${maxDeposit.toLocaleString()}
               </p>
+              {!amountValid && amount !== "" ? (
+                <p className="cp-error">Enter ${effectiveMin.toFixed(2)} to ${maxDeposit.toLocaleString()}.</p>
+              ) : null}
+            </section>
 
-              {error ? <p className="cp-error">{error}</p> : null}
+            <section className="cp-card cp-glass cp-banker-card">
+              <h3><span>2</span> Select cryptocurrency</h3>
+              <label className="cp-deposit-search">
+                <SearchIcon />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search coin or network"
+                  autoComplete="off"
+                />
+              </label>
+              {coinGroups.length === 0 ? (
+                <p className="cp-deposit-empty">No currency matches “{query}”.</p>
+              ) : (
+                <div className="cp-asset-grid">
+                  {coinGroups.map((group) => {
+                    const current = group.rows.find((row) => row.code === coin) ?? group.rows[0];
+                    const active = group.rows.some((row) => row.code === coin);
+                    return (
+                      <button
+                        key={group.symbol}
+                        type="button"
+                        className={`cp-asset${active ? " is-on" : ""}`}
+                        aria-pressed={active}
+                        onClick={() => setCoin(current.code)}
+                      >
+                        <CoinLogo code={current.code} logoUrl={current.logoUrl} size={42} />
+                        <strong>{group.symbol}</strong>
+                        <small>{shortCoinName(group.symbol, current.name)}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
 
-              <button
-                className="cp-btn cp-deposit-submit"
-                type="button"
-                disabled={busy || !selected || !amountValid}
-                onClick={() => void createInvoice()}
-              >
-                {busy ? "Creating payment…" : "Continue to crypto checkout"}
-              </button>
-            </>
-          )}
-        </section>
+            {activeGroup ? (
+              <section className="cp-card cp-glass cp-banker-card">
+                <h3><span>3</span> Select network ({activeGroup.symbol})</h3>
+                <div className="cp-network-grid">
+                  {activeGroup.rows.map((row) => (
+                    <button
+                      key={row.code}
+                      type="button"
+                      className={`cp-network${row.code === coin ? " is-on" : ""}`}
+                      aria-pressed={row.code === coin}
+                      onClick={() => setCoin(row.code)}
+                    >
+                      <CoinLogo code={row.code} logoUrl={row.logoUrl} size={28} />
+                      <span>
+                        <strong>{networkBadge(row.code, row.network)}</strong>
+                        <small>{row.networkLabel}</small>
+                      </span>
+                      {row.minUsd != null ? <em>Min ${row.minUsd.toFixed(2)}</em> : null}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </div>
 
-        <aside className="cp-card cp-deposit-aside">
-          <h3>How crediting works</h3>
-          <ol className="cp-funds-steps">
-            <li>
-              <strong>Invoice</strong>
-              <span>Fixed crypto amount and deposit address</span>
-            </li>
-            <li>
-              <strong>Pay</strong>
-              <span>Send on the stated network before expiry</span>
-            </li>
-            <li>
-              <strong>Verify</strong>
-              <span>Signed provider webhook checks amount and network</span>
-            </li>
-            <li>
-              <strong>Credit</strong>
-              <span>USD balance updates only after verification</span>
-            </li>
-          </ol>
-          <p className="cp-note">Crypto only. Underpaid or mismatched payments go to manual review.</p>
-          <Link className="cp-btn-ghost cp-funds-link" href="/dashboard/payments">
-            Payment history
-          </Link>
-        </aside>
-      </div>
+          <aside className="cp-card cp-glass cp-banker-summary">
+            <h3>Payment summary</h3>
+            <dl>
+              <div>
+                <dt>Amount (wallet credit)</dt>
+                <dd>${Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : "0.00"}</dd>
+              </div>
+              <div>
+                <dt>Network</dt>
+                <dd>{selected ? networkBadge(selected.code, selected.network) : "—"}</dd>
+              </div>
+              <div>
+                <dt>Provider fee</dt>
+                <dd>Included in the crypto you send</dd>
+              </div>
+              <div className="is-total">
+                <dt>Estimated crypto</dt>
+                <dd>{quoteLabel}</dd>
+              </div>
+            </dl>
+            <p className="cp-deposit-note">
+              This quote refreshes every 30 seconds. Checkout locks the exact amount from NOWPayments, including the service fee you pay. Your wallet is credited the USD amount, after the payment is verified.
+            </p>
+            {error ? <p className="cp-error">{error}</p> : null}
+            <button
+              className="cp-btn cp-deposit-submit"
+              type="button"
+              disabled={busy || !selected || !amountValid}
+              onClick={() => void createInvoice()}
+            >
+              {busy ? "Creating payment…" : "Continue to crypto checkout"}
+            </button>
+            <p className="cp-banker-secure">Secured by NOWPayments · Pay window up to 1 hour</p>
+            <Link className="cp-btn-ghost cp-funds-link" href="/dashboard/payments">
+              Payment history
+            </Link>
+          </aside>
+        </div>
+      )}
 
       {live && payment && !checkoutOpen ? (
         <button type="button" className="cp-btn cp-deposit-resume" onClick={() => setCheckoutOpen(true)}>
@@ -542,9 +499,9 @@ export function AddFundsView() {
       ) : null}
 
       {live && payment && checkoutOpen ? (
-        <div className="cp-deposit-modal" role="presentation" onClick={() => setCheckoutOpen(false)}>
+        <div className="cp-sheet" role="presentation" onClick={() => setCheckoutOpen(false)}>
           <section
-            className="cp-deposit-modal-card cp-deposit-checkout"
+            className="cp-sheet-card cp-glass cp-deposit-checkout"
             role="dialog"
             aria-modal="true"
             aria-labelledby="crypto-checkout-title"
@@ -553,7 +510,7 @@ export function AddFundsView() {
           >
             <header className="cp-deposit-checkout-head">
               <div>
-                <p className="cp-kicker">Deposit {payment.id}</p>
+                <p className="cp-kicker">Crypto checkout</p>
                 <h3 id="crypto-checkout-title">{LABELS[payment.status] || payment.status}</h3>
               </div>
               <div className="cp-deposit-head-actions">
@@ -582,29 +539,45 @@ export function AddFundsView() {
               </div>
             ) : null}
 
+            <div className="cp-sheet-coin">
+              <CoinLogo code={payment.payCurrency || ""} logoUrl={payment.logoUrl} size={42} />
+              <div>
+                <strong>
+                  {payment.symbol || payment.payCurrency?.toUpperCase()} ({networkBadge(payment.payCurrency || "", payment.network)})
+                </strong>
+                <small>Pay on {payment.networkLabel || payment.network || "the selected network"}</small>
+              </div>
+            </div>
+
             <div className="cp-checkout-layout">
-              {payment.address ? <CryptoDepositQr value={payment.address} label="Scan deposit address" /> : null}
+              {payment.address ? <CryptoDepositQr value={payment.address} label="Deposit address" /> : null}
               <div className="cp-checkout-facts">
                 <div>
-                  <span className="cp-label">You send (includes your fee)</span>
-                  <p className="cp-deposit-big">
-                    {payment.payAmount || "—"} {payment.symbol || payment.payCurrency?.toUpperCase()}
+                  <span className="cp-label">Send exact amount</span>
+                  <p className="cp-deposit-exact">
+                    {payment.payAmount || "—"} <small>{payment.symbol || payment.payCurrency?.toUpperCase()}</small>
                   </p>
-                </div>
-                <div>
-                  <span className="cp-label">Wallet credit</span>
-                  <p className="cp-deposit-big">${payment.amountUsd.toFixed(2)} USD</p>
-                </div>
-                <div>
-                  <span className="cp-label">Network</span>
-                  <p className="cp-deposit-big">{payment.networkLabel || payment.network || "—"}</p>
-                </div>
-                <div>
-                  <span className="cp-label">Time left</span>
-                  <p className="cp-deposit-big">{formatWindow(payment, nowTick)}</p>
+                  <p className="cp-deposit-note">Wallet credit ${payment.amountUsd.toFixed(2)}. Provider fee is included in this amount.</p>
                 </div>
               </div>
             </div>
+
+            <div className="cp-timer">
+              <div>
+                <span>Time remaining</span>
+                <strong>{formatWindow(payment, nowTick)}</strong>
+              </div>
+              <i style={{ width: `${windowPercent(payment, nowTick)}%` }} />
+            </div>
+
+            <ol className="cp-pay-stages">
+              {["Waiting for payment", "Confirming", "Completed"].map((label, index) => (
+                <li key={label} className={payStage(payment.status) >= index ? "is-on" : ""}>
+                  <span>{payStage(payment.status) > index ? "✓" : index + 1}</span>
+                  {label}
+                </li>
+              ))}
+            </ol>
 
             {payment.address ? (
               <div className="cp-deposit-copy">
@@ -686,19 +659,59 @@ export function AddFundsView() {
   );
 }
 
-function formatWindow(payment: Payment, now: number) {
+function windowEnd(payment: Payment, now: number) {
   const created = new Date(payment.createdAt).getTime();
   const cap = Number.isFinite(created) ? created + PAYMENT_WINDOW_MS : now + PAYMENT_WINDOW_MS;
   const providerEnd = payment.expiresAt ? new Date(payment.expiresAt).getTime() : cap;
-  const end = Math.min(Number.isFinite(providerEnd) ? providerEnd : cap, cap);
-  const left = end - now;
-  if (left <= 0) return "Window ended";
+  return Math.min(Number.isFinite(providerEnd) ? providerEnd : cap, cap);
+}
+
+function formatWindow(payment: Payment, now: number) {
+  const left = windowEnd(payment, now) - now;
+  if (left <= 0) return "Ended";
   const total = Math.floor(left / 1000);
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const seconds = total % 60;
   const clock = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   return hours > 0 ? `${hours}:${clock}` : clock;
+}
+
+function windowPercent(payment: Payment, now: number) {
+  const created = new Date(payment.createdAt).getTime();
+  const end = windowEnd(payment, now);
+  const span = Math.max(end - (Number.isFinite(created) ? created : now), 1);
+  return Math.max(0, Math.min(100, ((end - now) / span) * 100));
+}
+
+function payStage(status: string) {
+  if (status === "paid") return 2;
+  if (status === "confirming" || status === "partial" || status === "review") return 1;
+  return 0;
+}
+
+function shortCoinName(symbol: string, name: string) {
+  const known: Record<string, string> = {
+    USDT: "Tether",
+    USDC: "USD Coin",
+    BTC: "Bitcoin",
+    ETH: "Ethereum",
+    BNB: "BNB",
+    SOL: "Solana",
+    LTC: "Litecoin",
+    TRX: "TRON",
+  };
+  return known[symbol] || name.split("(")[0].trim();
+}
+
+function WalletGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="6" width="18" height="13" rx="3" />
+      <path d="M3 10h18" />
+      <circle cx="16.5" cy="14.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
 }
 
 function trimCrypto(value: string) {
