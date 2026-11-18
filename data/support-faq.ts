@@ -90,7 +90,7 @@ export const supportFaqCategories: SupportFaqCategory[] = [
     items: [
       {
         q: "Which payment methods do you support?",
-        a: "TrustifySMM supports balance top-ups suitable for global resellers, including crypto via the Banker invoice flow documented on /api. Supported pay assets depend on your configured gateway (e.g. USDT TRC20 through NOWPayments). Card or local rails may be added in the panel when available in your region.",
+        a: "TrustifySMM supports balance top-ups suitable for global resellers, including crypto via the Banker invoice flow documented on /api. Enabled pay assets are USDT (ERC20 and BEP20), USDC, BTC, ETH, BNB, SOL, LTC, TRX, DASH, and XRP. Card or local rails may be added in the panel when available in your region.",
       },
       {
         q: "How does the Banker API top-up work?",

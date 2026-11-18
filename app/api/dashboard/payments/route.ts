@@ -14,6 +14,7 @@ export async function GET() {
   return NextResponse.json({
     balance: user.balance,
     currency: "USD",
+    customer: { name: user.name, email: user.email },
     gateway,
     payments: invoices.map((invoice) => ({
       id: invoice.id,

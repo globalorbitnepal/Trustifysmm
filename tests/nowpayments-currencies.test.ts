@@ -87,6 +87,8 @@ describe("NOWPayments deposit options", () => {
     expect(usdt?.symbol).toBe("USDT");
     expect(networkBadge("usdtbsc", "bsc")).toBe("BEP20");
     expect(networkBadge("trx", "trx")).toBe("TRON");
+    expect(networkBadge("dash", "dash")).toBe("Dash");
+    expect(networkBadge("xrp", "xrp")).toBe("XRP Ledger");
     expect(networkBadge("usdttrc20", "trx")).toBe("TRC20");
     expect(bnb?.symbol).toBe("BNB");
     expect(bnb?.networkLabel).toBe("BNB Smart Chain (BEP20)");

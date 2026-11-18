@@ -30,6 +30,8 @@ const COIN_KEYS: Record<string, string> = {
   doge: "doge",
   sol: "sol",
   trx: "trx",
+  dash: "dash",
+  xrp: "xrp",
   matic: "pol",
   pol: "pol",
 };
@@ -115,11 +117,14 @@ export function CoinLogo({
     sol: "/coins/sol.svg",
     ltc: "/coins/ltc.svg",
     trx: "/coins/trx.svg",
+    dash: "/coins/dash.svg",
+    xrp: "/coins/xrp.svg",
   };
   if (brandFile[key]) {
+    const onLight = key === "xrp";
     return (
-      <span className={className} style={{ width: size, height: size, display: "inline-grid", placeItems: "center", flexShrink: 0, ...style }} aria-hidden>
-        <img src={brandFile[key]} alt="" width={size} height={size} style={{ width: size, height: size, objectFit: "contain" }} />
+      <span className={className} style={{ width: size, height: size, display: "inline-grid", placeItems: "center", flexShrink: 0, borderRadius: onLight ? "50%" : undefined, background: onLight ? "#fff" : undefined, ...style }} aria-hidden>
+        <img src={brandFile[key]} alt="" width={size} height={size} style={{ width: onLight ? "78%" : size, height: onLight ? "78%" : size, objectFit: "contain" }} />
       </span>
     );
   }

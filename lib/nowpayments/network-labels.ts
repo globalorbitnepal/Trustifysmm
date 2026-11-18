@@ -10,6 +10,8 @@ export const NETWORK_LABELS: Record<string, string> = {
   matic: "Polygon",
   sol: "Solana",
   ltc: "Litecoin",
+  dash: "Dash",
+  xrp: "XRP Ledger",
   doge: "Dogecoin",
   ton: "TON",
   arbitrum: "Arbitrum",

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CoinLogo } from "@/components/dashboard/CoinLogo";
 import { CryptoDepositQr } from "@/components/dashboard/CryptoDepositQr";
 import { Empty, Skeleton } from "@/components/dashboard/OverviewView";
+import { openDepositInvoice } from "@/components/dashboard/deposit-invoice";
 import { networkBadge, networkLabel } from "@/lib/nowpayments/network-labels";
 
 type DepositOption = {
@@ -44,6 +45,7 @@ type Payment = {
   /** Network label captured when the invoice was created. Never read from live picker state. */
   networkLabel?: string | null;
   createdAt: string;
+  paidAt?: string | null;
   expiresAt: string | null;
   quoteCrypto?: string | null;
   baseCrypto?: string | null;
@@ -61,7 +63,7 @@ const LABELS: Record<string, string> = {
   confirming: "Confirming on blockchain",
   paid: "Payment successful",
   partial: "Partially paid — under review",
-  expired: "Expired",
+  expired: "Timed out",
   failed: "Failed",
   review: "Manual review required",
 };
@@ -95,10 +97,11 @@ export function AddFundsView() {
   const [quoting, setQuoting] = useState(false);
   const [polling, setPolling] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [payer, setPayer] = useState<{ name: string | null; email: string | null } | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   const minDeposit = gateway?.minDepositUsd ?? 5;
-  const maxDeposit = gateway?.maxDepositUsd ?? 50_000;
+  const maxDeposit = gateway?.maxDepositUsd ?? 1_000;
 
   useEffect(() => {
     void (async () => {
@@ -107,8 +110,12 @@ export function AddFundsView() {
         fetch("/api/payments/nowpayments/currencies"),
       ]);
       if (paymentsRes.ok) {
-        const data = (await paymentsRes.json()) as { balance: number };
+        const data = (await paymentsRes.json()) as {
+          balance: number;
+          customer?: { name: string | null; email: string | null };
+        };
         setBalance(data.balance);
+        if (data.customer) setPayer(data.customer);
       }
       if (currencyRes.ok) {
         const data = (await currencyRes.json()) as CurrenciesResponse;
@@ -390,7 +397,11 @@ export function AddFundsView() {
                 ))}
               </div>
               {!amountValid && amount !== "" ? (
-                <p className="cp-error">Choose $10, $20, $25, $50, or $100.</p>
+                <p className="cp-error">
+                  {amountNumber > maxDeposit
+                    ? `The highest top-up is $${maxDeposit.toLocaleString()}.`
+                    : "Choose $10, $20, $25, $50, $100, $250, $500, or $1000."}
+                </p>
               ) : null}
             </section>
 
@@ -502,7 +513,7 @@ export function AddFundsView() {
       ) : null}
 
       {live && payment && checkoutOpen ? (
-        <div className="cp-sheet" role="presentation" onClick={() => setCheckoutOpen(false)}>
+        <div className="cp-sheet" role="presentation">
           <section
             className="cp-sheet-card cp-glass cp-deposit-checkout"
             role="dialog"
@@ -536,6 +547,9 @@ export function AddFundsView() {
                     {payment.nowPaymentId ? ` Provider ref ${payment.nowPaymentId}.` : ""}
                   </p>
                 </div>
+                <button type="button" className="cp-btn" onClick={() => downloadCurrentInvoice(payment, payer)}>
+                  Download invoice
+                </button>
                 <Link className="cp-btn" href="/dashboard">
                   Leave this page
                 </Link>
@@ -613,7 +627,8 @@ export function AddFundsView() {
             <p className="cp-deposit-warning">
               Send only {payment.symbol || payment.payCurrency?.toUpperCase()} on {payment.networkLabel || payment.network}. The amount
               includes the provider service fee, which you pay. A different asset or network can be lost. Status refreshes every 30
-              seconds. The payment window is at most 1 hour.
+              seconds and stays in Payment history if you close this window. The payment window is at most 1 hour. A finished
+              payment is credited automatically.
             </p>
 
             <div className="cp-deposit-checkout-actions">
@@ -625,11 +640,6 @@ export function AddFundsView() {
               >
                 {polling ? "Checking…" : "Refresh status"}
               </button>
-              {payment.status === "paid" ? (
-                <Link className="cp-btn" href="/dashboard">
-                  Leave this page
-                </Link>
-              ) : null}
               {isTerminal(payment.status) ? (
                 <button
                   type="button"
@@ -702,6 +712,29 @@ function checkoutTitle(payment: Payment) {
   return symbol;
 }
 
+function downloadCurrentInvoice(
+  payment: Payment,
+  payer: { name: string | null; email: string | null } | null,
+) {
+  if (payment.status !== "paid") return;
+  openDepositInvoice({
+    id: payment.id,
+    amountUsd: payment.amountUsd,
+    payCurrency: payment.payCurrency,
+    payAmount: payment.payAmount,
+    address: payment.address,
+    network: payment.network,
+    networkLabel: payment.networkLabel,
+    status: payment.status,
+    nowPaymentId: payment.nowPaymentId,
+    txHash: payment.txHash,
+    createdAt: payment.createdAt,
+    paidAt: payment.paidAt,
+    customerName: payer?.name,
+    customerEmail: payer?.email,
+  });
+}
+
 function lockedFeeUsd(payment: Payment) {
   const base = Number(payment.baseCrypto);
   const gross = Number(payment.payAmount);
@@ -719,6 +752,8 @@ function shortCoinName(symbol: string, name: string) {
     SOL: "Solana",
     LTC: "Litecoin",
     TRX: "TRON",
+    DASH: "Dash",
+    XRP: "XRP",
   };
   return known[symbol] || name.split("(")[0].trim();
 }
@@ -749,19 +784,58 @@ const HISTORY_FILTERS = [
   ["paid", "Credited"],
   ["review", "Manual review"],
   ["failed", "Failed"],
-  ["expired", "Expired"],
+  ["expired", "Timed out"],
 ] as const;
+
+const HISTORY_STATUS: Record<string, string> = {
+  pending: "Pending",
+  confirming: "Confirming",
+  paid: "Successful",
+  partial: "Partial payment",
+  expired: "Timed out",
+  failed: "Failed",
+  review: "Under review",
+};
+
+const OPEN_HISTORY = new Set(["pending", "confirming", "partial", "review"]);
 
 export function PaymentsView() {
   const [rows, setRows] = useState<HistoryPayment[] | null>(null);
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
   const [detail, setDetail] = useState<HistoryPayment | null>(null);
+  const [payer, setPayer] = useState<{ name: string | null; email: string | null } | null>(null);
 
   useEffect(() => {
-    void fetch("/api/dashboard/payments").then(async (res) => {
-      if (res.ok) setRows(((await res.json()) as { payments: HistoryPayment[] }).payments);
-    });
+    let stop = false;
+    async function tick() {
+      const res = await fetch("/api/dashboard/payments");
+      if (!res.ok || stop) return;
+      const data = (await res.json()) as {
+        payments: HistoryPayment[];
+        customer?: { name: string | null; email: string | null };
+      };
+      if (data.customer) setPayer(data.customer);
+      const open = data.payments.filter((row) => OPEN_HISTORY.has(row.status)).slice(0, 8);
+      if (open.length) {
+        await Promise.all(open.map((row) => fetch(`/api/payments/nowpayments/status/${encodeURIComponent(row.id)}`)));
+        const again = await fetch("/api/dashboard/payments");
+        if (!again.ok || stop) return;
+        const next = (await again.json()) as { payments: HistoryPayment[] };
+        if (stop) return;
+        setRows(next.payments);
+        setDetail((current) => (current ? next.payments.find((row) => row.id === current.id) ?? current : current));
+        return;
+      }
+      setRows(data.payments);
+      setDetail((current) => (current ? data.payments.find((row) => row.id === current.id) ?? current : current));
+    }
+    void tick();
+    const timer = window.setInterval(() => void tick(), STATUS_POLL_MS);
+    return () => {
+      stop = true;
+      window.clearInterval(timer);
+    };
   }, []);
 
   if (!rows) return <Skeleton />;
@@ -825,7 +899,7 @@ export function PaymentsView() {
                 <td data-label="USD">${row.amountUsd.toFixed(2)}</td>
                 <td data-label="Coin">{row.payCurrency?.toUpperCase() || "—"}</td>
                 <td data-label="Network">{row.network ? networkLabel(row.network) : "—"}</td>
-                <td data-label="Status">{LABELS[row.status] || row.status}</td>
+                <td data-label="Status">{HISTORY_STATUS[row.status] || row.status}</td>
                 <td data-label="Credited">{row.status === "paid" ? "Yes" : "No"}</td>
                 <td>
                   <button type="button" className="cp-btn-ghost" onClick={() => setDetail(row)}>
@@ -877,7 +951,7 @@ export function PaymentsView() {
               </div>
               <div>
                 <dt>Status</dt>
-                <dd>{(detail.providerStatus || detail.status).replace(/_/g, " ")}</dd>
+                <dd>{HISTORY_STATUS[detail.status] || detail.status}</dd>
               </div>
               <div>
                 <dt>Wallet credit</dt>
@@ -898,6 +972,11 @@ export function PaymentsView() {
                 <dd>{detail.txHash || "—"}</dd>
               </div>
             </dl>
+            {detail.status === "paid" ? (
+              <button type="button" className="cp-btn" onClick={() => downloadCurrentInvoice(detail, payer)}>
+                Download invoice
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}

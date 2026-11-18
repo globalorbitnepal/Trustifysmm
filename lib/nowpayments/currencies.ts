@@ -36,6 +36,8 @@ const POPULAR_CODES = new Set([
   "sol",
   "ltc",
   "trx",
+  "dash",
+  "xrp",
 ]);
 
 const SYMBOLS: Record<string, string> = {
