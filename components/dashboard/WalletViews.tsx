@@ -7,6 +7,7 @@ import { CryptoDepositQr } from "@/components/dashboard/CryptoDepositQr";
 import { Empty, Skeleton } from "@/components/dashboard/OverviewView";
 import { openDepositInvoice } from "@/components/dashboard/deposit-invoice";
 import { networkBadge, networkLabel } from "@/lib/nowpayments/network-labels";
+import { customerDepositReason } from "@/lib/nowpayments/status";
 
 type DepositOption = {
   code: string;
@@ -40,6 +41,7 @@ type Payment = {
   txHash: string | null;
   status: string;
   providerStatus?: string | null;
+  reviewReason?: string | null;
   nowPaymentId?: string | null;
   network?: string | null;
   /** Network label captured when the invoice was created. Never read from live picker state. */
@@ -199,6 +201,7 @@ export function AddFundsView() {
         pay_address?: string | null;
         pay_amount?: string | null;
         wallet_credited?: boolean;
+        review_reason?: string | null;
       };
       setPayment((prev) =>
         prev && prev.id === depositId
@@ -206,6 +209,7 @@ export function AddFundsView() {
               ...prev,
               status: row.status,
               providerStatus: row.provider_status ?? prev.providerStatus,
+              reviewReason: row.review_reason ?? prev.reviewReason,
               address: row.pay_address ?? prev.address,
               payAmount: row.pay_amount ?? prev.payAmount,
               network: row.network ?? prev.network,
@@ -481,6 +485,10 @@ export function AddFundsView() {
                 <dt>Fee</dt>
                 <dd className="cp-fee-plus">{quote?.feeUsd != null ? `+ $${quote.feeUsd.toFixed(2)}` : "…"}</dd>
               </div>
+              <div className="is-total">
+                <dt>You pay</dt>
+                <dd>{quote?.feeUsd != null && Number.isFinite(amountNumber) ? `$${(Math.round((amountNumber + quote.feeUsd) * 100) / 100).toFixed(2)}` : "…"}</dd>
+              </div>
             </dl>
             <div className="cp-send-block">
               <span>You send</span>
@@ -543,7 +551,7 @@ export function AddFundsView() {
                 <div>
                   <strong>Payment successful</strong>
                   <p>
-                    ${payment.amountUsd.toFixed(2)} was added to your balance.
+                    ${payment.amountUsd.toFixed(2)} was added to your balance. The provider fee was not added.
                     {payment.nowPaymentId ? ` Provider ref ${payment.nowPaymentId}.` : ""}
                   </p>
                 </div>
@@ -579,9 +587,15 @@ export function AddFundsView() {
                   </div>
                   <div>
                     <dt>Fee</dt>
-                    <dd className="cp-fee-plus">{lockedFeeUsd(payment) != null ? `+ $${lockedFeeUsd(payment)!.toFixed(2)}` : "Included"}</dd>
+                    <dd className="cp-fee-plus">{lockedFeeUsd(payment) != null ? `+ $${lockedFeeUsd(payment)!.toFixed(2)}` : "…"}</dd>
+                  </div>
+                  <div className="is-pay">
+                    <dt>You pay</dt>
+                    <dd>{payTotal(payment) != null ? `$${payTotal(payment)!.toFixed(2)}` : "…"}</dd>
                   </div>
                 </dl>
+                <p className="cp-credit-note">Wallet receives ${payment.amountUsd.toFixed(2)}. The fee stays with the network.</p>
+                {customerDepositReason(payment) ? <p className="cp-deposit-reason">{customerDepositReason(payment)}</p> : null}
 
                 <div className="cp-timer">
                   <div>
@@ -738,6 +752,12 @@ function downloadCurrentInvoice(
     customerName: payer?.name,
     customerEmail: payer?.email,
   });
+}
+
+function payTotal(payment: Payment) {
+  const fee = lockedFeeUsd(payment);
+  if (fee == null) return null;
+  return Math.round((payment.amountUsd + fee) * 100) / 100;
 }
 
 function lockedFeeUsd(payment: Payment) {
@@ -904,7 +924,10 @@ export function PaymentsView() {
                 <td data-label="USD">${row.amountUsd.toFixed(2)}</td>
                 <td data-label="Coin">{row.payCurrency?.toUpperCase() || "—"}</td>
                 <td data-label="Network">{row.network ? networkLabel(row.network) : "—"}</td>
-                <td data-label="Status">{HISTORY_STATUS[row.status] || row.status}</td>
+                <td data-label="Status">
+                  {HISTORY_STATUS[row.status] || row.status}
+                  {customerDepositReason(row) ? <div className="cp-muted">{customerDepositReason(row)}</div> : null}
+                </td>
                 <td data-label="Credited">{row.status === "paid" ? "Yes" : "No"}</td>
                 <td>
                   <button type="button" className="cp-btn-ghost" onClick={() => setDetail(row)}>
@@ -956,7 +979,10 @@ export function PaymentsView() {
               </div>
               <div>
                 <dt>Status</dt>
-                <dd>{HISTORY_STATUS[detail.status] || detail.status}</dd>
+                <dd>
+                  {HISTORY_STATUS[detail.status] || detail.status}
+                  {customerDepositReason(detail) ? <div>{customerDepositReason(detail)}</div> : null}
+                </dd>
               </div>
               <div>
                 <dt>Wallet credit</dt>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { configuredPayCurrencies, createBankerInvoice } from "@/lib/banker/handler";
 import { publicGatewayConfig } from "@/lib/nowpayments/config";
+import { customerDepositReason } from "@/lib/nowpayments/status";
 import { requireCustomer } from "@/lib/customer/guard";
 import { listInvoicesForKey } from "@/lib/smm-api/demo-store";
 
@@ -30,6 +31,12 @@ export async function GET() {
       nowPaymentId: invoice.nowPaymentId ?? null,
       network: invoice.network ?? null,
       walletCredited: Boolean(invoice.walletCredited),
+      reviewReason: invoice.reviewReason ?? null,
+      statusReason: customerDepositReason({
+        status: invoice.status,
+        providerStatus: invoice.providerStatus,
+        reviewReason: invoice.reviewReason,
+      }),
       createdAt: invoice.createdAt,
       paidAt: invoice.paidAt ?? null,
       expiresAt: invoice.expiresAt ?? null,

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { feeFromQuotes, minAmountQuery, providerMinUsd } from "@/lib/nowpayments/client";
+import { customerDepositReason } from "@/lib/nowpayments/status";
 
 const originalFetch = global.fetch;
 const originalKey = process.env.NOWPAYMENTS_API_KEY;
@@ -45,6 +46,10 @@ describe("NOWPayments fee and minimum", () => {
     expect(fee?.feeUsd).toBe(0.17);
     expect(feeFromQuotes(10, 0.26771257, 0.27342385)?.feeUsd).toBe(0.21);
     expect(feeFromQuotes(25, "25", "20")).toBeNull();
+    expect(customerDepositReason({ status: "paid" })).toBeNull();
+    expect(customerDepositReason({ status: "expired" })).toMatch(/Nothing was added/);
+    expect(customerDepositReason({ status: "failed", providerStatus: "refunded" })).toMatch(/refunded/);
+    expect(customerDepositReason({ status: "review", reviewReason: "underpaid" })).toMatch(/less than/);
   });
 });
 

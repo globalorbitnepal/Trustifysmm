@@ -637,5 +637,6 @@ export async function getBankerInvoiceStatus(
     expires_at: invoice.expiresAt ?? null,
     tx_hash: invoice.txHash ?? null,
     status_history: invoice.statusHistory ?? [],
+    review_reason: invoice.reviewReason ?? null,
   };
 }
