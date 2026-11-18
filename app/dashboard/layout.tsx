@@ -1,5 +1,6 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import "./panel.css";
+import "./deposit.css";
 
 export const dynamic = "force-dynamic";
 

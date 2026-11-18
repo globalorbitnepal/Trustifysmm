@@ -164,8 +164,16 @@ export const apiDocEndpoints: ApiDocEndpoint[] = [
     title: "Banker — invoice status",
     method: "GET",
     path: BANKER_STATUS_PATH,
-    summary: "Poll invoice until status becomes paid, then call balance.",
-    params: [{ name: "id", required: true, description: "invoice_id from create invoice." }],
+    summary:
+      "Poll invoice until status becomes paid, then call balance. Authentication is required: send the API key that created the invoice as the x-api-key header. A deposit access token (x-deposit-token) is also accepted for single-deposit holders.",
+    params: [
+      { name: "id", required: true, description: "invoice_id from create invoice." },
+      {
+        name: "x-api-key",
+        required: true,
+        description: "Header. Your API key — the same key used to create the invoice. Send as a header, never in the URL.",
+      },
+    ],
     responseExample: `{
   "invoice_id": "TSM-A1B2C3D4E5F6",
   "amount": "50.00",
@@ -173,9 +181,43 @@ export const apiDocEndpoints: ApiDocEndpoint[] = [
   "status": "paid",
   "paid_at": "2026-11-17T12:00:00.000Z"
 }`,
-    curlExample: `curl "https://trustifysmm.com/api/banker/status?id=TSM-A1B2C3D4E5F6"`,
+    curlExample: `curl "https://trustifysmm.com/api/banker/status?id=TSM-A1B2C3D4E5F6" \\
+  -H "x-api-key: YOUR_API_KEY"`,
+  },
+  {
+    id: "banker-pay",
+    title: "Banker — invoice view (read-only)",
+    method: "GET",
+    path: "/api/banker/pay",
+    summary:
+      "Read-only view of a deposit. This endpoint can never confirm or credit a payment — a GET request must not change wallet state. Balances credit only through the signed provider webhook. Requires x-api-key or x-deposit-token.",
+    params: [
+      { name: "id", required: true, description: "invoice_id from create invoice." },
+      { name: "x-api-key", required: true, description: "Header. Your reseller API key." },
+    ],
+    responseExample: `{
+  "invoice_id": "TSM-A1B2C3D4E5F6",
+  "status": "pending",
+  "read_only": true,
+  "message": "This endpoint is read-only and cannot confirm or credit a payment."
+}`,
+    curlExample: `curl "https://trustifysmm.com/api/banker/pay?id=TSM-A1B2C3D4E5F6" \\
+  -H "x-api-key: YOUR_API_KEY"`,
   },
 ];
+
+/**
+ * Migration notice for the B1 hardening (see docs/NOWPAYMENTS_PRE_DEPLOYMENT_CHECKLIST.md).
+ * Rendered in the public API documentation so existing resellers see the requirement.
+ */
+export const bankerAuthMigration = {
+  title: "Action required: API key now required for /api/banker/status",
+  body:
+    "Deposit details are no longer readable with a deposit id alone. Send the API key that created the invoice as the x-api-key header. Query-string keys (?key=) are no longer accepted, and the ?confirm=1 demo credit on /api/banker/pay has been removed. Unauthenticated requests receive HTTP 401; a deposit belonging to another account returns the same HTTP 404 as a deposit that does not exist.",
+  before: `curl "https://trustifysmm.com/api/banker/status?id=TSM-A1B2C3D4E5F6"`,
+  after: `curl "https://trustifysmm.com/api/banker/status?id=TSM-A1B2C3D4E5F6" \\
+  -H "x-api-key: YOUR_API_KEY"`,
+};
 
 export const apiErrorCodes = [
   { code: "Invalid API key", meaning: "Key missing, wrong, or revoked." },

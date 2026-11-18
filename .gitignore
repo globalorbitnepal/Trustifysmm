@@ -30,6 +30,18 @@ tsconfig.tsbuildinfo
 # Local API demo store (balances, orders, invoices)
 data/runtime/
 
+# Runtime telemetry (never commit visitor/session rows)
+data/orbit/traffic.jsonl
+
+# Local saved page snapshots and ad-hoc verification dumps
+.live-check.html
+*.live-check.html
+
+# Backup archives must never enter the repository
+*.tar.gz
+*.bundle
+*.age
+
 # Generated source JPGs (transparent PNGs are committed)
 public/brand/*.jpg
 public/brand/*-raw.png

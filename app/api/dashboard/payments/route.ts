@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { configuredPayCurrencies, createBankerInvoice } from "@/lib/banker/handler";
+import { publicGatewayConfig } from "@/lib/nowpayments/config";
 import { requireCustomer } from "@/lib/customer/guard";
 import { listInvoicesForKey } from "@/lib/smm-api/demo-store";
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await requireCustomer();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const gateway = configuredPayCurrencies();
+  const gateway = { ...configuredPayCurrencies(), ...publicGatewayConfig() };
   const invoices = await listInvoicesForKey(user.apiKey);
   return NextResponse.json({
     balance: user.balance,
@@ -24,6 +25,10 @@ export async function GET() {
       txHash: invoice.txHash ?? null,
       status: invoice.status,
       provider: invoice.provider,
+      providerStatus: invoice.providerStatus ?? null,
+      nowPaymentId: invoice.nowPaymentId ?? null,
+      network: invoice.network ?? null,
+      walletCredited: Boolean(invoice.walletCredited),
       createdAt: invoice.createdAt,
       paidAt: invoice.paidAt ?? null,
       expiresAt: invoice.expiresAt ?? null,
@@ -42,6 +47,7 @@ export async function POST(request: Request) {
   }
   const created = await createBankerInvoice({
     apiKey: user.apiKey,
+    userId: user.id,
     amountUsd: Number(body.amount),
     payCurrency: body.payCurrency,
     requireLive: true,

@@ -58,6 +58,18 @@ export async function getUserByApiKey(apiKey: string) {
   return store.users.find((user) => user.apiKey === apiKey) ?? null;
 }
 
+/** After wallet credit, mirror JSON customer balance from api-store wallet. */
+export async function syncCustomerBalanceFromWallet(apiKey: string) {
+  const { getAccountByKey } = await import("@/lib/smm-api/demo-store");
+  const wallet = await getAccountByKey(apiKey);
+  const user = await getUserByApiKey(apiKey);
+  if (!wallet || !user) return null;
+  user.balance = wallet.balance;
+  user.updatedAt = new Date().toISOString();
+  await persistCustomer(user);
+  return user;
+}
+
 export async function getUserByGoogleId(googleId: string) {
   const store = await loadStore();
   return store.users.find((u) => u.googleId === googleId) ?? null;

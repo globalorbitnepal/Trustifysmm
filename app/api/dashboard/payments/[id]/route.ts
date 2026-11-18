@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getBankerInvoiceStatus, submitInvoiceHash } from "@/lib/banker/handler";
+import { constantTimeEquals } from "@/lib/banker/access";
 import { requireCustomer } from "@/lib/customer/guard";
 import { getInvoice } from "@/lib/smm-api/demo-store";
 
@@ -12,14 +13,23 @@ export async function GET(_request: Request, ctx: Ctx) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const id = (await ctx.params).id;
   const invoice = await getInvoice(id);
-  if (!invoice || invoice.apiKey !== user.apiKey) return NextResponse.json({ error: "Deposit not found." }, { status: 404 });
-  return NextResponse.json(await getBankerInvoiceStatus(id));
+  // Same response for "missing" and "not yours" so ids cannot be probed.
+  if (!invoice || !constantTimeEquals(invoice.apiKey, user.apiKey)) {
+    return NextResponse.json({ error: "Deposit not found." }, { status: 404 });
+  }
+  const status = await getBankerInvoiceStatus(id, { apiKey: user.apiKey });
+  if ("error" in status) return NextResponse.json({ error: "Deposit not found." }, { status: 404 });
+  return NextResponse.json(status);
 }
 
 export async function POST(request: Request, ctx: Ctx) {
   const user = await requireCustomer();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const id = (await ctx.params).id;
+  const invoice = await getInvoice(id);
+  if (!invoice || !constantTimeEquals(invoice.apiKey, user.apiKey)) {
+    return NextResponse.json({ error: "Deposit not found." }, { status: 404 });
+  }
   let body: { txHash?: string };
   try {
     body = (await request.json()) as { txHash?: string };

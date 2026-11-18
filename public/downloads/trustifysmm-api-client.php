@@ -110,6 +110,11 @@ final class TrustifySmmApi
     }
 
     /**
+     * Invoice status for a Banker top-up. Requires the reseller API key.
+     *
+     * The API key is sent in the `x-api-key` header — never in the query string, so it does
+     * not leak into access logs, proxy logs or Referer headers.
+     *
      * @return array<string, mixed>
      */
     public function invoiceStatus(string $invoiceId, ?string $statusUrl = null): array
@@ -124,9 +129,13 @@ final class TrustifySmmApi
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => $this->timeout,
-            CURLOPT_HTTPHEADER => ['Accept: application/json'],
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+                'x-api-key: ' . $this->apiKey,
+            ],
         ]);
         $raw = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
         if ($raw === false) {
@@ -134,7 +143,16 @@ final class TrustifySmmApi
         }
 
         $data = json_decode($raw, true);
-        return is_array($data) ? $data : ['error' => 'Invalid status JSON'];
+        if (!is_array($data)) {
+            return ['error' => 'Invalid status JSON', 'http_code' => $code];
+        }
+        if ($code === 401) {
+            return ['error' => 'API key rejected by /api/banker/status', 'http_code' => 401];
+        }
+        if ($code === 404) {
+            return ['error' => 'Invoice not found for this API key', 'http_code' => 404];
+        }
+        return $data;
     }
 
     /**

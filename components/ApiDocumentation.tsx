@@ -6,6 +6,7 @@ import {
   API_BASE_PATH,
   apiDocEndpoints,
   apiErrorCodes,
+  bankerAuthMigration,
 } from "@/data/api-documentation";
 
 function useSiteOrigin() {
@@ -106,10 +107,21 @@ key=YOUR_API_KEY&action=balance`}</code>
             </li>
             <li>Redirect user to <code>payment_url</code> or show <code>pay_address</code>.</li>
             <li>
-              Poll <code>GET {origin}/api/banker/status?id=INVOICE_ID</code> until <code>status: paid</code>.
+              Poll <code>GET {origin}/api/banker/status?id=INVOICE_ID</code> with your API key in the{" "}
+              <code>x-api-key</code> header until <code>status: paid</code>.
             </li>
             <li>Place orders with the same key — balance updates instantly after webhook.</li>
           </ol>
+          <aside className="api-docs-callout">
+            <h3>{bankerAuthMigration.title}</h3>
+            <p>{bankerAuthMigration.body}</p>
+            <p>
+              <strong>Before:</strong> <code>{bankerAuthMigration.before}</code>
+            </p>
+            <p>
+              <strong>After:</strong> <code>{bankerAuthMigration.after}</code>
+            </p>
+          </aside>
         </section>
 
         <section className="api-docs-card" id="api-endpoints">

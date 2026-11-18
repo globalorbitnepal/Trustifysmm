@@ -3,6 +3,14 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import type { BankerInvoice, DemoAccount, DemoOrder } from "@/lib/smm-api/types";
 import { withStoreLock } from "@/lib/runtime-lock";
+import {
+  demoKeyFromEnv,
+  hashApiKey,
+  isDenylistedKey,
+  isDenylistedKeyHash,
+  keyMatchesRecord,
+  needsHashMigration,
+} from "@/lib/smm-api/api-keys";
 
 export type LedgerEntry = {
   id: string;
@@ -14,6 +22,8 @@ export type LedgerEntry = {
   status: "completed";
   createdAt: string;
   ref?: string;
+  adminId?: string;
+  reason?: string;
 };
 
 type StoreFile = {
@@ -27,21 +37,30 @@ type StoreFile = {
 
 const STORE_PATH = path.join(process.cwd(), "data", "runtime", "api-store.json");
 
-const defaultStore = (): StoreFile => ({
-  accounts: [
-    {
-      key: process.env.DEMO_API_KEY?.trim() || "trustify-demo-key-change-me",
-      email: "demo@trustifysmm.com",
-      balance: 100,
-      currency: "USD",
-    },
-  ],
-  orders: [],
-  invoices: [],
-  transactions: [],
-  idempotency: [],
-  nextOrderId: 900001,
-});
+const defaultStore = (): StoreFile => {
+  /*
+   * The seeded demo account gets NO usable credential unless DEMO_API_KEY is explicitly
+   * configured. There is no hardcoded fallback: an unset env var means the account exists
+   * (for balance/ledger isolation) but cannot authenticate at all.
+   */
+  const demoKey = demoKeyFromEnv();
+  return {
+    accounts: [
+      {
+        ...(demoKey ? { keyHash: hashApiKey(demoKey) } : {}),
+        email: "demo@trustifysmm.com",
+        balance: 100,
+        currency: "USD",
+        demo: true,
+      },
+    ],
+    orders: [],
+    invoices: [],
+    transactions: [],
+    idempotency: [],
+    nextOrderId: 900001,
+  };
+};
 
 async function ensureStore(): Promise<StoreFile> {
   try {
@@ -52,6 +71,7 @@ async function ensureStore(): Promise<StoreFile> {
     parsed.orders ??= [];
     parsed.invoices ??= [];
     parsed.accounts ??= [];
+    await quarantineRetiredKeys(parsed);
     return parsed;
   } catch {
     const initial = defaultStore();
@@ -60,33 +80,116 @@ async function ensureStore(): Promise<StoreFile> {
   }
 }
 
+/**
+ * Any account still holding the retired public default key is revoked and its key material
+ * removed. Runs on every store load, so a pre-existing production file is cleaned the first
+ * time the new code touches it.
+ *
+ * Only denylisted material is touched — other accounts are left byte-for-byte unchanged.
+ * If the operator has configured a fresh `DEMO_API_KEY`, the demo account adopts it and is
+ * un-revoked, so the demo wallet stays usable with the *new* key only.
+ */
+async function quarantineRetiredKeys(store: StoreFile) {
+  let changed = false;
+  const quarantinedEmails = new Set<string>();
+
+  for (const account of store.accounts) {
+    const material = account.keyHash ?? (account.key ? hashApiKey(account.key) : "");
+    const retired =
+      Boolean(account.key && isDenylistedKey(account.key)) || Boolean(material && isDenylistedKeyHash(material));
+    if (!retired) continue;
+    account.revoked = true;
+    delete account.key;
+    account.keyHash = undefined;
+    quarantinedEmails.add(account.email.toLowerCase());
+    changed = true;
+  }
+
+  const configuredDemoKey = demoKeyFromEnv();
+  if (configuredDemoKey && quarantinedEmails.size) {
+    const demo = store.accounts.find(
+      (row) => isDemoAccount(row) && quarantinedEmails.has(row.email.toLowerCase()),
+    );
+    if (demo) {
+      demo.keyHash = hashApiKey(configuredDemoKey);
+      demo.revoked = false;
+      changed = true;
+    }
+  }
+
+  if (changed) await persist(store);
+}
+
 async function persist(store: StoreFile) {
   await mkdir(path.dirname(STORE_PATH), { recursive: true });
   await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
 
-export async function getAccountByKey(key: string) {
-  const store = await ensureStore();
-  return store.accounts.find((a) => a.key === key) ?? null;
+/** Transparently upgrade a legacy plaintext `key` to `keyHash` on read. */
+async function migrateLegacyKey(store: StoreFile, account: DemoAccount) {
+  if (!needsHashMigration(account)) return;
+  account.keyHash = hashApiKey(account.key as string);
+  delete account.key;
+  await persist(store);
 }
 
-/** Register or refresh a customer wallet without resetting balance. */
-export async function ensureDemoAccount(input: { email: string; key: string; balance: number }) {
+/**
+ * Resolve an account by API key using constant-time comparison against the stored hash.
+ * The retired public default and its shape are refused outright, even for a store that has
+ * not been migrated yet.
+ */
+export async function getAccountByKey(key: string) {
+  const presented = (key ?? "").trim();
+  if (!presented) return null;
+  if (isDenylistedKey(presented)) return null;
+
   const store = await ensureStore();
-  const byKey = store.accounts.find((a) => a.key === input.key);
+  const account = store.accounts.find((a) => keyMatchesRecord(presented, a)) ?? null;
+  if (!account) return null;
+  // A revoked credential must never resolve to an account.
+  if (account.revoked) return null;
+  if (needsHashMigration(account)) await migrateLegacyKey(store, account);
+  return account;
+}
+
+/** True when the account is the seeded, non-financial demo wallet. */
+export function isDemoAccount(account: Pick<DemoAccount, "demo" | "email"> | null | undefined) {
+  if (!account) return false;
+  if (account.demo) return true;
+  return account.email?.toLowerCase() === "demo@trustifysmm.com";
+}
+
+/**
+ * Register or refresh a customer wallet without resetting balance.
+ *
+ * Real customer accounts keep their plaintext `key` because it is the foreign key used by
+ * invoices, orders and ledger rows (and the dashboard key display). A `keyHash` is stored
+ * alongside it so authentication never depends on a plaintext comparison.
+ *
+ * The seeded demo account never reaches this path with a plaintext key: it is created by
+ * `defaultStore()` with a hash only.
+ */
+export async function ensureDemoAccount(input: { email: string; key: string; balance: number }) {
+  const keyHash = hashApiKey(input.key);
+  const store = await ensureStore();
+  const byKey = store.accounts.find((a) => keyMatchesRecord(input.key, a));
   const byEmail = store.accounts.find((a) => a.email.toLowerCase() === input.email.toLowerCase());
   if (byKey) {
     byKey.email = input.email;
+    byKey.keyHash = keyHash;
     await persist(store);
     return byKey;
   }
   if (byEmail) {
-    byEmail.key = input.key;
+    byEmail.keyHash = keyHash;
+    // Demo accounts must never persist plaintext key material.
+    if (!byEmail.demo) byEmail.key = input.key;
     await persist(store);
     return byEmail;
   }
   const account: DemoAccount = {
     key: input.key,
+    keyHash,
     email: input.email,
     balance: input.balance,
     currency: "USD",
@@ -289,6 +392,43 @@ export async function adjustAccount(
   });
 }
 
+export async function adjustAccountExact(
+  key: string,
+  amountUsd: string,
+  description: string,
+  ref: string,
+  meta: { adminId: string; reason: string },
+) {
+  const { decimalToScaled, scaledToDecimal } = await import("@/lib/nowpayments/money");
+  return withStoreLock(async () => {
+    const scaled = decimalToScaled(amountUsd, 2);
+    if (scaled === null || scaled === BigInt(0)) return { error: "Invalid USD amount." as const };
+    const store = await ensureStore();
+    if (store.transactions.some((row) => row.ref === ref)) {
+      return { error: "This adjustment was already recorded." as const };
+    }
+    const account = store.accounts.find((row) => row.key === key);
+    if (!account) return { error: "Wallet not found." as const };
+    const current = decimalToScaled(account.balance, 2);
+    if (current === null) return { error: "Wallet balance is not a valid USD amount." as const };
+    const next = current + scaled;
+    if (next < BigInt(0)) return { error: "That debit would make the wallet negative." as const };
+    account.balance = Number(scaledToDecimal(next, 2));
+    pushLedger(store, {
+      accountKey: key,
+      type: "adjustment",
+      amount: Number(scaledToDecimal(scaled, 2)),
+      balanceAfter: account.balance,
+      description,
+      ref,
+      adminId: meta.adminId,
+      reason: meta.reason,
+    });
+    await persist(store);
+    return { account, ref };
+  });
+}
+
 export async function refundOrder(orderId: number, description: string) {
   return withStoreLock(async () => {
     const store = await ensureStore();
@@ -304,7 +444,7 @@ export async function refundOrder(orderId: number, description: string) {
     order.status = "Refunded";
     order.updatedAt = new Date().toISOString();
     pushLedger(store, {
-      accountKey: account.key,
+      accountKey: order.accountKey as string,
       type: "refund",
       amount,
       balanceAfter: account.balance,
@@ -372,22 +512,103 @@ export async function setAccountRevoked(key: string, revoked: boolean) {
 }
 
 export async function saveInvoice(invoice: BankerInvoice) {
-  const store = await ensureStore();
-  store.invoices.push(invoice);
-  await persist(store);
-  return invoice;
+  return withStoreLock(async () => {
+    const store = await ensureStore();
+    store.invoices.push(invoice);
+    await persist(store);
+    return invoice;
+  });
 }
 
+/**
+ * Patch one invoice.
+ *
+ * Runs inside `withStoreLock` so the read-modify-write cycle cannot interleave with a wallet
+ * credit. Without the lock, a stale copy loaded before a credit could be written back and
+ * silently revert `walletCredited` / the balance-adjacent fields — a double-credit risk.
+ * No locked function calls this, so there is no re-entrancy.
+ */
 export async function updateInvoice(id: string, patch: Partial<BankerInvoice>) {
-  const store = await ensureStore();
-  const inv = store.invoices.find((i) => i.id === id);
-  if (!inv) return null;
-  Object.assign(inv, patch);
-  await persist(store);
-  return inv;
+  return withStoreLock(async () => {
+    const store = await ensureStore();
+    const inv = store.invoices.find((i) => i.id === id);
+    if (!inv) return null;
+    Object.assign(inv, patch);
+    await persist(store);
+    return inv;
+  });
 }
 
 export async function getInvoice(id: string) {
   const store = await ensureStore();
   return store.invoices.find((i) => i.id === id) ?? null;
+}
+
+export async function getInvoiceByNowPaymentId(nowPaymentId: string) {
+  const store = await ensureStore();
+  const needle = nowPaymentId.trim();
+  return store.invoices.find((i) => i.nowPaymentId === needle) ?? null;
+}
+
+export async function finalizeDepositCredit(
+  invoiceId: string,
+  patch: Partial<BankerInvoice>,
+): Promise<{ ok: true; balance: number; invoice: BankerInvoice; duplicate: boolean } | { error: string }> {
+  return withStoreLock(async () => {
+    const store = await ensureStore();
+    const invoice = store.invoices.find((row) => row.id === invoiceId);
+    if (!invoice) return { error: "Invoice not found" };
+    const duplicate = Boolean(invoice.walletCredited || invoice.status === "paid");
+    const credited = creditWalletDepositLocked(store, invoice);
+    if ("error" in credited) return credited;
+    Object.assign(invoice, patch);
+    await persist(store);
+    return { ok: true, balance: credited.balance, invoice, duplicate };
+  });
+}
+
+/** Find the wallet that owns a stored invoice apiKey (plaintext FK). */
+function findAccountByRef(store: StoreFile, apiKeyRef: string): DemoAccount | null {
+  const ref = (apiKeyRef ?? "").trim();
+  if (!ref) return null;
+  return (
+    store.accounts.find((a) => a.key && a.key === ref) ??
+    store.accounts.find((a) => a.keyHash && a.keyHash === hashApiKey(ref)) ??
+    null
+  );
+}
+
+/** Credit wallet once per deposit ref (must run inside withStoreLock). */
+export function creditWalletDepositLocked(
+  store: StoreFile,
+  invoice: BankerInvoice,
+  meta?: { description?: string },
+): { ok: true; balance: number } | { error: string } {
+  /*
+   * The seeded demo wallet is excluded from every provider credit path. Demo balance changes
+   * stay isolated to the demo ledger and can never be funded by a real payment.
+   */
+  const target = findAccountByRef(store, invoice.apiKey);
+  if (isDemoAccount(target)) {
+    return { error: "The demo account cannot receive real deposit credits." };
+  }
+
+  if (invoice.walletCredited || invoice.status === "paid") {
+    return { ok: true, balance: target?.balance ?? 0 };
+  }
+  if (store.transactions.some((row) => row.ref === invoice.id && row.type === "deposit")) {
+    return { ok: true, balance: target?.balance ?? 0 };
+  }
+  const account = target;
+  if (!account) return { error: "Account not found" };
+  account.balance = Math.round((account.balance + invoice.amountUsd) * 10000) / 10000;
+  pushLedger(store, {
+    accountKey: invoice.apiKey,
+    type: "deposit",
+    amount: Math.round(invoice.amountUsd * 10000) / 10000,
+    balanceAfter: account.balance,
+    description: meta?.description ?? `Crypto deposit ${invoice.id}`,
+    ref: invoice.id,
+  });
+  return { ok: true, balance: account.balance };
 }

@@ -94,11 +94,11 @@ export const supportFaqCategories: SupportFaqCategory[] = [
       },
       {
         q: "How does the Banker API top-up work?",
-        a: "POST /api/banker/invoice with JSON containing your API key and USD amount. You receive invoice_id and payment_url. After on-chain payment, our webhook credits the same key used in the invoice. Poll GET /api/banker/status?id= until status is paid, then confirm with action=balance.",
+        a: "POST /api/banker/invoice with JSON containing your API key and USD amount. You receive invoice_id and the provider payment_url. After on-chain payment, our webhook credits the same key used in the invoice. Poll GET /api/banker/status?id= with your API key in the x-api-key header until status is paid, then confirm with action=balance.",
       },
       {
         q: "I paid crypto but balance is not updated yet.",
-        a: "Wait for blockchain confirmations and webhook delivery. Check invoice status via /api/banker/status. If paid shows on the gateway but not in panel after 60 minutes, email support with transaction hash, invoice_id and API key prefix (never send the full secret in public channels).",
+        a: "Wait for blockchain confirmations and webhook delivery. Check invoice status via /api/banker/status with your API key in the x-api-key header. If paid shows on the gateway but not in panel after 60 minutes, email support with transaction hash, invoice_id and API key prefix (never send the full secret in public channels).",
       },
       {
         q: "Are deposits refundable?",
@@ -121,7 +121,7 @@ export const supportFaqCategories: SupportFaqCategory[] = [
       },
       {
         q: "Why do I get Invalid API key?",
-        a: "Ensure you send the key parameter on every call, use the active key from Account → API, and avoid trimming or encoding errors. In demo mode on local dev, match DEMO_API_KEY from .env. Production may forward to SMM_UPSTREAM_API_URL — keys must be valid on the upstream panel.",
+        a: "Ensure you send the key parameter on every call, use the active key from Account → API, and avoid trimming or encoding errors. Production may forward to SMM_UPSTREAM_API_URL — keys must be valid on the upstream panel.",
       },
       {
         q: "Why do I get Not enough funds?",

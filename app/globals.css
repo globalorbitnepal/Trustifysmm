@@ -4107,6 +4107,36 @@ button {
   padding-left: 1.2rem;
 }
 
+.api-docs-callout {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.api-docs-callout h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fde68a;
+}
+
+.api-docs-callout p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.api-docs-callout p:last-child {
+  margin-bottom: 0;
+}
+
+.api-docs-callout code {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .api-docs-endpoint {
   margin-top: 28px;
   padding-top: 24px;

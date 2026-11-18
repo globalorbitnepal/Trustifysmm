@@ -937,6 +937,132 @@ table.ob-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .ob-banker-stat { padding: 13px 15px; border-radius: 14px; background: rgba(255, 255, 255, 0.16); }
 .ob-banker-stat span { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; opacity: 0.88; }
 .ob-banker-stat strong { display: block; margin-top: 5px; font-size: 21px; }
+
+/* Payment analytics + deposit detail drawer */
+.ob-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.ob-stat-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+.ob-stat-card span {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ob-stat-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.ob-note--warn {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--warn);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.ob-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(6, 4, 20, 0.55);
+  backdrop-filter: blur(4px);
+}
+.ob-drawer {
+  width: min(520px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: 22px;
+  background: var(--card);
+  border-left: 1px solid var(--line);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.35);
+}
+.ob-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.ob-drawer-head h3 { margin: 4px 0 0; font-size: 18px; font-weight: 800; color: var(--text); }
+.ob-drawer-head p { margin: 0; font-size: 11.5px; }
+
+.ob-detail-list { display: flex; flex-direction: column; gap: 9px; margin: 0 0 16px; }
+.ob-detail-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.ob-detail-list dt { font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.ob-detail-list dd {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .ob-drawer { width: 100%; }
+}
+
+/* Reconciliation result + audit trail */
+.ob-reconcile-note {
+  margin: 0 0 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.ob-reconcile-note--ok {
+  border: 1px solid var(--ok);
+  color: var(--text);
+  background: var(--card-2);
+}
+
+.ob-reconcile-log { margin-top: 18px; }
+.ob-reconcile-log h4 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ob-reconcile-log ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ob-reconcile-log li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--card-2);
+}
+.ob-reconcile-log li span { font-size: 11px; color: var(--muted); }
+.ob-reconcile-log li strong { font-size: 12.5px; color: var(--text); text-transform: capitalize; }
+.ob-reconcile-log li em { font-size: 11.5px; font-style: normal; color: var(--dim); }
 .ob-filter-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .ob-filter-row button.is-on { background: var(--purple); color: #fff; border-color: var(--purple); }
 
