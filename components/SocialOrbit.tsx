@@ -16,22 +16,22 @@ const OUTER = [
 ] as const;
 
 const DUST = [
-  { id: "instagram", top: "8%", left: "6%", size: 34, delay: "0s" },
-  { id: "youtube", top: "18%", left: "22%", size: 28, delay: "0.6s" },
-  { id: "tiktok", top: "6%", left: "46%", size: 26, delay: "1.1s" },
-  { id: "facebook", top: "14%", left: "78%", size: 30, delay: "0.3s" },
-  { id: "x", top: "32%", left: "4%", size: 24, delay: "1.4s" },
-  { id: "telegram", top: "28%", left: "88%", size: 28, delay: "0.8s" },
-  { id: "whatsapp", top: "58%", left: "8%", size: 32, delay: "1.8s" },
-  { id: "snapchat", top: "72%", left: "18%", size: 26, delay: "0.4s" },
-  { id: "threads", top: "78%", left: "70%", size: 28, delay: "1.2s" },
-  { id: "linkedin", top: "48%", left: "92%", size: 24, delay: "2s" },
-  { id: "spotify", top: "84%", left: "42%", size: 22, delay: "0.9s" },
-  { id: "pinterest", top: "40%", left: "14%", size: 22, delay: "1.6s" },
-  { id: "instagram", top: "66%", left: "86%", size: 22, delay: "2.2s" },
-  { id: "youtube", top: "4%", left: "64%", size: 20, delay: "1.5s" },
-  { id: "tiktok", top: "88%", left: "58%", size: 20, delay: "0.2s" },
-  { id: "facebook", top: "52%", left: "2%", size: 20, delay: "2.4s" },
+  { id: "instagram", top: "6%", left: "4%", size: 28, delay: "0s" },
+  { id: "youtube", top: "4%", left: "58%", size: 22, delay: "0.6s" },
+  { id: "tiktok", top: "8%", left: "92%", size: 24, delay: "1.1s" },
+  { id: "facebook", top: "22%", left: "96%", size: 26, delay: "0.3s" },
+  { id: "x", top: "46%", left: "1%", size: 22, delay: "1.4s" },
+  { id: "telegram", top: "34%", left: "90%", size: 24, delay: "0.8s" },
+  { id: "whatsapp", top: "70%", left: "2%", size: 24, delay: "1.8s" },
+  { id: "snapchat", top: "86%", left: "12%", size: 22, delay: "0.4s" },
+  { id: "threads", top: "82%", left: "78%", size: 24, delay: "1.2s" },
+  { id: "linkedin", top: "58%", left: "94%", size: 22, delay: "2s" },
+  { id: "spotify", top: "90%", left: "46%", size: 20, delay: "0.9s" },
+  { id: "pinterest", top: "92%", left: "28%", size: 20, delay: "1.6s" },
+  { id: "instagram", top: "74%", left: "88%", size: 20, delay: "2.2s" },
+  { id: "youtube", top: "3%", left: "28%", size: 18, delay: "1.5s" },
+  { id: "tiktok", top: "88%", left: "62%", size: 18, delay: "0.2s" },
+  { id: "facebook", top: "16%", left: "1%", size: 18, delay: "2.4s" },
 ] as const;
 
 export function HeroLogoField() {

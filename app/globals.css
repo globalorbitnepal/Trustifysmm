@@ -634,7 +634,7 @@ button {
 .hero-logo-bit {
   position: absolute;
   aspect-ratio: 1;
-  opacity: 0.34;
+  opacity: 0.22;
   animation: icon-float 7.5s ease-in-out infinite;
   filter: drop-shadow(0 8px 12px rgba(20, 8, 48, 0.28));
 }
