@@ -154,7 +154,7 @@ export function SignUpPageContent({ copy }: { copy?: AuthPageCopy }) {
         <div className="auth-signup-card">
           <div className="auth-signup-card-head">
             <div className="auth-signup-card-mark" aria-hidden>
-              <img src="/brand/glass/glass-trustify-t.png" alt="" width={72} height={72} />
+              <img src="/brand/logo-mark-transparent.png" alt="" width={72} height={72} />
             </div>
             <h2>
               {copy?.cardTitle || "Sign up"} <span className="grad">{copy?.cardTitleAccent || "free"}</span>
@@ -315,8 +315,8 @@ function MailIcon() {
 function KeyIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="8" cy="14" r="4" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M12 14h9M16 10v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
 }

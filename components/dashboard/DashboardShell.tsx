@@ -210,7 +210,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="cp-main">
         <header className="cp-top">
           <div className="cp-top-title">
-            <button type="button" className="cp-icon-btn" aria-label="Toggle sidebar" onClick={() => (window.innerWidth < 980 ? setOpen(true) : setCollapsed((v) => !v))}>
+            <button type="button" className="cp-icon-btn cp-menu-toggle" aria-label="Toggle sidebar" onClick={() => (window.innerWidth < 980 ? setOpen(true) : setCollapsed((v) => !v))}>
               <Icon name="menu" />
             </button>
             <DashboardBrandLockup theme={light ? "light" : "dark"} compact className="cp-top-mark" />
@@ -220,13 +220,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="cp-top-actions">
-            <button type="button" className="cp-icon-btn" aria-label={light ? "Switch to dark mode" : "Switch to light mode"} aria-pressed={light} onClick={toggleTheme}>
+            <button type="button" className="cp-icon-btn cp-desk-only" aria-label={light ? "Switch to dark mode" : "Switch to light mode"} aria-pressed={light} onClick={toggleTheme}>
               <Icon name={light ? "moon" : "sun"} />
             </button>
-            <button type="button" className="cp-icon-btn" aria-label="Search" onClick={() => setSearch(true)}>
+            <button type="button" className="cp-icon-btn cp-desk-only" aria-label="Search" onClick={() => setSearch(true)}>
               <Icon name="search" />
             </button>
-            <Link href="/dashboard/notifications" className="cp-icon-btn" aria-label="Notifications">
+            <Link href="/dashboard/notifications" className="cp-icon-btn cp-desk-only" aria-label="Notifications">
               <Icon name="bell" />
               {unread > 0 ? <i className="cp-dot" /> : null}
             </Link>
@@ -238,7 +238,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               Add Funds
             </Link>
             <div className="cp-profile">
-              <button type="button" className="cp-profile-btn" onClick={() => setMenu((v) => !v)} aria-expanded={menu} aria-haspopup="menu">
+              <button type="button" className="cp-profile-btn cp-desk-only" onClick={() => setMenu((v) => !v)} aria-expanded={menu} aria-haspopup="menu">
                 <Avatar user={user} />
                 <span className="cp-profile-name">{name}</span>
               </button>
@@ -247,11 +247,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               </button>
               {menu ? (
                 <div className="cp-menu" role="menu">
+                  <Link href="/dashboard/new-order">New Order</Link>
+                  <Link href="/dashboard/add-funds">Add Funds</Link>
+                  <Link href="/dashboard/notifications">Notifications{unread > 0 ? ` (${unread})` : ""}</Link>
                   <Link href="/dashboard/profile">My Profile</Link>
                   <Link href="/dashboard/security">Security</Link>
                   <Link href="/dashboard/tickets">Support</Link>
-                  <Link href="/dashboard/add-funds">Add Funds</Link>
-                  <Link href="/dashboard/new-order">New Order</Link>
+                  <button type="button" onClick={() => setSearch(true)}>Search</button>
+                  <button type="button" onClick={toggleTheme}>{light ? "Dark mode" : "Light mode"}</button>
                   <button type="button" onClick={() => void logout()}>
                     Logout
                   </button>

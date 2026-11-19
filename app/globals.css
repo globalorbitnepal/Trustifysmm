@@ -3903,7 +3903,7 @@ button {
 
   .orbit {
     order: 2;
-    min-height: 380px;
+    min-height: 240px;
   }
 
   .hero-copy {
@@ -4760,9 +4760,9 @@ button {
 .auth-signup-lede {
   margin: 16px 0 0;
   max-width: 46ch;
-  font-size: clamp(15px, 1.4vw, 17px);
-  line-height: 1.65;
-  color: rgba(224, 216, 255, 0.78);
+  font-size: clamp(16px, 1.35vw, 18px);
+  line-height: 1.6;
+  color: rgba(244, 240, 255, 0.92);
 }
 
 .auth-signup-perks {
@@ -4795,9 +4795,9 @@ button {
 .auth-signup-perk span:last-child {
   display: block;
   margin-top: 4px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.45;
-  color: rgba(248, 250, 252, 0.52);
+  color: rgba(244, 240, 255, 0.78);
 }
 
 .auth-signup-perk-icon {
@@ -4892,8 +4892,10 @@ button {
 
 .auth-signup-card-mark img {
   width: 56px;
-  height: auto;
-  filter: drop-shadow(0 8px 20px rgba(168, 85, 247, 0.45));
+  height: 56px;
+  object-fit: contain;
+  background: transparent;
+  filter: drop-shadow(0 10px 22px rgba(124, 58, 237, 0.45));
 }
 
 .auth-signup-card-head h2 {
@@ -4913,8 +4915,9 @@ button {
 
 .auth-signup-card-head p {
   margin: 8px 0 0;
-  font-size: 14px;
-  color: rgba(248, 250, 252, 0.55);
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(244, 240, 255, 0.82);
 }
 
 .auth-signup-form {
@@ -4925,8 +4928,9 @@ button {
   display: block;
   margin: 14px 0 8px;
   font-size: 13px;
-  font-weight: 600;
-  color: rgba(248, 250, 252, 0.7);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(248, 250, 252, 0.92);
 }
 
 .auth-signup-form label:first-of-type {
@@ -4950,13 +4954,21 @@ button {
 }
 
 .auth-signup-field-icon {
-  color: rgba(196, 181, 253, 0.85);
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #f5f3ff;
+  background: rgba(168, 85, 247, 0.16);
   line-height: 0;
 }
 
 .auth-signup-field-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .auth-signup-field input {
@@ -4970,7 +4982,18 @@ button {
 }
 
 .auth-signup-field input::placeholder {
-  color: rgba(248, 250, 252, 0.32);
+  color: rgba(248, 250, 252, 0.42);
+}
+
+.auth-signup-field input::-ms-reveal,
+.auth-signup-field input::-ms-clear,
+.auth-signup-field input::-webkit-credentials-auto-fill-button,
+.auth-signup-field input::-webkit-contacts-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
+  width: 0;
+  height: 0;
 }
 
 .auth-signup-eye {
@@ -5381,6 +5404,32 @@ button {
   .auth-signup-perks {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-height: 820px) and (min-width: 900px) {
+  .auth-signup-inner {
+    min-height: auto;
+    padding: 8px 0 12px;
+  }
+  .auth-signup-title { font-size: 36px; margin-top: 12px; }
+  .auth-signup-lede { margin-top: 10px; font-size: 15px; }
+  .auth-signup-perks { margin-top: 14px; gap: 8px; }
+  .auth-signup-perk { padding: 10px 12px; }
+  .auth-signup-trust { margin-top: 12px; }
+  .auth-signup-card { padding: 22px 22px 18px; }
+  .auth-signup-form { margin-top: 14px; }
+}
+
+@media (min-width: 1800px) {
+  .auth-signup-inner { width: min(1680px, calc(100% - 96px)); }
+  .auth-signup-title { font-size: 64px; }
+  .auth-signup-split { gap: 88px; grid-template-columns: minmax(0, 1.1fr) minmax(420px, 480px); }
+  .auth-signup-card-wrap { max-width: 480px; }
+}
+
+.auth-signup {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* ——— Support / Help Center ——— */
@@ -6860,4 +6909,5 @@ button {
   .app-tabbar { display: grid; }
   .install-banner { display: flex; }
   .site-footer { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+  body { padding-bottom: env(safe-area-inset-bottom); }
 }

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { MobileAppChrome } from "@/components/MobileAppChrome";
 import { SiteNavProgress } from "@/components/SiteNavProgress";
@@ -32,6 +32,13 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
     shortcut: "/favicon-32.png",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#08091b",
 };
 
 export const revalidate = 60;
