@@ -405,7 +405,11 @@ export function AddFundsView() {
                 <p className="cp-error">
                   {amountNumber > maxDeposit
                     ? `The highest top-up is $${maxDeposit.toLocaleString()}.`
-                    : "Choose $10, $20, $25, $50, $100, $250, $500, or $1000."}
+                    : providerMin != null && amountNumber < effectiveMin
+                      ? `NOWPayments requires at least $${providerMin.toFixed(2)} for ${selected?.symbol ?? "this coin"} on ${networkBadge(selected?.code ?? "", selected?.network)}.`
+                      : amountNumber < effectiveMin
+                        ? `Use $${effectiveMin.toFixed(2)} or more.`
+                        : "Choose $10, $20, $25, $50, $100, $250, $500, or $1000."}
                 </p>
               ) : null}
             </section>
@@ -780,6 +784,10 @@ function shortCoinName(symbol: string, name: string) {
     TRX: "TRON",
     DASH: "Dash",
     XRP: "XRP",
+    ZEC: "Zcash",
+    BCH: "Bitcoin Cash",
+    XMR: "Monero",
+    TON: "Toncoin",
   };
   return known[symbol] || name.split("(")[0].trim();
 }

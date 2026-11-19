@@ -29,7 +29,7 @@ export function loadNowPaymentsConfig(): NowPaymentsConfig {
   const rawCurrencies =
     process.env.BANKER_PAY_CURRENCIES ||
     process.env.BANKER_PAY_CURRENCY ||
-    "usdterc20,usdtbsc,usdc,btc,eth,bnbbsc,sol,ltc,trx,dash,xrp";
+    "usdterc20,usdtbsc,usdc,btc,eth,bnbbsc,sol,ltc,trx,dash,xrp,zec,bch,xmr,ton";
   const payCurrencies = rawCurrencies
     .split(",")
     .map((c) => c.trim().toLowerCase())

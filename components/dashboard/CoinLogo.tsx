@@ -32,6 +32,10 @@ const COIN_KEYS: Record<string, string> = {
   trx: "trx",
   dash: "dash",
   xrp: "xrp",
+  zec: "zec",
+  bch: "bch",
+  xmr: "xmr",
+  ton: "ton",
   matic: "pol",
   pol: "pol",
 };
@@ -119,6 +123,10 @@ export function CoinLogo({
     trx: "/coins/trx.svg",
     dash: "/coins/dash.svg",
     xrp: "/coins/xrp.svg",
+    zec: "/coins/zec.svg",
+    bch: "/coins/bch.svg",
+    xmr: "/coins/xmr.svg",
+    ton: "/coins/ton.svg",
   };
   if (brandFile[key]) {
     const onLight = key === "xrp";

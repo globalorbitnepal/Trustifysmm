@@ -38,6 +38,10 @@ const POPULAR_CODES = new Set([
   "trx",
   "dash",
   "xrp",
+  "zec",
+  "bch",
+  "xmr",
+  "ton",
 ]);
 
 const SYMBOLS: Record<string, string> = {
