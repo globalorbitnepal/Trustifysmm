@@ -117,13 +117,16 @@ function LayersIcon() {
 function HeadsetIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      {/* Headband arc plus two ear cups — the previous path closed into a horseshoe shape
+          that read as an upside-down U rather than a headset. */}
       <path
-        d="M4 14a8 8 0 0 1 16 0v3a3 3 0 0 1-3 3h-1v-4H8v4H7a3 3 0 0 1-3-3v-3Z"
+        d="M4.5 15v-3a7.5 7.5 0 0 1 15 0v3"
         stroke="currentColor"
         strokeWidth="1.8"
-        strokeLinejoin="round"
+        strokeLinecap="round"
       />
-      <path d="M8 17v3a4 4 0 0 0 8 0v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <rect x="2.5" y="14" width="4" height="6" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="17.5" y="14" width="4" height="6" rx="2" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
 }

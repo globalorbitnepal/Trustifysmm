@@ -5,10 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import type { OrbitSiteConfig, PageExtras, PageHeroContent, SitePageMeta } from "@/lib/orbit/types";
 import { ORBIT_PAGES, pageBySlug } from "@/lib/orbit/page-registry";
 import { defaultPageExtras } from "@/lib/orbit/page-defaults";
+import { defaultCustomerReviews } from "@/lib/orbit/home-defaults";
 import { useOrbit } from "@/components/orbit/use-orbit";
 import { CmsSectionHead, ImageUrlField } from "@/components/orbit/cms-fields";
 import { SeoScorePanel, SerpPreview } from "@/components/orbit/SeoScorePanel";
 import { CatalogPlatformsEditor } from "@/components/orbit/catalog-platforms-editor";
+import { ReviewsEditor } from "@/components/orbit/ReviewsEditor";
 import { ServicesScreen } from "@/components/orbit/services-screen";
 import type { ComponentProps } from "react";
 import { OrbitIcon } from "@/components/orbit/orbit-icons";
@@ -515,6 +517,11 @@ export function PageEditorScreen({ slug }: { slug: string }) {
 
       {tab === "sections" && slug === "home" ? (
         <>
+          <ReviewsEditor
+            /* Seed from the built-in cards the first time, so the editor never opens empty. */
+            reviews={config.customerReviews ?? defaultCustomerReviews}
+            onChange={(customerReviews) => setConfig({ ...config, customerReviews })}
+          />
           <article className="ob-card">
             <h3>Visible sections</h3>
             <div className="ob-toolbar">

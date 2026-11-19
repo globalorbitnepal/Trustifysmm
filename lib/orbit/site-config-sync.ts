@@ -212,7 +212,12 @@ export function mergeSiteConfig(raw: OrbitSiteConfig): OrbitSiteConfig {
     platformCards: raw.platformCards?.length ? raw.platformCards : base.platformCards,
     howSteps: raw.howSteps?.length ? raw.howSteps : base.howSteps,
     howPerks: raw.howPerks?.length ? raw.howPerks : base.howPerks,
-    customerReviews: raw.customerReviews?.length ? raw.customerReviews : base.customerReviews,
+    /*
+     * `undefined` means "never edited" so the defaults apply. An explicitly empty array is a
+     * real decision (the admin removed every card) and must be respected, otherwise deletions
+     * silently resurrect the built-in reviews.
+     */
+    customerReviews: Array.isArray(raw.customerReviews) ? raw.customerReviews : base.customerReviews,
     paymentCoins: raw.paymentCoins?.length ? raw.paymentCoins : base.paymentCoins,
     paymentPerks: raw.paymentPerks?.length ? raw.paymentPerks : base.paymentPerks,
     orbitDashboard: { ...base.orbitDashboard, ...raw.orbitDashboard },

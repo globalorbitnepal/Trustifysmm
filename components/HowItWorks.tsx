@@ -149,9 +149,17 @@ function CartIcon() {
 function RocketIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M12 3c3 2.6 5 6.2 5 10.5 0 .8-.6 1.5-1.4 1.5H8.4C7.6 15 7 14.3 7 13.5 7 9.2 9 5.6 12 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <path d="M10 15v4l2-1 2 1v-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9.5 6.5 7.5 9M14.5 6.5l2 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Clean rocket: body outline, window, two fins and a flame cone. The previous path
+          tapered to a point and read as a shuttlecock. */}
+      <path
+        d="M12 2.5c2.7 1.9 4.3 5 4.3 8.6v3.4l-2.6 1.6V12c0-3-.6-5.4-1.7-7-1.1 1.6-1.7 4-1.7 7v4.1l-2.6-1.6v-3.4c0-3.6 1.6-6.7 4.3-8.6Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="9" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M9 15.5 7 19l3-1M15 15.5 17 19l-3-1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 17v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }

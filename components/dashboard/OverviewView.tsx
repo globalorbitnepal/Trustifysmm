@@ -225,14 +225,22 @@ function QuickIcon({
     plus: "M12 5v14M5 12h14",
     wallet: "M4 8h16v11H4V8Zm0-3h10a3 3 0 013 3",
     box: "M4 7l8-4 8 4v10l-8 4-8-4V7Z",
-    ticket: "M5 9h14v3a3 3 0 01-3 3h-1v5l-3-2-3 2v-5H8a3 3 0 01-3-3V9Z",
+    // Speech bubble with a tail: reads as "support", not a trophy.
+    ticket: "M21 12a8 8 0 0 1-8 8H4l2.2-3.3A8 8 0 1 1 21 12Z",
     layers: "M12 4 4 8l8 4 8-4-8-4Zm0 8-8 4 8 4 8-4-8-4Z",
-    swap: "M7 7h12M17 17H5M17 7l3-3M7 17l-3 3",
+    // Two-way exchange between two cards: reads as money movement, not a tilde.
+    swap: "M3 9a2 2 0 0 1 2-2h12l-2.5-2.5M21 15a2 2 0 0 1-2 2H7l2.5 2.5",
   };
   return (
     <span className={`cp-action-ico cp-action-ico--${tone}`} aria-hidden>
       <svg viewBox="0 0 24 24" fill="none">
         <path d={paths[name]} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {name === "ticket" ? (
+          <path d="M8.5 12h.01M12 12h.01M15.5 12h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        ) : null}
+        {name === "swap" ? (
+          <path d="M3 9h2M19 15h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        ) : null}
       </svg>
     </span>
   );
