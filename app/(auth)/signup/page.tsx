@@ -37,13 +37,11 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="page">
-      <section className="auth-signup">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
-        <div className="auth-signup-inner">
-            <SignUpPageContent copy={authCopy("/signup")} />
-        </div>
-      </section>
-    </main>
+    <section className="auth-signup">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
+      <div className="auth-signup-inner">
+        <SignUpPageContent copy={authCopy("/signup")} />
+      </div>
+    </section>
   );
 }

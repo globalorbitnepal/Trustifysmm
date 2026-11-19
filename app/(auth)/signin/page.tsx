@@ -37,15 +37,13 @@ export default function SignInPage() {
   };
 
   return (
-    <main className="page">
-      <section className="auth-signup">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
-        <div className="auth-signup-inner">
-          <Suspense fallback={<div className="auth-signup-card" />}>
-            <SignInPageContent copy={authCopy("/signin")} />
-          </Suspense>
-        </div>
-      </section>
-    </main>
+    <section className="auth-signup">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
+      <div className="auth-signup-inner">
+        <Suspense fallback={<div className="auth-signup-card" />}>
+          <SignInPageContent copy={authCopy("/signin")} />
+        </Suspense>
+      </div>
+    </section>
   );
 }

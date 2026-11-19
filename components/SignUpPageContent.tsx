@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
 import { AuthDivider } from "@/components/AuthDivider";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 import type { AuthPageCopy } from "@/lib/orbit/types";
@@ -153,9 +154,7 @@ export function SignUpPageContent({ copy }: { copy?: AuthPageCopy }) {
       <div className="auth-signup-card-wrap">
         <div className="auth-signup-card">
           <div className="auth-signup-card-head">
-            <div className="auth-signup-card-mark" aria-hidden>
-              <img src="/brand/logo-mark-transparent.png" alt="" width={72} height={72} />
-            </div>
+            <AuthBrandMark />
             <h2>
               {copy?.cardTitle || "Sign up"} <span className="grad">{copy?.cardTitleAccent || "free"}</span>
             </h2>

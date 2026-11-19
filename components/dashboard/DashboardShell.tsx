@@ -128,6 +128,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
+    document.documentElement.classList.add("is-dash-app");
+    return () => document.documentElement.classList.remove("is-dash-app");
+  }, []);
+
+  useEffect(() => {
+    if (!open && !search) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open, search]);
+
+  useEffect(() => {
     if (!menu) return;
     function onPointer(event: MouseEvent) {
       const target = event.target as HTMLElement | null;

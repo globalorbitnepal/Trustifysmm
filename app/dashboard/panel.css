@@ -1,3 +1,8 @@
+html.is-dash-app {
+  overflow-x: clip;
+  max-width: 100vw;
+}
+
 .cp {
   --bg: #08091b;
   --side: rgba(14, 16, 48, 0.94);
@@ -1633,8 +1638,20 @@ html[data-dash="light"] .cp-account-hero,
 }
 @media (max-width: 980px) {
   .cp, .cp.is-collapsed {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100vw;
     min-height: 100dvh;
+    min-height: 100svh;
+    overflow-x: clip;
+  }
+  .cp-main {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .cp-side {
     position: fixed;
@@ -1672,7 +1689,11 @@ html[data-dash="light"] .cp-account-hero,
   .cp-balance span { font-size: 10px; }
   .cp-balance strong { font-size: 13px; }
   .cp-hero-orbit-wrap { display: none; }
-  .cp-hero-glass { padding: 18px 16px; gap: 0; }
+  .cp-hero-glass {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px 16px;
+    gap: 0;
+  }
   .cp-hero-glass h2 { font-size: 22px; }
   .cp-hero-actions {
     display: grid;
@@ -1691,7 +1712,35 @@ html[data-dash="light"] .cp-account-hero,
   .cp-action-tile { min-height: 64px; padding: 14px; }
   .cp-content {
     padding: 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
     padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+  .cp-top {
+    width: 100%;
+    max-width: 100vw;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .cp-top-actions { min-width: 0; flex: 0 1 auto; }
+  .cp-balance { max-width: 46vw; }
+  .cp-balance strong {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .cp-modal {
+    place-items: end center;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .cp-dialog {
+    width: min(520px, 100%);
+    max-height: min(88dvh, 100%);
+    border-radius: 20px 20px 0 0;
+    overflow: auto;
   }
   .cp-table thead { display: none; }
   .cp-table, .cp-table tbody, .cp-table tr, .cp-table td { display: block; width: 100%; }
