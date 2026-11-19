@@ -1763,3 +1763,25 @@ html[data-orbit="dark"] .ob-cust-tag.is-bad,
 
 .ob-cms-card-foot { display: flex; gap: 8px; margin-top: auto; padding-top: 4px; flex-wrap: wrap; }
 .ob-cms-card-foot .ob-btn { flex: 1; justify-content: center; }
+
+/* ——— Traffic: three-column source / country / page breakdown ——— */
+.ob-traffic-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ob-traffic-h {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+@media (max-width: 1320px) {
+  .ob-traffic-grid--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 860px) {
+  .ob-traffic-grid--3 { grid-template-columns: minmax(0, 1fr); }
+}

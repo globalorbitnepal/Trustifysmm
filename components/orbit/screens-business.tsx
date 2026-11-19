@@ -29,6 +29,7 @@ type Traffic = {
   unique: number;
   change: number;
   sources: { source: string; count: number; pct: number }[];
+  countries: { code: string; name: string; count: number; pct: number }[];
   paths: { path: string; count: number }[];
 };
 
@@ -352,8 +353,9 @@ export function DashboardScreen() {
           <div><span>Unique Visitors</span><strong>{traffic.data?.unique ?? 0}</strong></div>
           <div><span>vs Previous Window</span><strong>{traffic.data?.change ? `${traffic.data.change > 0 ? "+" : ""}${traffic.data.change}%` : "0%"}</strong></div>
         </div>
-        <div className="ob-traffic-grid">
+        <div className="ob-traffic-grid ob-traffic-grid--3">
           <div className="ob-bars">
+            <h4 className="ob-traffic-h">Visitor sources</h4>
             {(traffic.data?.sources ?? []).map((row) => (
               <div key={row.source} className="ob-bar-row">
                 <span>{row.source}</span>
@@ -363,11 +365,21 @@ export function DashboardScreen() {
             ))}
             {!traffic.data?.sources.length ? <p className="ob-muted">No public visits recorded in this window yet.</p> : null}
           </div>
+          <div className="ob-bars">
+            <h4 className="ob-traffic-h">Top countries</h4>
+            {(traffic.data?.countries ?? []).length ? (traffic.data?.countries ?? []).map((row) => (
+              <div key={row.code} className="ob-bar-row">
+                <span>{row.name}</span>
+                <i><b style={{ width: `${Math.max(8, row.pct)}%` }} /></i>
+                <em>{row.count} · {row.pct}%</em>
+              </div>
+            )) : <p className="ob-muted">Country data appears once the CDN sends geo headers.</p>}
+          </div>
           <table className="ob-table ob-table--compact">
-            <thead><tr><th>Top Landing Pages</th><th>Views</th></tr></thead>
+            <thead><tr><th>Top landing pages</th><th>Views</th></tr></thead>
             <tbody>
               {(traffic.data?.paths ?? []).map((row) => (
-                <tr key={row.path}><td><code className="ob-url">{row.path}</code></td><td><strong>{row.count}</strong></td></tr>
+                <tr key={row.path}><td data-label="Page"><code className="ob-url">{row.path}</code></td><td data-label="Views"><strong>{row.count}</strong></td></tr>
               ))}
             </tbody>
           </table>

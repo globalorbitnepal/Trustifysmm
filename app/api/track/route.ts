@@ -9,6 +9,19 @@ function sidFrom(request: NextRequest) {
   return request.cookies.get("tsmm_sid")?.value || `s_${randomBytes(8).toString("hex")}`;
 }
 
+/**
+ * Country comes from the CDN edge header (Cloudflare sends CF-IPCountry). The raw IP is
+ * never stored, which keeps the analytics useful without collecting personal data.
+ */
+function countryFrom(request: NextRequest): string {
+  const candidates = ["cf-ipcountry", "x-vercel-ip-country", "x-geo-country"];
+  for (const header of candidates) {
+    const value = request.headers.get(header)?.trim();
+    if (value && value.length === 2) return value.toUpperCase();
+  }
+  return "";
+}
+
 export async function POST(request: NextRequest) {
   let body: { path?: string; referrer?: string; utm?: string } = {};
   try {
@@ -28,6 +41,7 @@ export async function POST(request: NextRequest) {
     source: classified.source,
     host: classified.host,
     sid,
+    country: countryFrom(request),
   });
   const response = NextResponse.json({ ok: true });
   if (!request.cookies.get("tsmm_sid")) {
