@@ -1646,7 +1646,8 @@ html[data-dash="light"] .cp-account-hero,
   .cp.is-collapsed .cp-brand-copy { display: initial; }
   .cp-top { padding: 14px; }
   .cp-content { padding: 16px; }
-  .cp-add, .cp-profile-btn span { display: none; }
+  .cp-add, .cp-profile-name { display: none; }
+  .cp-more { display: grid; }
   .cp-table thead { display: none; }
   .cp-table, .cp-table tbody, .cp-table tr, .cp-table td { display: block; width: 100%; }
   .cp-table tr { margin-bottom: 12px; border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
@@ -1671,16 +1672,20 @@ html[data-dash="light"] .cp-account-hero,
   border-top: 1px solid var(--line);
   backdrop-filter: blur(16px);
 }
+.cp-more { display: grid; }
 .cp-dock a, .cp-dock button {
-  min-height: 46px;
+  min-height: 52px;
   border: 0;
   border-radius: 12px;
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   text-decoration: none;
+  display: grid;
+  place-items: center;
+  gap: 2px;
 }
 .cp-dock .is-on { color: #fff; background: linear-gradient(90deg, var(--purple), var(--blue)); }
 @media (max-width: 980px) {

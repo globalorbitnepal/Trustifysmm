@@ -162,9 +162,6 @@ export function SignUpPageContent({ copy }: { copy?: AuthPageCopy }) {
             <p>{copy?.cardLede || "Already reselling? Get your API key in minutes."}</p>
           </div>
 
-          <GoogleAuthButton mode="signup" disabled={loading} />
-          <AuthDivider />
-
           <form className="auth-signup-form" onSubmit={onSubmit}>
               <label htmlFor="signup-name">Full name</label>
               <div className="auth-signup-field">
@@ -268,6 +265,9 @@ export function SignUpPageContent({ copy }: { copy?: AuthPageCopy }) {
                 )}
               </button>
           </form>
+
+          <AuthDivider />
+          <GoogleAuthButton mode="signup" disabled={loading} />
 
           <p className="auth-signup-foot">
             <ShieldIcon />

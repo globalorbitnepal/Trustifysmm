@@ -121,6 +121,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     setSearch(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!menu) return;
+    function onPointer(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest(".cp-profile")) return;
+      setMenu(false);
+    }
+    document.addEventListener("mousedown", onPointer);
+    return () => document.removeEventListener("mousedown", onPointer);
+  }, [menu]);
+
   const title = pathname.startsWith("/dashboard/orders/")
     ? "Order details"
     : pathname.startsWith("/dashboard/tickets/")
@@ -222,16 +233,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               Add Funds
             </Link>
             <div className="cp-profile">
-              <button type="button" className="cp-profile-btn" onClick={() => setMenu((v) => !v)}>
+              <button type="button" className="cp-profile-btn" onClick={() => setMenu((v) => !v)} aria-expanded={menu} aria-haspopup="menu">
                 <Avatar user={user} />
-                <span>{name}</span>
+                <span className="cp-profile-name">{name}</span>
+              </button>
+              <button type="button" className="cp-icon-btn cp-more" aria-label="More" aria-expanded={menu} onClick={() => setMenu((v) => !v)}>
+                <Icon name="more" />
               </button>
               {menu ? (
-                <div className="cp-menu">
+                <div className="cp-menu" role="menu">
                   <Link href="/dashboard/profile">My Profile</Link>
-                  <Link href="/dashboard/profile">Account Settings</Link>
                   <Link href="/dashboard/security">Security</Link>
                   <Link href="/dashboard/tickets">Support</Link>
+                  <Link href="/dashboard/add-funds">Add Funds</Link>
+                  <Link href="/dashboard/new-order">New Order</Link>
                   <button type="button" onClick={() => void logout()}>
                     Logout
                   </button>
@@ -242,11 +257,26 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </header>
         <div className="cp-content">{children}</div>
         <nav className="cp-dock" aria-label="Dashboard">
-          <Link href="/dashboard" className={pathname === "/dashboard" ? "is-on" : ""}>Home</Link>
-          <Link href="/dashboard/new-order" className={pathname.startsWith("/dashboard/new-order") ? "is-on" : ""}>Order</Link>
-          <Link href="/dashboard/add-funds" className={pathname.startsWith("/dashboard/add-funds") ? "is-on" : ""}>Funds</Link>
-          <Link href="/dashboard/orders" className={pathname.startsWith("/dashboard/orders") ? "is-on" : ""}>Orders</Link>
-          <button type="button" onClick={() => setOpen(true)}>Menu</button>
+          <Link href="/dashboard" className={pathname === "/dashboard" ? "is-on" : ""}>
+            <Icon name="grid" />
+            Home
+          </Link>
+          <Link href="/dashboard/new-order" className={pathname.startsWith("/dashboard/new-order") ? "is-on" : ""}>
+            <Icon name="plus" />
+            Order
+          </Link>
+          <Link href="/dashboard/add-funds" className={pathname.startsWith("/dashboard/add-funds") ? "is-on" : ""}>
+            <Icon name="wallet" />
+            Funds
+          </Link>
+          <Link href="/dashboard/orders" className={pathname.startsWith("/dashboard/orders") ? "is-on" : ""}>
+            <Icon name="box" />
+            Orders
+          </Link>
+          <button type="button" onClick={() => setOpen(true)}>
+            <Icon name="menu" />
+            Menu
+          </button>
         </nav>
       </div>
       {search ? (
@@ -299,6 +329,13 @@ function Icon({ name }: { name: string }) {
       {name === "search" && <path {...common} d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-3.5-3.5" />}
       {name === "sun" && <path {...common} d="M12 4V2M12 22v-2M4.9 4.9 3.5 3.5M20.5 20.5l-1.4-1.4M4 12H2M22 12h-2M4.9 19.1 3.5 20.5M20.5 3.5l-1.4 1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />}
       {name === "moon" && <path {...common} d="M20 14.5A8 8 0 0 1 9.5 4 7 7 0 1 0 20 14.5z" />}
+      {name === "more" && (
+        <>
+          <circle cx="12" cy="6" r="1.6" fill="currentColor" />
+          <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+          <circle cx="12" cy="18" r="1.6" fill="currentColor" />
+        </>
+      )}
     </svg>
   );
 }

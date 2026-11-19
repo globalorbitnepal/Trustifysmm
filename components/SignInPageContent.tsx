@@ -200,9 +200,6 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
             <p>{copy?.cardLede || "Use the email and password from your reseller account."}</p>
           </div>
 
-          {twoFactor ? null : <GoogleAuthButton mode="login" disabled={loading} />}
-          {twoFactor ? null : <AuthDivider />}
-
           <form className="auth-signup-form" onSubmit={twoFactor ? onTotp : onSubmit}>
               {!twoFactor || email ? (<>
               <label htmlFor="signin-email">Email</label>
@@ -291,6 +288,13 @@ export function SignInPageContent({ copy }: { copy?: AuthPageCopy }) {
                 )}
               </button>
           </form>
+
+          {twoFactor ? null : (
+            <>
+              <AuthDivider />
+              <GoogleAuthButton mode="login" disabled={loading} />
+            </>
+          )}
 
           <p className="auth-signup-foot">
             <ShieldIcon />

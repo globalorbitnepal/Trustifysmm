@@ -37,7 +37,14 @@ export function MobileAppChrome() {
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
 
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/orbit")) return null;
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/orbit") ||
+    pathname.startsWith("/signin") ||
+    pathname.startsWith("/signup")
+  ) {
+    return null;
+  }
 
   async function installApp() {
     if (!install) return;
