@@ -7,6 +7,7 @@ import { CryptoDepositQr } from "@/components/dashboard/CryptoDepositQr";
 import { Empty, Skeleton } from "@/components/dashboard/OverviewView";
 import { openDepositInvoice } from "@/components/dashboard/deposit-invoice";
 import { networkBadge, networkLabel } from "@/lib/nowpayments/network-labels";
+import { formatWalletUsd } from "@/lib/money";
 import { customerDepositReason } from "@/lib/nowpayments/status";
 
 type DepositOption = {
@@ -341,7 +342,7 @@ export function AddFundsView() {
         </div>
         <div>
           <h2 className="cp-deposit-title">Add funds</h2>
-          <p className="cp-banker-lede">Top up your wallet with cryptocurrency. Balance ${balance.toFixed(2)} USD.</p>
+          <p className="cp-banker-lede">Top up your wallet with cryptocurrency. Balance {formatWalletUsd(balance)} USD.</p>
         </div>
         <span className={`cp-deposit-pill${live ? " is-live" : " is-off"}`}>{live ? "Provider online" : "Provider unavailable"}</span>
       </header>
@@ -1065,7 +1066,7 @@ export function TransactionsView() {
                 <td data-label="Type">{row.type}</td>
                 <td data-label="Description">{row.description}</td>
                 <td data-label="Amount">{row.amount.toFixed(4)}</td>
-                <td data-label="Balance after">{row.balanceAfter.toFixed(4)}</td>
+                <td data-label="Balance after">{formatWalletUsd(row.balanceAfter)}</td>
                 <td data-label="Status">{row.status}</td>
                 <td data-label="Date">{row.date.slice(0, 16).replace("T", " ")}</td>
               </tr>

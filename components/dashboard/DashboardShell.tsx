@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardBrandLockup } from "@/components/dashboard/DashboardBrandLockup";
+import { formatWalletUsd } from "@/lib/money";
 
 type SessionUser = {
   name: string | null;
@@ -174,7 +175,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="cp-user-card">
             <Avatar user={user} />
             <div>
-              <strong>${(user?.balance ?? 0).toFixed(4)}</strong>
+              <strong>{formatWalletUsd(user?.balance ?? 0)}</strong>
               <span>{name}</span>
             </div>
           </div>
@@ -232,7 +233,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </Link>
             <Link href="/dashboard/add-funds" className="cp-balance">
               <span>Balance</span>
-              <strong>${(user?.balance ?? 0).toFixed(4)}</strong>
+              <strong>{formatWalletUsd(user?.balance ?? 0)}</strong>
             </Link>
             <Link href="/dashboard/add-funds" className="cp-add">
               Add Funds

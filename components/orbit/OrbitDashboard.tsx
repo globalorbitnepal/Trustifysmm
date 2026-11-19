@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { formatWalletUsd } from "@/lib/money";
 import type { OrbitSiteConfig } from "@/lib/orbit/types";
 import { OrbitBrandLogo } from "@/components/orbit/OrbitBrandLogo";
 
@@ -500,7 +501,7 @@ function CustomerEditor({ row, onSaved }: { row: CustomerRow; onSaved: () => voi
         <span className="orbit-cell-name">{name || row.email}</span>
         <small>{row.email} · {row.apiKeyMasked} · {row.google ? "Google" : row.hasPassword ? "Password" : "Account"}</small>
       </td>
-      <td>${row.balance.toFixed(2)}</td>
+      <td>{formatWalletUsd(row.balance)}</td>
       <td>{row.orders}</td>
       <td>{row.apiKeyRevoked ? "Revoked" : "Active"}</td>
       <td>

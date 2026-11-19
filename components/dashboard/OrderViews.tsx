@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Empty, Skeleton } from "@/components/dashboard/OverviewView";
 import { PlatformFilterIcon } from "@/components/PlatformFilterIcon";
 import { ServiceCatalogUI } from "@/components/dashboard/ServiceCatalogUI";
+import { formatWalletUsd } from "@/lib/money";
 
 type Service = {
   id: number;
@@ -182,7 +183,7 @@ export function NewOrderView() {
             <div className="cp-charge">
               <span>Charge</span>
               <strong>${charge.toFixed(4)}</strong>
-              <em>Wallet ${balance.toFixed(4)}</em>
+              <em>Wallet {formatWalletUsd(balance)}</em>
             </div>
             <button className="cp-btn cp-btn-wide" type="button" disabled={busy || !service} onClick={() => void place()}>{busy ? "Placing…" : "Place order"}</button>
           </>
@@ -250,7 +251,7 @@ export function MassOrderView() {
       <section className="cp-card">
         <p className="cp-kicker">Mass order</p>
         <p>One order per line: <code>service_id|link|quantity</code></p>
-        <p className="cp-note">Wallet ${balance.toFixed(4)}. Every line is priced on the server and taken from the wallet only when the whole batch is accepted.</p>
+        <p className="cp-note">Wallet {formatWalletUsd(balance)}. Every line is priced on the server and taken from the wallet only when the whole batch is accepted.</p>
         {error ? <p className="cp-error">{error}</p> : null}
         {result ? <p className="cp-ok">Placed {result}</p> : null}
         <textarea className="cp-mass" value={text} onChange={(event) => setText(event.target.value)} rows={12} placeholder={"2410|https://instagram.com/p/example|1000"} />

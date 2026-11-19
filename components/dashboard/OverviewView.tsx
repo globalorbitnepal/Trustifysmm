@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DashboardHeroPlatforms } from "@/components/dashboard/DashboardHeroPlatforms";
+import { formatWalletUsd } from "@/lib/money";
 
 type Overview = {
   balance: number;
@@ -63,7 +64,7 @@ export function OverviewView({ name }: { name?: string }) {
       {!data ? <Skeleton rows={4} /> : (
         <>
           <section className="cp-grid cp-stats cp-stats-glass">
-            <Stat label="Available balance" value={`$${data.balance.toFixed(4)}`} hint={data.currency} href="/dashboard/add-funds" cta="Add funds" accent />
+            <Stat label="Available balance" value={formatWalletUsd(data.balance)} hint={data.currency} href="/dashboard/add-funds" cta="Add funds" accent />
             <Stat label="Total orders" value={String(data.totalOrders)} hint="All orders on this account" />
             <Stat label="Active orders" value={String(data.activeOrders)} hint="Pending · processing · in progress" />
             <Stat label="Completed" value={String(data.completedOrders)} hint="Successfully delivered" />

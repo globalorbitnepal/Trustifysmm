@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { formatWalletUsd } from "@/lib/money";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -71,7 +72,7 @@ export function DashboardContent() {
       <div className="dashboard-cards">
         <article className="dashboard-card">
           <p className="dashboard-card-label">Wallet balance</p>
-          <p className="dashboard-card-value">${user.balance.toFixed(2)}</p>
+          <p className="dashboard-card-value">{formatWalletUsd(user.balance)}</p>
           <Link className="btn btn-primary btn-sm" href="/api">
             Top up via Banker
           </Link>
