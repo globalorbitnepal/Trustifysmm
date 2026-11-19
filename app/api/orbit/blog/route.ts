@@ -6,8 +6,18 @@ import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  /*
+   * ?slug= returns one managed post, which the editor uses to load an article back
+   * into the form. Without a slug the full list is returned for the article table.
+   */
+  const slug = new URL(request.url).searchParams.get("slug");
   const managed = readManagedPostsSync();
+  if (slug) {
+    const post = managed.find((row) => row.slug === slug);
+    if (!post) return NextResponse.json({ error: "Article not found." }, { status: 404 });
+    return NextResponse.json({ post });
+  }
   const builtIn = getAllBlogPosts().map((post) => ({
     slug: post.slug,
     title: post.title,

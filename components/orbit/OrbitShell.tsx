@@ -6,7 +6,6 @@ import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react
 import { OrbitBrandLogoLink } from "@/components/orbit/OrbitBrandLogoLink";
 import { OrbitIcon } from "@/components/orbit/orbit-icons";
 import { usd } from "@/components/orbit/orbit-ui";
-import { ORBIT_PAGES } from "@/lib/orbit/page-registry";
 
 type NavLink = {
   href: string;
@@ -16,19 +15,6 @@ type NavLink = {
   exact?: boolean;
 };
 type NavGroup = { title: string; icon: NavLink["icon"]; links: NavLink[] };
-
-const pageNavIcons: Record<string, NavLink["icon"]> = {
-  home: "pages",
-  services: "services",
-  pricing: "wallet",
-  api: "bolt",
-  blogs: "blog",
-  support: "support",
-  terms: "settings",
-  privacy: "settings",
-  signin: "customers",
-  signup: "userPlus",
-};
 
 const groups: NavGroup[] = [
   {
@@ -46,10 +32,9 @@ const groups: NavGroup[] = [
     icon: "services",
     links: [
       { href: "/orbit/services", label: "Services", icon: "services", exact: true },
-      { href: "/orbit/services#categories", label: "Categories", icon: "grid" },
       { href: "/orbit/providers", label: "Platforms", icon: "providers" },
-      { href: "/orbit/server-api", label: "Service API", icon: "providers" },
       { href: "/orbit/pages/pricing", label: "Service Pricing", icon: "wallet" },
+      { href: "/orbit/server-api", label: "Service API", icon: "bolt" },
     ],
   },
   {
@@ -65,30 +50,27 @@ const groups: NavGroup[] = [
     title: "Finance",
     icon: "banker",
     links: [
-      { href: "/orbit/wallet", label: "Wallet Management", icon: "wallet" },
       { href: "/orbit/transactions", label: "Transactions", icon: "activity" },
-      { href: "/orbit/nowpayments", label: "NOWPayments", icon: "banker" },
       { href: "/orbit/payments", label: "Payment History", icon: "banker" },
+      { href: "/orbit/nowpayments", label: "NOWPayments", icon: "banker" },
     ],
   },
   {
     title: "Website Control",
     icon: "pages",
     links: [
-      { href: "/orbit/pages/home", label: "Homepage Builder", icon: "pages" },
       { href: "/orbit/pages", label: "All Pages", icon: "pages", exact: true },
-      ...ORBIT_PAGES.filter((page) => page.slug !== "home").map((page) => ({
-        href: `/orbit/pages/${page.slug}`,
-        label: page.label,
-        icon: pageNavIcons[page.slug] ?? ("pages" as const),
-        nested: true,
-      })),
-      { href: "/orbit/blog", label: "Blog CMS", icon: "blog" },
-      { href: "/orbit/seo", label: "SEO Manager", icon: "seo" },
+      { href: "/orbit/pages/home", label: "Homepage", icon: "pages" },
+      { href: "/orbit/blog", label: "Blog & Articles", icon: "blog" },
+      { href: "/orbit/seo", label: "SEO Overview", icon: "seo" },
       { href: "/orbit/media", label: "Media Library", icon: "media" },
-      { href: "/orbit/support", label: "Support Tickets", icon: "support" },
       { href: "/orbit/settings", label: "Settings", icon: "settings" },
     ],
+  },
+  {
+    title: "Support",
+    icon: "support",
+    links: [{ href: "/orbit/support", label: "Support Tickets", icon: "support", exact: true }],
   },
 ];
 
@@ -103,7 +85,23 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
   const [closed, setClosed] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [header, setHeader] = useState<HeaderStats>({ openTickets: 0, walletLiability: 0, gatewayLive: false });
+
+  /* The drawer is a mobile-only overlay: close it whenever the route changes. */
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
+  /* Lock body scroll while the mobile drawer covers the screen. */
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [drawerOpen]);
 
   useEffect(() => {
     const saved = localStorage.getItem("trustify-orbit-theme");
@@ -185,11 +183,19 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
   if (pathname.startsWith("/orbit/login")) return <>{children}</>;
 
   return (
-    <div className={`ob${theme === "dark" ? " is-dark" : ""}${collapsed ? " is-collapsed" : ""}`}>
+    <div className={`ob${theme === "dark" ? " is-dark" : ""}${collapsed ? " is-collapsed" : ""}${drawerOpen ? " is-drawer-open" : ""}`}>
+      {drawerOpen ? (
+        <button type="button" className="ob-drawer-scrim" aria-label="Close menu" onClick={() => setDrawerOpen(false)} />
+      ) : null}
       <aside className="ob-side">
         <div className="ob-brand-wrap">
           <OrbitBrandLogoLink theme={theme} href="/orbit" compact={collapsed} />
           <div className="ob-side-badge">Orbit Control Center</div>
+          <button type="button" className="ob-drawer-close" aria-label="Close menu" onClick={() => setDrawerOpen(false)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
         </div>
 
         <nav className="ob-nav" aria-label="Orbit modules">
@@ -250,9 +256,14 @@ export function OrbitShell({ children }: { children: React.ReactNode }) {
 
       <div className="ob-body">
         <header className="ob-top">
-          <button className="ob-burger" type="button" onClick={() => setCollapsed((value) => !value)} aria-label="Toggle sidebar">
+          <button className="ob-burger" type="button" onClick={() => setDrawerOpen(true)} aria-label="Open admin menu" aria-expanded={drawerOpen}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 7h16M4 12h12M4 17h16" />
+            </svg>
+          </button>
+          <button className="ob-collapse-btn" type="button" onClick={() => setCollapsed((value) => !value)} aria-label="Collapse sidebar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M9 6l6 6-6 6" />
             </svg>
           </button>
 

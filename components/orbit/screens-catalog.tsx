@@ -4,7 +4,7 @@ import { useState } from "react";
 import { send, usd, useOrbit } from "@/components/orbit/use-orbit";
 
 type Detail = {
-  customer: { id: string; email: string; name: string | null; balance: number; suspended: boolean; apiKeyRevoked: boolean; createdAt: string; apiKeyMasked: string; totpEnabled?: boolean };
+  customer: { id: string; email: string; name: string | null; username?: string | null; balance: number; suspended: boolean; apiKeyRevoked: boolean; createdAt: string; apiKeyMasked: string; google?: boolean; totpEnabled?: boolean; totpActivatedAt?: string | null };
   orders: { id: number; service: string; link: string; quantity: number; charge: number; status: string; channel?: string; createdAt: string }[];
   api?: { id: string; at: string; action: string; ok: boolean; detail: string; ip: string; orderId: number | null; keyPrefix: string }[];
   ledger: { id: string; type: string; amount: number; description: string; createdAt: string }[];
@@ -12,11 +12,32 @@ type Detail = {
   tickets: { id: string; subject: string; status: string }[];
 };
 
+/** Small labelled figure used across the customer header and KPI strip. */
+function DetailStat({ label, value, tone }: { label: string; value: string; tone?: "good" | "warn" | "bad" }) {
+  return (
+    <div className="ob-cust-stat">
+      <span>{label}</span>
+      <strong className={tone ? `is-${tone}` : undefined}>{value}</strong>
+    </div>
+  );
+}
+
+function statusTone(status: string): "good" | "warn" | "bad" | undefined {
+  const value = status.toLowerCase();
+  if (["completed", "paid", "deposit"].includes(value)) return "good";
+  if (["pending", "processing", "in progress", "confirming"].includes(value)) return "warn";
+  if (["canceled", "cancelled", "refunded", "failed"].includes(value)) return "bad";
+  return undefined;
+}
+
 export function CustomerDetailScreen({ id }: { id: string }) {
   const { data, error, reload } = useOrbit<Detail>(`/api/orbit/customers/${id}`);
   const [name, setName] = useState("");
   const [reason, setReason] = useState("");
   const [balance, setBalance] = useState("");
+  const [amount, setAmount] = useState("");
+  const [direction, setDirection] = useState<"credit" | "debit">("credit");
+  const [tab, setTab] = useState<"orders" | "wallet" | "activity" | "logins">("orders");
   const [message, setMessage] = useState("");
   const customer = data?.customer;
   async function patch(body: Record<string, unknown>) {
@@ -32,47 +53,178 @@ export function CustomerDetailScreen({ id }: { id: string }) {
   }
   if (error) return <p className="ob-error">{error}</p>;
   if (!customer) return <p className="ob-muted">Loading customer…</p>;
+
+  const orders = data?.orders ?? [];
+  const ledger = data?.ledger ?? [];
+  const logins = data?.logins ?? [];
+  const spend = orders.reduce((sum, order) => sum + (order.status === "Refunded" ? 0 : order.charge), 0);
+  const deposits = ledger.filter((row) => row.type === "deposit").reduce((sum, row) => sum + row.amount, 0);
+  const lastLogin = logins[0];
+  const lastIp = lastLogin?.ip || "—";
+  const signupMethod = customer.google ? "Google" : "Email & password";
+
   return (
     <>
-      <article className="ob-card">
-        <h2 style={{ marginTop: 0 }}>{customer.name || customer.email}</h2>
-        <p>{customer.email}</p>
-        <p>Joined {customer.createdAt.slice(0, 10)} · Balance {usd(customer.balance)} · API {customer.apiKeyMasked}</p>
-        <p>Status: {customer.suspended ? "Suspended" : "Active"}{customer.apiKeyRevoked ? " · API revoked" : ""}{customer.totpEnabled ? " · Authenticator on" : " · Authenticator off"}</p>
+      <article className="ob-card ob-cust-head">
+        <div className="ob-cust-identity">
+          <div className="ob-cust-avatar" aria-hidden>
+            {(customer.name || customer.email).charAt(0).toUpperCase()}
+          </div>
+          <div className="ob-cust-id-copy">
+            <h2 style={{ margin: 0 }}>{customer.name || customer.email.split("@")[0]}</h2>
+            <p className="ob-muted" style={{ margin: "2px 0 0" }}>{customer.email}</p>
+            <div className="ob-cust-tags">
+              <span className={`ob-cust-tag ${customer.suspended ? "is-bad" : "is-good"}`}>
+                {customer.suspended ? "Suspended" : "Active"}
+              </span>
+              <span className="ob-cust-tag">{signupMethod}</span>
+              {customer.totpEnabled ? <span className="ob-cust-tag is-good">2FA on</span> : <span className="ob-cust-tag">2FA off</span>}
+              {customer.apiKeyRevoked ? <span className="ob-cust-tag is-bad">API revoked</span> : null}
+            </div>
+          </div>
+        </div>
+        <div className="ob-cust-kpis">
+          <DetailStat label="Wallet balance" value={usd(customer.balance)} />
+          <DetailStat label="Total spent" value={usd(spend)} />
+          <DetailStat label="Deposits" value={usd(deposits)} tone="good" />
+          <DetailStat label="Orders" value={String(orders.length)} />
+          <DetailStat label="Joined" value={customer.createdAt.slice(0, 10)} />
+          <DetailStat label="Last IP" value={lastIp} />
+        </div>
       </article>
-      <form className="ob-form" onSubmit={(event) => { event.preventDefault(); patch({ name, reason: reason || "Profile edit" }); }}>
-        <label>Name<input value={name} placeholder={customer.name || ""} onChange={(event) => setName(event.target.value)} /></label>
-        <label>Set balance<input value={balance} onChange={(event) => setBalance(event.target.value)} /></label>
-        <label>Reason<input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Required for balance changes" /></label>
-        <button className="ob-btn primary" type="submit">Save name</button>
-        <button className="ob-btn" type="button" onClick={() => patch({ balance: Number(balance), reason })}>Set balance</button>
-        <button className="ob-btn" type="button" onClick={() => patch({ suspended: !customer.suspended })}>{customer.suspended ? "Restore account" : "Suspend account"}</button>
-        <button className="ob-btn" type="button" onClick={() => patch({ revoked: !customer.apiKeyRevoked })}>{customer.apiKeyRevoked ? "Restore API" : "Revoke API"}</button>
-        <button className="ob-btn" type="button" onClick={() => patch({ clearTotp: true, reason })}>Clear authenticator</button>
-      </form>
-      {message ? <p>{message}</p> : null}
-      <div className="ob-table-wrap">
-        <table className="ob-table">
-          <thead><tr><th>Order</th><th>From</th><th>Service</th><th>Qty</th><th>Charge</th><th>Status</th></tr></thead>
-          <tbody>{(data?.orders ?? []).map((order) => <tr key={order.id}><td>#{order.id}</td><td>{order.channel === "api" ? "API" : "Dashboard"}</td><td>{order.service}</td><td>{order.quantity}</td><td>{usd(order.charge)}</td><td>{order.status}</td></tr>)}</tbody>
-        </table>
+
+      <div className="ob-cust-actions">
+        <article className="ob-card ob-form">
+          <h3 style={{ marginTop: 0 }}>Wallet adjustment</h3>
+          <p className="ob-muted" style={{ marginTop: 0 }}>
+            Every change writes a ledger entry. Current balance {usd(customer.balance)}.
+          </p>
+          <div className="ob-toolbar">
+            <button type="button" className={direction === "credit" ? "ob-btn primary" : "ob-btn"} onClick={() => setDirection("credit")}>Credit</button>
+            <button type="button" className={direction === "debit" ? "ob-btn primary" : "ob-btn"} onClick={() => setDirection("debit")}>Debit</button>
+          </div>
+          <label>Amount (USD)<input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" placeholder="25.00" /></label>
+          <label>Reason (required)<input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Goodwill credit, manual top-up…" /></label>
+          <button
+            className="ob-btn primary"
+            type="button"
+            onClick={() => {
+              patch({ direction, amount: Number(amount), reason });
+              setAmount("");
+            }}
+          >
+            {direction === "credit" ? "Add funds" : "Deduct funds"}
+          </button>
+        </article>
+
+        <article className="ob-card ob-form">
+          <h3 style={{ marginTop: 0 }}>Account</h3>
+          <label>Display name<input value={name} placeholder={customer.name || ""} onChange={(event) => setName(event.target.value)} /></label>
+          <button className="ob-btn" type="button" onClick={() => patch({ name })}>Save name</button>
+          <label>Set exact balance<input value={balance} onChange={(event) => setBalance(event.target.value)} placeholder={String(customer.balance)} /></label>
+          <button className="ob-btn" type="button" onClick={() => patch({ balance: Number(balance), reason: reason || "Balance set by admin" })}>Set balance</button>
+          <div className="ob-toolbar">
+            <button className="ob-btn" type="button" onClick={() => patch({ suspended: !customer.suspended })}>{customer.suspended ? "Restore account" : "Suspend account"}</button>
+            <button className="ob-btn" type="button" onClick={() => patch({ revoked: !customer.apiKeyRevoked })}>{customer.apiKeyRevoked ? "Restore API" : "Revoke API"}</button>
+            <button className="ob-btn" type="button" onClick={() => patch({ clearTotp: true, reason: reason || "Authenticator reset requested" })}>Clear 2FA</button>
+          </div>
+          <p className="ob-muted" style={{ marginBottom: 0 }}>API key {customer.apiKeyMasked}</p>
+        </article>
       </div>
-      <div className="ob-table-wrap">
-        <table className="ob-table">
-          <thead><tr><th>When</th><th>Type</th><th>Amount</th><th>Detail</th></tr></thead>
-          <tbody>{(data?.ledger ?? []).map((row) => <tr key={row.id}><td>{row.createdAt.slice(0, 16).replace("T", " ")}</td><td>{row.type}</td><td>{usd(row.amount)}</td><td>{row.description}</td></tr>)}</tbody>
-        </table>
+
+      {message ? <p className="ob-reconcile-note ob-reconcile-note--ok">{message}</p> : null}
+
+      <div className="ob-chart-tabs">
+        <button type="button" className={tab === "orders" ? "is-on" : ""} onClick={() => setTab("orders")}>Orders ({orders.length})</button>
+        <button type="button" className={tab === "wallet" ? "is-on" : ""} onClick={() => setTab("wallet")}>Wallet ledger ({ledger.length})</button>
+        <button type="button" className={tab === "activity" ? "is-on" : ""} onClick={() => setTab("activity")}>API &amp; tickets ({(data?.api ?? []).length})</button>
+        <button type="button" className={tab === "logins" ? "is-on" : ""} onClick={() => setTab("logins")}>Logins ({logins.length})</button>
       </div>
-      <article className="ob-card">
-        <span>API connections</span>
-        {(data?.api ?? []).length === 0 ? <p>This customer has not generated or called the API yet.</p> : (data?.api ?? []).map((row) => (
-          <p key={row.id}>{row.at.slice(0, 16).replace("T", " ")} · {row.action} · {row.ok ? "OK" : "Failed"} · {row.detail} · {row.keyPrefix}… · {row.ip}</p>
-        ))}
-        <span>Logins</span>
-        {data?.logins.map((row) => <p key={row.createdAt}>{row.createdAt.slice(0, 16).replace("T", " ")} · {row.method} · {row.ip}</p>)}
-        <span>Tickets</span>
-        {data?.tickets.map((ticket) => <p key={ticket.id}>{ticket.subject} · {ticket.status}</p>)}
-      </article>
+
+      {tab === "orders" ? (
+        <div className="ob-table-wrap">
+          <table className="ob-table">
+            <thead><tr><th>Order</th><th>From</th><th>Service</th><th>Qty</th><th>Charge</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+              {orders.length ? orders.map((order) => (
+                <tr key={order.id}>
+                  <td data-label="Order"><strong>#TS-{order.id}</strong></td>
+                  <td data-label="From">{order.channel === "api" ? "API" : "Dashboard"}</td>
+                  <td data-label="Service" className="ob-ellipsis">{order.service}</td>
+                  <td data-label="Qty">{order.quantity.toLocaleString()}</td>
+                  <td data-label="Charge">{usd(order.charge)}</td>
+                  <td data-label="Status"><span className={`ob-cust-tag is-${statusTone(order.status) ?? "muted"}`}>{order.status}</span></td>
+                  <td data-label="Date" className="ob-muted">{order.createdAt.slice(0, 16).replace("T", " ")}</td>
+                </tr>
+              )) : <tr><td colSpan={7} className="ob-muted">No orders from this customer yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {tab === "wallet" ? (
+        <div className="ob-table-wrap">
+          <table className="ob-table">
+            <thead><tr><th>When</th><th>Type</th><th>Amount</th><th>Detail</th></tr></thead>
+            <tbody>
+              {ledger.length ? ledger.map((row) => (
+                <tr key={row.id}>
+                  <td data-label="When" className="ob-muted">{row.createdAt.slice(0, 16).replace("T", " ")}</td>
+                  <td data-label="Type"><span className={`ob-cust-tag is-${statusTone(row.type) ?? "muted"}`}>{row.type}</span></td>
+                  <td data-label="Amount"><strong>{usd(row.amount)}</strong></td>
+                  <td data-label="Detail">{row.description}</td>
+                </tr>
+              )) : <tr><td colSpan={4} className="ob-muted">No wallet movements recorded.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {tab === "activity" ? (
+        <>
+          <div className="ob-table-wrap">
+            <table className="ob-table">
+              <thead><tr><th>When</th><th>Action</th><th>Result</th><th>IP</th><th>Detail</th></tr></thead>
+              <tbody>
+                {(data?.api ?? []).length ? (data?.api ?? []).map((row) => (
+                  <tr key={row.id}>
+                    <td data-label="When" className="ob-muted">{row.at.slice(0, 16).replace("T", " ")}</td>
+                    <td data-label="Action">{row.action}</td>
+                    <td data-label="Result"><span className={`ob-cust-tag is-${row.ok ? "good" : "bad"}`}>{row.ok ? "OK" : "Failed"}</span></td>
+                    <td data-label="IP"><code className="ob-url">{row.ip}</code></td>
+                    <td data-label="Detail">{row.detail}</td>
+                  </tr>
+                )) : <tr><td colSpan={5} className="ob-muted">This customer has not called the API yet.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <article className="ob-card">
+            <h3 style={{ marginTop: 0 }}>Support tickets</h3>
+            {(data?.tickets ?? []).length ? (data?.tickets ?? []).map((ticket) => (
+              <p key={ticket.id} style={{ margin: "4px 0" }}>
+                <strong>{ticket.subject}</strong> · <span className="ob-muted">{ticket.status}</span>
+              </p>
+            )) : <p className="ob-muted">No tickets from this customer.</p>}
+          </article>
+        </>
+      ) : null}
+
+      {tab === "logins" ? (
+        <div className="ob-table-wrap">
+          <table className="ob-table">
+            <thead><tr><th>When</th><th>Method</th><th>IP address</th></tr></thead>
+            <tbody>
+              {logins.length ? logins.map((row, index) => (
+                <tr key={`${row.createdAt}-${index}`}>
+                  <td data-label="When" className="ob-muted">{row.createdAt.slice(0, 16).replace("T", " ")}</td>
+                  <td data-label="Method">{row.method === "google" ? "Google" : "Password"}</td>
+                  <td data-label="IP address"><code className="ob-url">{row.ip}</code></td>
+                </tr>
+              )) : <tr><td colSpan={3} className="ob-muted">No sign-ins recorded.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </>
   );
 }

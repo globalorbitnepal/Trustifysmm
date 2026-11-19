@@ -81,78 +81,7 @@ export function PagesScreen() {
   );
 }
 
-export function BlogScreen() {
-  const { data, reload } = useOrbit<{ posts: { slug: string; title: string; status: string; source: string; category: string }[] }>("/api/orbit/blog");
-  const [form, setForm] = useState({
-    title: "",
-    slug: "",
-    excerpt: "",
-    body: "",
-    category: "Guides",
-    status: "draft",
-    metaTitle: "",
-    metaDescription: "",
-    focusKeywords: "",
-    secondaryKeywords: "",
-    canonical: "",
-    ogTitle: "",
-    ogDescription: "",
-    ogImage: "",
-    noindex: false,
-    image: "",
-  });
-  const [message, setMessage] = useState("");
-  return (
-    <>
-      <form className="ob-form" onSubmit={async (event) => {
-        event.preventDefault();
-        try {
-          await send("/api/orbit/blog", form);
-          setMessage(form.status === "published" ? "Published." : "Saved.");
-          reload();
-        } catch (reason) {
-          setMessage(reason instanceof Error ? reason.message : "Save failed");
-        }
-      }}>
-        <label>Title<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required /></label>
-        <label>Slug<input value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} /></label>
-        <label>Category<input value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} /></label>
-        <label>Status<select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}><option value="draft">Draft</option><option value="published">Published</option><option value="scheduled">Scheduled</option></select></label>
-        <label>Excerpt<textarea value={form.excerpt} onChange={(event) => setForm({ ...form, excerpt: event.target.value })} /></label>
-        <label>Body<textarea value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} placeholder="Paragraphs separated by a blank line. Start a line with ## for a heading." /></label>
-        <label>Meta title<input value={form.metaTitle} onChange={(event) => setForm({ ...form, metaTitle: event.target.value })} /></label>
-        <label>Meta description<textarea value={form.metaDescription} onChange={(event) => setForm({ ...form, metaDescription: event.target.value })} /></label>
-        <p className="ob-muted">Title {form.metaTitle.length}/60 · Description {form.metaDescription.length}/160</p>
-        <label>Focus keyword<input value={form.focusKeywords} onChange={(event) => setForm({ ...form, focusKeywords: event.target.value })} /></label>
-        <label>Secondary keywords<input value={form.secondaryKeywords} onChange={(event) => setForm({ ...form, secondaryKeywords: event.target.value })} placeholder="comma separated" /></label>
-        <label>Canonical URL<input value={form.canonical} onChange={(event) => setForm({ ...form, canonical: event.target.value })} placeholder="leave empty for /blogs/slug" /></label>
-        <label>OG title<input value={form.ogTitle} onChange={(event) => setForm({ ...form, ogTitle: event.target.value })} /></label>
-        <label>OG description<input value={form.ogDescription} onChange={(event) => setForm({ ...form, ogDescription: event.target.value })} /></label>
-        <label>OG image URL<input value={form.ogImage} onChange={(event) => setForm({ ...form, ogImage: event.target.value })} /></label>
-        <label><input type="checkbox" checked={form.noindex} onChange={(event) => setForm({ ...form, noindex: event.target.checked })} /> Noindex and exclude from sitemap</label>
-        <label>Image URL<input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} /></label>
-        <p className="ob-muted">Search preview: {form.metaTitle || form.title || "Post title"} — {form.metaDescription || "Meta description"}</p>
-        <button className="ob-btn primary" type="submit">Save post</button>
-      </form>
-      {message ? <p>{message}</p> : null}
-      <div className="ob-table-wrap">
-        <table className="ob-table">
-          <thead><tr><th>Title</th><th>Status</th><th>Source</th><th></th></tr></thead>
-          <tbody>
-            {data?.posts.map((post) => (
-              <tr key={post.slug}>
-                <td>{post.title}</td>
-                <td>{post.status}</td>
-                <td>{post.source}</td>
-                <td>{post.source === "orbit" ? <button className="ob-btn warn" type="button" onClick={async () => { await send("/api/orbit/blog", { action: "delete", slug: post.slug }); reload(); }}>Delete</button> : "Built-in"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
-}
+export { BlogScreen } from "@/components/orbit/blog-editor";
 
 const seoPaths = [
   "/",

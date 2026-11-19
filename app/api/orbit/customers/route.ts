@@ -49,6 +49,8 @@ export async function GET() {
       totpEnabled: (await totpStatus(user.id)).enabled,
       createdAt: user.createdAt,
       lastLogin: last?.createdAt ?? null,
+      lastIp: last?.ip ?? null,
+      lastMethod: last?.method ?? null,
       tickets: tickets.filter((ticket) => ticket.userId === user.id).length,
     });
   }

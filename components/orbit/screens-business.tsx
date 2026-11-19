@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { OrbitHeroArt } from "@/components/orbit/OrbitHeroArt";
 import { PlatformBadge } from "@/components/orbit/PlatformBadge";
 import { OrbitIcon } from "@/components/orbit/orbit-icons";
 import { AreaChart, Donut, QuickAction, StatCard, StatusPill, timeAgo, usd } from "@/components/orbit/orbit-ui";
@@ -131,23 +130,40 @@ export function DashboardScreen() {
 
   return (
     <div className="ob-home">
-      <section className="ob-hero">
+      <section className="ob-hero ob-hero--command">
         <div className="ob-hero-copy">
+          <p className="ob-hero-eyebrow">Control center</p>
           <h2>
-            {dash?.welcomePrefix || "Welcome back,"} <span>{dash?.welcomeName || "Admin Owner"}</span> 👋
+            {dash?.welcomePrefix || "Welcome back,"} <span>{dash?.welcomeName || "Admin Owner"}</span>
           </h2>
-          <p>{dash?.welcomeLede || "Manage your entire TrustifySMM business from one powerful dashboard."}</p>
-          <div className="ob-hero-meta">
-            <span>📅 {loading ? "Syncing…" : dateStr}</span>
-            <span>🕒 {timeStr}</span>
-            <span className="ob-online-dot">
-              <i style={{ background: data?.gateway.live ? "#22c55e" : "#f59e0b" }} />
-              {data?.gateway.live ? "System Online" : "System Online · Gateway Pending"}
-            </span>
+          <div className="ob-hero-kpis" role="list">
+            <div role="listitem">
+              <span>Wallet liability</span>
+              <strong>{usd(data?.stats.walletLiability ?? 0)}</strong>
+            </div>
+            <div role="listitem">
+              <span>Revenue</span>
+              <strong>{usd(data?.stats.revenue ?? 0)}</strong>
+            </div>
+            <div role="listitem">
+              <span>Open tickets</span>
+              <strong>{(data?.stats.openTickets ?? 0).toLocaleString()}</strong>
+            </div>
+            <div role="listitem">
+              <span>Gateway</span>
+              <strong className={data?.gateway.live ? "is-live" : "is-warn"}>
+                {data?.gateway.live ? "Live" : "Pending"}
+              </strong>
+            </div>
           </div>
-        </div>
-        <div className="ob-hero-visual" aria-hidden>
-          {dash?.heroArt ? <img src={dash.heroArt} alt="" /> : <OrbitHeroArt className="ob-hero-art-svg" />}
+          <div className="ob-hero-meta">
+            <span>{loading ? "Syncing…" : dateStr}</span>
+            <span aria-hidden>·</span>
+            <span>{timeStr}</span>
+            <span aria-hidden>·</span>
+            <Link href="/orbit/payments" className="ob-hero-link">Payments →</Link>
+            <Link href="/orbit/activity" className="ob-hero-link">Activity →</Link>
+          </div>
         </div>
       </section>
       {error ? <p className="ob-error">{error}</p> : null}
@@ -375,6 +391,9 @@ type Customer = {
   suspended: boolean;
   apiKeyRevoked: boolean;
   lastLogin: string | null;
+  lastIp?: string | null;
+  lastMethod?: string | null;
+  google?: boolean;
 };
 
 export function CustomersScreen() {
@@ -404,24 +423,38 @@ export function CustomersScreen() {
       </form>
       {message ? <p className="ob-error">{message}</p> : null}
       {error ? <p className="ob-error">{error}</p> : null}
-      <input placeholder="Search customers" value={query} onChange={(event) => setQuery(event.target.value)} />
+      <div className="ob-toolbar">
+        <input placeholder="Search name, email or username" value={query} onChange={(event) => setQuery(event.target.value)} style={{ flex: 1, minWidth: 0 }} />
+        <span className="ob-muted">{rows.length} customer{rows.length === 1 ? "" : "s"}</span>
+      </div>
       <div className="ob-table-wrap">
         <table className="ob-table">
-          <thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Balance</th><th>Orders</th><th>Spend</th><th>Status</th><th>Last login</th><th></th></tr></thead>
+          <thead><tr><th>Customer</th><th>Signup</th><th>Joined</th><th>Balance</th><th>Orders</th><th>Spend</th><th>Status</th><th>Last login / IP</th><th></th></tr></thead>
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
-                <td>{row.name || "—"}</td>
-                <td>{row.email}</td>
-                <td>{row.createdAt.slice(0, 10)}</td>
-                <td>{usd(row.balance)}</td>
-                <td>{row.orders}</td>
-                <td>{usd(row.spending)}</td>
-                <td>{row.suspended ? "Suspended" : row.apiKeyRevoked ? "API revoked" : "Active"}</td>
-                <td>{row.lastLogin ? row.lastLogin.slice(0, 16).replace("T", " ") : "—"}</td>
-                <td><Link href={`/orbit/customers/${row.id}`}>Open</Link></td>
+                <td data-label="Customer">
+                  <strong>{row.name || row.email.split("@")[0]}</strong>
+                  <br /><span className="ob-muted">{row.email}</span>
+                </td>
+                <td data-label="Signup">{row.google ? "Google" : "Email"}</td>
+                <td data-label="Joined">{row.createdAt.slice(0, 10)}</td>
+                <td data-label="Balance"><strong>{usd(row.balance)}</strong></td>
+                <td data-label="Orders">{row.orders}</td>
+                <td data-label="Spend">{usd(row.spending)}</td>
+                <td data-label="Status">
+                  <span className={`ob-cust-tag is-${row.suspended || row.apiKeyRevoked ? "bad" : "good"}`}>
+                    {row.suspended ? "Suspended" : row.apiKeyRevoked ? "API revoked" : "Active"}
+                  </span>
+                </td>
+                <td data-label="Last login">
+                  {row.lastLogin ? row.lastLogin.slice(0, 16).replace("T", " ") : "—"}
+                  {row.lastIp ? <><br /><code className="ob-url">{row.lastIp}</code></> : null}
+                </td>
+                <td data-label="Open"><Link className="ob-btn primary" href={`/orbit/customers/${row.id}`}>Open</Link></td>
               </tr>
             ))}
+            {!rows.length ? <tr><td colSpan={9} className="ob-muted">No customers match that search.</td></tr> : null}
           </tbody>
         </table>
       </div>

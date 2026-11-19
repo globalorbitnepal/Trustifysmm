@@ -7,6 +7,7 @@ import { ORBIT_PAGES, pageBySlug } from "@/lib/orbit/page-registry";
 import { defaultPageExtras } from "@/lib/orbit/page-defaults";
 import { useOrbit } from "@/components/orbit/use-orbit";
 import { CmsSectionHead, ImageUrlField } from "@/components/orbit/cms-fields";
+import { SeoScorePanel, SerpPreview } from "@/components/orbit/SeoScorePanel";
 import { CatalogPlatformsEditor } from "@/components/orbit/catalog-platforms-editor";
 import { ServicesScreen } from "@/components/orbit/services-screen";
 import type { ComponentProps } from "react";
@@ -32,6 +33,8 @@ function emptyMeta(): SitePageMeta {
 
 export function PagesHubScreen() {
   const { data } = useOrbit<OrbitSiteConfig>("/api/orbit/config");
+  const pages = ORBIT_PAGES;
+  const withTitle = pages.filter((page) => Boolean(data?.pages?.[page.path]?.title)).length;
   return (
     <>
       <article className="ob-page-intro">
@@ -42,40 +45,48 @@ export function PagesHubScreen() {
             <span>Publish</span>
           </p>
           <h2>Every public page, full edit</h2>
-          <p>Homepage, services catalog, pricing, API, blogs, support articles, terms, privacy, sign in and sign up. Change the words and images here, then Publish now — the live site updates immediately.</p>
+          <p>
+            Open any page to edit its hero, body sections, FAQ, meta title, description, focus keyword,
+            Open Graph card and index setting. Publishing updates the live site immediately.
+          </p>
         </div>
         <aside className="ob-page-intro-side" aria-label="Publish status">
           <span>Live sync</span>
           <strong>Instant publish</strong>
+          <span>{withTitle} of {pages.length} pages have a custom meta title</span>
           <span>Last save {data?.updatedAt ? new Date(data.updatedAt).toLocaleString() : "—"}</span>
         </aside>
       </article>
-      <div className="ob-table-wrap ob-card" style={{ padding: 0 }}>
-        <table className="ob-table">
-          <thead>
-            <tr>
-              <th>Page</th>
-              <th>URL</th>
-              <th>Meta title</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {ORBIT_PAGES.map((page) => (
-              <tr key={page.path}>
-                <td><strong>{page.label}</strong><div className="ob-muted">{page.group}</div></td>
-                <td><code className="ob-url">{page.path}</code></td>
-                <td>{data?.pages?.[page.path]?.title || "—"}</td>
-                <td>
-                  <div className="ob-toolbar">
-                    <Link className="ob-btn primary" href={`/orbit/pages/${page.slug}`}>Full edit</Link>
-                    <a className="ob-btn ghost" href={page.path} target="_blank" rel="noreferrer">Preview</a>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      <div className="ob-cms-grid">
+        {pages.map((page) => {
+          const meta = data?.pages?.[page.path];
+          const hasTitle = Boolean(meta?.title);
+          const hasDesc = Boolean(meta?.description);
+          const noindex = Boolean(meta?.noindex);
+          return (
+            <article key={page.path} className="ob-cms-card">
+              <div className="ob-cms-card-head">
+                <span className="ob-cms-card-ico" aria-hidden>
+                  <OrbitIcon name="pages" />
+                </span>
+                <div>
+                  <strong>{page.label}</strong>
+                  <code className="ob-url">{page.path}</code>
+                </div>
+                <span className={`ob-cust-tag is-${noindex ? "warn" : hasTitle && hasDesc ? "good" : "muted"}`}>
+                  {noindex ? "Noindex" : hasTitle && hasDesc ? "Ready" : "Needs SEO"}
+                </span>
+              </div>
+              <p className="ob-cms-card-title">{meta?.title || "No custom meta title yet"}</p>
+              <p className="ob-cms-card-desc">{meta?.description || "No custom meta description yet"}</p>
+              <div className="ob-cms-card-foot">
+                <Link className="ob-btn primary" href={`/orbit/pages/${page.slug}`}>Edit page</Link>
+                <a className="ob-btn ghost" href={page.path} target="_blank" rel="noreferrer">Preview ↗</a>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </>
   );
@@ -463,13 +474,31 @@ export function PageEditorScreen({ slug }: { slug: string }) {
       {tab === "seo" ? (
         <article className="ob-card ob-form">
           <CmsSectionHead icon="seo" title="SEO" hint="Meta title, description, focus keywords, and social cards." />
+          <SeoScorePanel
+            input={{
+              title: meta.title,
+              description: meta.description,
+              focusKeyword: meta.focusKeywords || meta.keywords || "",
+              slug: meta.slug || def.slug,
+              ogTitle: meta.ogTitle,
+              ogDescription: meta.ogDescription,
+              ogImage: meta.ogImage,
+            }}
+          />
+          <SerpPreview
+            url={`https://trustifysmm.com${def.path}`}
+            title={meta.ogTitle || meta.title}
+            description={meta.ogDescription || meta.description}
+          />
           <label>URL slug<input value={meta.slug || def.slug} onChange={(event) => patchMeta({ slug: event.target.value })} /></label>
           <label>Meta title<input value={meta.title} onChange={(event) => patchMeta({ title: event.target.value })} /></label>
+          <p className="ob-muted">Title {meta.title.length}/60</p>
           <label>Meta description<textarea value={meta.description} onChange={(event) => patchMeta({ description: event.target.value })} /></label>
-          <label>Focus keywords<input value={meta.focusKeywords || meta.keywords} onChange={(event) => patchMeta({ focusKeywords: event.target.value, keywords: event.target.value })} /></label>
-          <label>Tags<input value={meta.tags || ""} onChange={(event) => patchMeta({ tags: event.target.value })} placeholder="comma separated" /></label>
-          <label>Canonical URL<input value={meta.canonical || ""} onChange={(event) => patchMeta({ canonical: event.target.value })} /></label>
-          <label><input type="checkbox" checked={Boolean(meta.noindex)} onChange={(event) => patchMeta({ noindex: event.target.checked })} /> Noindex this page</label>
+          <p className="ob-muted">Description {meta.description.length}/160</p>
+          <label>Focus keyword<input value={meta.focusKeywords || meta.keywords} onChange={(event) => patchMeta({ focusKeywords: event.target.value, keywords: event.target.value })} placeholder="one phrase this page should rank for" /></label>
+          <label>Secondary keywords<input value={meta.tags || ""} onChange={(event) => patchMeta({ tags: event.target.value })} placeholder="comma separated" /></label>
+          <label>Canonical URL<input value={meta.canonical || ""} onChange={(event) => patchMeta({ canonical: event.target.value })} placeholder={`https://trustifysmm.com${def.path}`} /></label>
+          <label><input type="checkbox" checked={Boolean(meta.noindex)} onChange={(event) => patchMeta({ noindex: event.target.checked })} /> Noindex this page (removes it from the sitemap)</label>
           <h3>Open Graph &amp; Twitter</h3>
           <label>OG title<input value={meta.ogTitle || ""} onChange={(event) => patchMeta({ ogTitle: event.target.value })} /></label>
           <label>OG description<input value={meta.ogDescription || ""} onChange={(event) => patchMeta({ ogDescription: event.target.value })} /></label>
@@ -479,7 +508,6 @@ export function PageEditorScreen({ slug }: { slug: string }) {
             onChange={(url) => patchMeta({ ogImage: url })}
             onClear={() => patchMeta({ ogImage: "" })}
           />
-          <p className="ob-muted">Title {meta.title.length}/60 · Description {meta.description.length}/160</p>
         </article>
       ) : null}
 
