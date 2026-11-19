@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Offline · TrustifySMM</title>
+    <style>
+      :root { color-scheme: dark; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: radial-gradient(900px 420px at 20% 0%, rgba(118, 44, 255, 0.22), transparent 60%), #08091b;
+        color: #ffffff;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+      }
+      .card {
+        max-width: 380px;
+        padding: 28px 24px;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(22, 24, 51, 0.72);
+        backdrop-filter: blur(18px);
+      }
+      img { width: 64px; height: 64px; object-fit: contain; margin-bottom: 14px; }
+      h1 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.02em; }
+      p { margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: rgba(224, 216, 255, 0.78); }
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font: inherit;
+        font-weight: 800;
+        color: #ffffff;
+        background: linear-gradient(90deg, #762cff, #287bff);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img src="/icon-192.png" alt="" width="64" height="64" />
+      <h1>No connection</h1>
+      <p>You are offline. Your session is safe — reconnect and the panel will load exactly where you left it.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </div>
+  </body>
+</html>

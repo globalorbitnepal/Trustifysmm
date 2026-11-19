@@ -84,6 +84,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [search, setSearch] = useState(false);
   const [query, setQuery] = useState("");
   const [light, setLight] = useState(false);
+  const [sessionError, setSessionError] = useState(false);
 
   useEffect(() => {
     const next = localStorage.getItem("trustify-dash-theme") === "light";
@@ -95,21 +96,64 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    void (async () => {
-      const res = await fetch("/api/dashboard/session");
-      if (cancelled) return;
-      if (!res.ok) {
-        router.replace(`/signin?next=${encodeURIComponent(window.location.pathname)}`);
-        return;
+
+    /**
+     * A network blip, a backgrounded tab or a flaky mobile connection used to redirect
+     * straight to /signin, which looked like a random logout. Retry a few times and only
+     * bounce when the server actually answers 401/403.
+     */
+    async function loadSession(attempt = 0) {
+      try {
+        const res = await fetch("/api/dashboard/session", { cache: "no-store" });
+        if (cancelled) return;
+
+        if (res.ok) {
+          const data = (await res.json()) as { user: SessionUser; unread: number };
+          setUser(data.user);
+          setUnread(data.unread);
+          return;
+        }
+
+        if (res.status === 401 || res.status === 403) {
+          router.replace(`/signin?next=${encodeURIComponent(window.location.pathname)}`);
+          return;
+        }
+
+        throw new Error(`session ${res.status}`);
+      } catch {
+        if (cancelled) return;
+        if (attempt < 3) {
+          window.setTimeout(() => void loadSession(attempt + 1), 400 * (attempt + 1));
+          return;
+        }
+        setSessionError(true);
       }
-      const data = (await res.json()) as { user: SessionUser; unread: number };
-      setUser(data.user);
-      setUnread(data.unread);
-    })();
+    }
+
+    void loadSession();
     return () => {
       cancelled = true;
     };
   }, [router]);
+
+  /* Re-check when the tab or PWA comes back to the foreground after being suspended. */
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState !== "visible") return;
+      void fetch("/api/dashboard/session", { cache: "no-store" })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = (await res.json()) as { user: SessionUser; unread: number };
+            setUser(data.user);
+            setUnread(data.unread);
+            setSessionError(false);
+          }
+        })
+        .catch(() => undefined);
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   useEffect(() => {
     function onWallet(event: Event) {
@@ -180,6 +224,28 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   const name = user?.name?.trim() || user?.email.split("@")[0] || "Customer";
+
+  if (sessionError && !user) {
+    return (
+      <div className="cp cp-session-error">
+        <div className="cp-card">
+          <h1>Connection problem</h1>
+          <p>
+            We could not reach the panel. Your session is still active — this is usually a weak
+            mobile connection.
+          </p>
+          <div className="cp-actions" style={{ marginTop: 16 }}>
+            <button type="button" className="cp-btn" onClick={() => window.location.reload()}>
+              Try again
+            </button>
+            <Link href="/signin" className="cp-btn-ghost cp-btn">
+              Sign in again
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`cp ${collapsed ? "is-collapsed" : ""} ${light ? "is-light" : ""}`}>
@@ -280,25 +346,25 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </header>
         <div className="cp-content">{children}</div>
         <nav className="cp-dock" aria-label="Dashboard">
-          <Link href="/dashboard" className={pathname === "/dashboard" ? "is-on" : ""}>
+          <Link href="/dashboard" className={pathname === "/dashboard" ? "is-on" : ""} aria-current={pathname === "/dashboard" ? "page" : undefined}>
             <Icon name="grid" />
-            Home
+            <span>Home</span>
           </Link>
-          <Link href="/dashboard/new-order" className={pathname.startsWith("/dashboard/new-order") ? "is-on" : ""}>
+          <Link href="/dashboard/new-order" className={pathname.startsWith("/dashboard/new-order") ? "is-on" : ""} aria-current={pathname.startsWith("/dashboard/new-order") ? "page" : undefined}>
             <Icon name="plus" />
-            Order
+            <span>Order</span>
           </Link>
-          <Link href="/dashboard/add-funds" className={pathname.startsWith("/dashboard/add-funds") ? "is-on" : ""}>
+          <Link href="/dashboard/add-funds" className={pathname.startsWith("/dashboard/add-funds") ? "is-on" : ""} aria-current={pathname.startsWith("/dashboard/add-funds") ? "page" : undefined}>
             <Icon name="wallet" />
-            Funds
+            <span>Funds</span>
           </Link>
-          <Link href="/dashboard/orders" className={pathname.startsWith("/dashboard/orders") ? "is-on" : ""}>
+          <Link href="/dashboard/orders" className={pathname.startsWith("/dashboard/orders") ? "is-on" : ""} aria-current={pathname.startsWith("/dashboard/orders") ? "page" : undefined}>
             <Icon name="box" />
-            Orders
+            <span>Orders</span>
           </Link>
-          <button type="button" onClick={() => setOpen(true)}>
+          <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}>
             <Icon name="menu" />
-            Menu
+            <span>Menu</span>
           </button>
         </nav>
       </div>
