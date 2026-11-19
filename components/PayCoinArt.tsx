@@ -1,22 +1,26 @@
-import type { CryptoId } from "@/components/CryptoBrandIcon";
+const ART = {
+  wallet: { base: "wallet-scene", widths: [256], size: 256 },
+  btc: { base: "glass-btc", widths: [96, 192], size: 192 },
+  eth: { base: "glass-eth", widths: [96, 192], size: 192 },
+  usdt: { base: "glass-usdt", widths: [96, 192], size: 192 },
+  sol: { base: "glass-sol", widths: [96, 192], size: 192 },
+} as const;
 
-const src: Record<CryptoId | "wallet", string> = {
-  wallet: "/brand/crypto/wallet-scene.png",
-  btc: "/brand/crypto/glass-btc.png",
-  eth: "/brand/crypto/glass-eth.png",
-  usdt: "/brand/crypto/glass-usdt.png",
-  sol: "/brand/crypto/glass-sol.png",
-};
+export type CryptoArtId = keyof typeof ART;
 
-export function PayCoinArt({ id, className }: { id: CryptoId | "wallet"; className?: string }) {
+export function PayCoinArt({ id, className, eager = false }: { id: CryptoArtId; className?: string; eager?: boolean }) {
+  const entry = ART[id];
+  const srcSet = entry.widths.map((width) => `/img/crypto/${entry.base}-${width}.webp ${width}w`).join(", ");
   return (
     <img
       className={className ?? "pay-coin-art"}
-      src={src[id]}
+      src={`/img/crypto/${entry.base}-${entry.widths[entry.widths.length - 1]}.webp`}
+      srcSet={srcSet}
+      sizes="96px"
       alt=""
-      width={1024}
-      height={1024}
-      loading="lazy"
+      width={entry.size}
+      height={entry.size}
+      loading={eager ? "eager" : "lazy"}
       decoding="async"
       draggable={false}
     />

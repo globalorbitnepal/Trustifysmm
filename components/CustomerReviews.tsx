@@ -24,7 +24,7 @@ export function CustomerReviews() {
           {looped.map((item, index) => (
             <article key={`${item.name}-${index}`} className={`review-card review-card--${item.tone}`}>
               <div className="review-top">
-                <img className="review-avatar" src={item.avatar} alt="" width={256} height={256} loading="lazy" />
+                <img className="review-avatar" src={item.avatar} alt="" width={104} height={104} loading="lazy" decoding="async" />
                 <div className="review-meta">
                   <strong>{item.name}</strong>
                   <span className="review-country">

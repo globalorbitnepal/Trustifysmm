@@ -73,7 +73,23 @@ export function SocialOrbit() {
           <OrbitSat key={icon.id} id={icon.id} angle={icon.angle} radius="44%" />
         ))}
       </div>
-      <img className="orbit-core" src="/brand/glass/glass-trustify-t.png" alt="" width={1024} height={1024} />
+      {/*
+        This <img> is the mobile LCP element. It must load eagerly with high priority and
+        stay off the lazy path; the 2 KB WebP variant renders identically to the 879 KB PNG
+        it replaced at the size it is actually painted.
+      */}
+      <img
+        className="orbit-core"
+        src="/img/glass/glass-trustify-t-256.webp"
+        srcSet="/img/glass/glass-trustify-t-128.webp 128w, /img/glass/glass-trustify-t-256.webp 256w"
+        sizes="(max-width: 560px) 120px, 220px"
+        alt=""
+        width={256}
+        height={256}
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
+      />
     </div>
   );
 }

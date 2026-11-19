@@ -141,6 +141,7 @@ export function Footer() {
                 key={item.id}
                 href={href}
                 className="site-footer-social-link"
+                role="listitem"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={item.label}
