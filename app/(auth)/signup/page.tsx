@@ -24,7 +24,8 @@ const signupMetadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  return metadataForPath("/signup", signupMetadata);
+  const resolved = await metadataForPath("/signup", signupMetadata);
+  return { ...resolved, robots: { index: false, follow: false, nocache: true }, alternates: { canonical: undefined } };
 }
 
 export default function SignUpPage() {

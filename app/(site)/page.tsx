@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
+import { jsonLdBlocks, organizationJsonLd, webPageJsonLd, websiteJsonLd } from "@/lib/seo/metadata";
 import { HeroLogoField, SocialOrbit } from "@/components/SocialOrbit";
 import { WhyChoose } from "@/components/WhyChoose";
 import { SupportedPlatforms } from "@/components/SupportedPlatforms";
@@ -11,29 +12,43 @@ import { PaymentMethods } from "@/components/PaymentMethods";
 import { CustomerReviews } from "@/components/CustomerReviews";
 
 const homeMetadata: Metadata = {
-  title: "TrustifySMM · SMM Panel",
+  title: "TrustifySMM – Professional SMM Panel & Social Media Marketing Services",
   description:
-    "Grow your social media faster with TrustifySMM. Reliable, affordable, automated SMM services for Instagram, YouTube, TikTok, Facebook and more — crypto Banker top-ups and a reseller API.",
-  keywords: ["smm panel", "TrustifySMM", "buy instagram followers", "smm reseller panel", "crypto smm panel"],
+    "Explore social media marketing services for Instagram, Facebook, TikTok, YouTube and more with TrustifySMM. Discover available services, transparent pricing and easy online ordering.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Grow Your Social Media Faster with TrustifySMM",
+    title: "TrustifySMM – Professional SMM Panel & Social Media Marketing Services",
     description:
-      "Premium SMM panel for resellers and agencies. Instant orders, crypto deposits, and services across every major platform.",
+      "One panel for Instagram, TikTok, YouTube, Facebook, Telegram and more. Transparent per-1K pricing, crypto wallet funding and tracked delivery.",
     url: "/",
     type: "website",
   },
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  return metadataForPath("/", homeMetadata);
+  const resolved = await metadataForPath("/", homeMetadata);
+  return {
+    ...resolved,
+    alternates: { canonical: "https://trustifysmm.com/" },
+    robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  };
 }
 
 export default function HomePage() {
   const site = liveSiteConfig();
   const enabled = (id: string) => site.sections?.[id] !== false;
+  const structuredData = jsonLdBlocks([
+    organizationJsonLd(),
+    websiteJsonLd(),
+    webPageJsonLd({
+      path: "/",
+      name: homeMetadata.title as string,
+      description: homeMetadata.description as string,
+    }),
+  ]);
   return (
     <main className="page">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       {enabled("hero") ? (
       <section className="hero-band" aria-labelledby="hero-title">
         <HeroLogoField />

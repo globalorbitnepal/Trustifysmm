@@ -83,7 +83,24 @@ export function PagesScreen() {
 
 export function BlogScreen() {
   const { data, reload } = useOrbit<{ posts: { slug: string; title: string; status: string; source: string; category: string }[] }>("/api/orbit/blog");
-  const [form, setForm] = useState({ title: "", slug: "", excerpt: "", body: "", category: "Guides", status: "draft", metaTitle: "", metaDescription: "", focusKeywords: "", image: "" });
+  const [form, setForm] = useState({
+    title: "",
+    slug: "",
+    excerpt: "",
+    body: "",
+    category: "Guides",
+    status: "draft",
+    metaTitle: "",
+    metaDescription: "",
+    focusKeywords: "",
+    secondaryKeywords: "",
+    canonical: "",
+    ogTitle: "",
+    ogDescription: "",
+    ogImage: "",
+    noindex: false,
+    image: "",
+  });
   const [message, setMessage] = useState("");
   return (
     <>
@@ -104,9 +121,17 @@ export function BlogScreen() {
         <label>Excerpt<textarea value={form.excerpt} onChange={(event) => setForm({ ...form, excerpt: event.target.value })} /></label>
         <label>Body<textarea value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} placeholder="Paragraphs separated by a blank line. Start a line with ## for a heading." /></label>
         <label>Meta title<input value={form.metaTitle} onChange={(event) => setForm({ ...form, metaTitle: event.target.value })} /></label>
-        <label>Meta description<input value={form.metaDescription} onChange={(event) => setForm({ ...form, metaDescription: event.target.value })} /></label>
-        <label>Keywords<input value={form.focusKeywords} onChange={(event) => setForm({ ...form, focusKeywords: event.target.value })} /></label>
+        <label>Meta description<textarea value={form.metaDescription} onChange={(event) => setForm({ ...form, metaDescription: event.target.value })} /></label>
+        <p className="ob-muted">Title {form.metaTitle.length}/60 · Description {form.metaDescription.length}/160</p>
+        <label>Focus keyword<input value={form.focusKeywords} onChange={(event) => setForm({ ...form, focusKeywords: event.target.value })} /></label>
+        <label>Secondary keywords<input value={form.secondaryKeywords} onChange={(event) => setForm({ ...form, secondaryKeywords: event.target.value })} placeholder="comma separated" /></label>
+        <label>Canonical URL<input value={form.canonical} onChange={(event) => setForm({ ...form, canonical: event.target.value })} placeholder="leave empty for /blogs/slug" /></label>
+        <label>OG title<input value={form.ogTitle} onChange={(event) => setForm({ ...form, ogTitle: event.target.value })} /></label>
+        <label>OG description<input value={form.ogDescription} onChange={(event) => setForm({ ...form, ogDescription: event.target.value })} /></label>
+        <label>OG image URL<input value={form.ogImage} onChange={(event) => setForm({ ...form, ogImage: event.target.value })} /></label>
+        <label><input type="checkbox" checked={form.noindex} onChange={(event) => setForm({ ...form, noindex: event.target.checked })} /> Noindex and exclude from sitemap</label>
         <label>Image URL<input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} /></label>
+        <p className="ob-muted">Search preview: {form.metaTitle || form.title || "Post title"} — {form.metaDescription || "Meta description"}</p>
         <button className="ob-btn primary" type="submit">Save post</button>
       </form>
       {message ? <p>{message}</p> : null}
@@ -129,11 +154,47 @@ export function BlogScreen() {
   );
 }
 
-const seoPaths = ["/", "/services", "/pricing", "/api", "/blogs", "/support", "/terms", "/privacy"];
+const seoPaths = [
+  "/",
+  "/services",
+  "/pricing",
+  "/api",
+  "/blogs",
+  "/support",
+  "/terms",
+  "/privacy",
+  "/signin",
+  "/signup",
+  "/social-media-services",
+  "/platforms",
+  "/how-it-works",
+  "/reviews",
+];
 
 export function SeoScreen() {
   const configState = useOrbit<OrbitSiteConfig>("/api/orbit/config");
-  const siteState = useOrbit<{ urls: string[]; redirects: { id: string; from: string; to: string; enabled: boolean }[] }>("/api/orbit/site");
+  const siteState = useOrbit<{
+    urls: string[];
+    sitemapUrl?: string;
+    robotsUrl?: string;
+    redirects: { id: string; from: string; to: string; enabled: boolean }[];
+    inventory?: {
+      rows: {
+        path: string;
+        kind: string;
+        label: string;
+        title: string;
+        titleLength: number;
+        descriptionLength: number;
+        noindex: boolean;
+        inSitemap: boolean;
+        issues: string[];
+      }[];
+      duplicateTitles: string[];
+      duplicateDescriptions: string[];
+    };
+    searchConsole?: { googleSiteVerification: boolean; sitemapReachable: boolean };
+  }>("/api/orbit/site");
   const [config, setConfig] = useState<OrbitSiteConfig | null>(null);
   const [path, setPath] = useState("/");
   const [redirect, setRedirect] = useState({ from: "", to: "" });
@@ -141,8 +202,51 @@ export function SeoScreen() {
   useEffect(() => { if (configState.data) setConfig(configState.data); }, [configState.data]);
   if (!config) return <p className="ob-muted">Loading SEO…</p>;
   const row = config.pages[path] || { title: "", description: "", keywords: "", ogTitle: "", ogDescription: "", ogImage: "", canonical: "", noindex: false };
+  const inventory = siteState.data?.inventory;
+  const problemRows = inventory?.rows.filter((item) => item.issues.length) ?? [];
   return (
     <>
+      <article className="ob-card">
+        <h2 style={{ marginTop: 0 }}>SEO overview</h2>
+        <div className="ob-toolbar">
+          <span className="ob-pill-tone ob-pill-tone--info">{inventory?.rows.length ?? 0} public pages tracked</span>
+          <span className="ob-pill-tone ob-pill-tone--info">{problemRows.length} with issues</span>
+          <span className="ob-pill-tone ob-pill-tone--info">{inventory?.duplicateTitles.length ?? 0} duplicate titles</span>
+          <span className="ob-pill-tone ob-pill-tone--info">{inventory?.duplicateDescriptions.length ?? 0} duplicate descriptions</span>
+        </div>
+        <p className="ob-muted">
+          Private areas (/orbit, /dashboard, /api, /account, /checkout, /payment, /wallet) are excluded from the sitemap and
+          carry X-Robots-Tag noindex. Sign-in and sign-up are noindexed and also excluded.
+        </p>
+        {problemRows.length ? (
+          <div className="ob-table-wrap">
+            <table className="ob-table">
+              <thead><tr><th>Page</th><th>Title</th><th>Description</th><th>Index</th><th>Sitemap</th><th>Issues</th></tr></thead>
+              <tbody>
+                {problemRows.map((item) => (
+                  <tr key={item.path}>
+                    <td><code className="ob-url">{item.path}</code></td>
+                    <td>{item.titleLength}/70</td>
+                    <td>{item.descriptionLength}/165</td>
+                    <td>{item.noindex ? "noindex" : "index"}</td>
+                    <td>{item.inSitemap ? "included" : "excluded"}</td>
+                    <td>{item.issues.join("; ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="ob-note">Every tracked page has a title, description and a consistent index/sitemap state.</p>
+        )}
+        <h3>Search Console readiness</h3>
+        <ul>
+          <li>Domain verification token: {siteState.data?.searchConsole?.googleSiteVerification ? "configured" : "not configured yet"}</li>
+          <li>Sitemap URL: {siteState.data?.sitemapUrl || "https://trustifysmm.com/sitemap.xml"}</li>
+          <li>Robots URL: {siteState.data?.robotsUrl || "https://trustifysmm.com/robots.txt"}</li>
+          <li>Canonical host: trustifysmm.com (www redirects permanently)</li>
+        </ul>
+      </article>
       <article className="ob-card">
         <label>Page
           <select value={path} onChange={(event) => setPath(event.target.value)}>{seoPaths.map((item) => <option key={item}>{item}</option>)}</select>
@@ -174,6 +278,23 @@ export function SeoScreen() {
       </article>
       <article className="ob-card">
         <h2>Sitemap URLs</h2>
+        {siteState.data?.sitemapUrl ? (
+          <p className="ob-muted">
+            Sitemap: <a href={siteState.data.sitemapUrl} target="_blank" rel="noreferrer">{siteState.data.sitemapUrl}</a>
+            {siteState.data.robotsUrl ? (
+              <>
+                {" · "}
+                Robots: <a href={siteState.data.robotsUrl} target="_blank" rel="noreferrer">{siteState.data.robotsUrl}</a>
+              </>
+            ) : null}
+          </p>
+        ) : null}
+        {siteState.data?.searchConsole ? (
+          <p className="ob-note">
+            Search Console verification file/token:{" "}
+            {siteState.data.searchConsole.googleSiteVerification ? "detected" : "not configured"}
+          </p>
+        ) : null}
         {siteState.data?.urls.map((url) => <p key={url}>{url}</p>)}
         <h2>Redirect</h2>
         <form className="ob-form" onSubmit={async (event) => {

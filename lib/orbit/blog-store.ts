@@ -6,6 +6,15 @@ import type { BlogPost } from "@/data/blog-types";
 export type ManagedPost = BlogPost & {
   status: "draft" | "published" | "scheduled";
   tags: string[];
+  /** Secondary keywords — internal use only, never rendered as a meta keywords tag. */
+  secondaryKeywords?: string[];
+  /** Absolute or root-relative canonical override. Empty means the default path. */
+  canonical?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  /** When true the post is excluded from the sitemap and served with noindex. */
+  noindex?: boolean;
 };
 
 const FILE = path.join(process.cwd(), "data", "runtime", "blog-posts.json");
@@ -88,6 +97,12 @@ export async function saveManagedPost(input: Partial<ManagedPost> & { body?: str
     faq: input.faq ?? existing?.faq ?? [],
     status: input.status || existing?.status || "draft",
     tags: input.tags ?? existing?.tags ?? [],
+    secondaryKeywords: input.secondaryKeywords ?? existing?.secondaryKeywords ?? [],
+    canonical: input.canonical?.trim() || existing?.canonical || "",
+    ogTitle: input.ogTitle?.trim() || existing?.ogTitle || "",
+    ogDescription: input.ogDescription?.trim() || existing?.ogDescription || "",
+    ogImage: input.ogImage?.trim() || existing?.ogImage || "",
+    noindex: input.noindex ?? existing?.noindex ?? false,
   };
   const words = next.blocks.reduce((sum, block) => sum + ("text" in block ? block.text.split(/\s+/).length : 0), 0);
   next.readMinutes = Math.max(1, Math.round(words / 220));

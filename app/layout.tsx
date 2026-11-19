@@ -16,13 +16,20 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://trustifysmm.com"),
   applicationName: "TrustifySMM",
   title: {
-    default: "TrustifySMM · SMM Panel",
+    default: "TrustifySMM – Professional SMM Panel & Social Media Marketing Services",
     template: "%s",
   },
   description:
-    "Power your social media growth with reliable, affordable and automated services across the platforms you love.",
+    "Explore social media marketing services for Instagram, Facebook, TikTok, YouTube and more with TrustifySMM. Discover available services, transparent pricing and easy online ordering.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "TrustifySMM", statusBarStyle: "black-translucent" },
+  /*
+   * Search Console verification is read from the environment so no token is invented.
+   * Set GOOGLE_SITE_VERIFICATION (DNS TXT or HTML tag value) in the deployment env.
+   */
+  verification: process.env.GOOGLE_SITE_VERIFICATION?.trim()
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() }
+    : undefined,
   icons: {
     icon: [
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },

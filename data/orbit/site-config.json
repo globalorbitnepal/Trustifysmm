@@ -12,24 +12,79 @@
     "secondaryCtaHref": "/services"
   },
   "whyFeatures": [
-    { "title": "Instant Orders", "text": "Get your orders started within seconds, 24/7 automated system.", "tone": "violet" },
-    { "title": "Reliable & Secure", "text": "Your data and payments are always safe and protected.", "tone": "blue" },
-    { "title": "Wide Service Range", "text": "All major social media platforms in one powerful panel.", "tone": "violet" },
-    { "title": "Dedicated Support", "text": "Get quick and friendly support whenever you need help.", "tone": "blue" }
+    {
+      "title": "Instant Orders",
+      "text": "Get your orders started within seconds, 24/7 automated system.",
+      "tone": "violet"
+    },
+    {
+      "title": "Reliable & Secure",
+      "text": "Your data and payments are always safe and protected.",
+      "tone": "blue"
+    },
+    {
+      "title": "Wide Service Range",
+      "text": "All major social media platforms in one powerful panel.",
+      "tone": "violet"
+    },
+    {
+      "title": "Dedicated Support",
+      "text": "Get quick and friendly support whenever you need help.",
+      "tone": "blue"
+    }
   ],
   "footerStats": [
-    { "value": "10K+", "label": "Active Users" },
-    { "value": "1M+", "label": "Orders Done" },
-    { "value": "99.9%", "label": "Uptime" },
-    { "value": "24/7", "label": "Support" }
+    {
+      "value": "10K+",
+      "label": "Active Users"
+    },
+    {
+      "value": "1M+",
+      "label": "Orders Done"
+    },
+    {
+      "value": "99.9%",
+      "label": "Uptime"
+    },
+    {
+      "value": "24/7",
+      "label": "Support"
+    }
   ],
   "pages": {
-    "/": { "title": "TrustifySMM · SMM Panel", "description": "Power your social media growth with reliable, affordable and automated services.", "keywords": "smm panel, trustifysmm" },
-    "/services": { "title": "TrustifySMM · Services & Prices", "description": "Browse 1,900+ SMM services with live USD rates per 1000.", "keywords": "smm services, smm prices" },
-    "/pricing": { "title": "SMM Rate Deck | TrustifySMM Pricing", "description": "Compare SMM rates per 1,000 with premium Rate Deck chapters.", "keywords": "smm pricing, rate deck" },
-    "/api": { "title": "API Documentation & Banker | TrustifySMM Panel", "description": "Panel API, Banker crypto top-ups, PHP client download.", "keywords": "smm api, banker" },
-    "/blogs": { "title": "SMM Panel Blogs & Growth Guides | TrustifySMM", "description": "Long SEO guides for resellers and agencies.", "keywords": "smm blog" },
-    "/support": { "title": "Help Center & Support | TrustifySMM Panel", "description": "FAQ on orders, refills, API and Banker.", "keywords": "smm support" }
+    "/": {
+      "title": "TrustifySMM – Professional SMM Panel & Social Media Marketing Services",
+      "description": "Explore social media marketing services for Instagram, Facebook, TikTok, YouTube and more with TrustifySMM. Discover available services, transparent pricing and easy online ordering.",
+      "keywords": "smm panel, trustifysmm",
+      "ogTitle": "TrustifySMM – Professional SMM Panel & Social Media Marketing Services",
+      "ogDescription": "One panel for Instagram, TikTok, YouTube, Facebook, Telegram and more. Transparent per-1K pricing, crypto wallet funding and tracked delivery.",
+      "focusKeywords": "trustifysmm, smm panel, social media marketing services"
+    },
+    "/services": {
+      "title": "Social Media Services & Live SMM Prices | TrustifySMM",
+      "description": "Browse 1,900+ social media marketing services with live USD rates per 1,000 units. Filter Instagram, TikTok, YouTube, Facebook, Telegram and more before you order.",
+      "keywords": "smm services, smm prices"
+    },
+    "/pricing": {
+      "title": "SMM Panel Pricing — Rates per 1,000 Units | TrustifySMM",
+      "description": "Compare SMM panel prices per 1,000 units for every platform, with minimum order sizes, delivery windows and refill terms shown before you place an order.",
+      "keywords": "smm pricing, rate deck"
+    },
+    "/api": {
+      "title": "API Documentation & Banker | TrustifySMM Panel",
+      "description": "Panel API, Banker crypto top-ups, PHP client download.",
+      "keywords": "smm api, banker"
+    },
+    "/blogs": {
+      "title": "SMM Panel Blogs & Growth Guides | TrustifySMM",
+      "description": "Long SEO guides for resellers and agencies.",
+      "keywords": "smm blog"
+    },
+    "/support": {
+      "title": "Help Center & Support | TrustifySMM Panel",
+      "description": "FAQ on orders, refills, API and Banker.",
+      "keywords": "smm support"
+    }
   },
   "pricing": {
     "globalMarkupPercent": 0,

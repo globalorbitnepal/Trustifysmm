@@ -24,7 +24,8 @@ const signinMetadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  return metadataForPath("/signin", signinMetadata);
+  const resolved = await metadataForPath("/signin", signinMetadata);
+  return { ...resolved, robots: { index: false, follow: false, nocache: true }, alternates: { canonical: undefined } };
 }
 
 export default function SignInPage() {

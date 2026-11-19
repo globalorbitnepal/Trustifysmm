@@ -19,6 +19,20 @@ const panelLinks = [
   { href: "/signup", label: "Create Account" },
 ] as const;
 
+/*
+ * A short, curated set of service pages. Deliberately not all 40 — a footer stuffed with
+ * every landing page dilutes internal linking instead of strengthening it.
+ */
+const popularServiceLinks = [
+  { href: "/smm-panel", label: "SMM Panel" },
+  { href: "/buy-instagram-followers", label: "Instagram Followers" },
+  { href: "/buy-tiktok-followers", label: "TikTok Followers" },
+  { href: "/buy-youtube-views", label: "YouTube Views" },
+  { href: "/buy-facebook-followers", label: "Facebook Followers" },
+  { href: "/buy-telegram-members", label: "Telegram Members" },
+  { href: "/social-media-services", label: "All Services" },
+] as const;
+
 const socialPlatforms: { href: string; id: BrandGlassId; label: string }[] = [
   { href: "https://instagram.com", id: "instagram", label: "Instagram" },
   { href: "https://facebook.com", id: "facebook", label: "Facebook" },
@@ -169,6 +183,7 @@ export function Footer() {
           <div className="site-footer-navs">
             <LinkColumn title="Explore" links={exploreLinks} />
             <LinkColumn title="Panel" links={panelLinks} />
+            <LinkColumn title="Popular services" links={popularServiceLinks} />
             <LinkColumn title="Support" links={supportLinks} />
           </div>
         </div>

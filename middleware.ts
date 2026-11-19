@@ -10,6 +10,26 @@ export async function middleware(request: NextRequest) {
   const pass = () => NextResponse.next({ request: { headers: requestHeaders } });
 
   /*
+   * Private areas get a hard noindex header in addition to authentication. Noindex is
+   * only a crawl directive; the session check below is the actual access control.
+   */
+  const noindexHeader = "noindex, nofollow, noarchive, nosnippet";
+  const withNoindex = (response: NextResponse) => {
+    if (
+      pathname.startsWith("/orbit") ||
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/api") ||
+      pathname.startsWith("/account") ||
+      pathname.startsWith("/checkout") ||
+      pathname.startsWith("/payment") ||
+      pathname.startsWith("/wallet")
+    ) {
+      response.headers.set("X-Robots-Tag", noindexHeader);
+    }
+    return response;
+  };
+
+  /*
    * The session cookie is scoped to one host. Serving the same app on both trustifysmm.com
    * and www.trustifysmm.com makes a signed-in customer look signed out on the other host,
    * so every www request is permanently redirected to the canonical apex host.
@@ -29,33 +49,33 @@ export async function middleware(request: NextRequest) {
     if (!userId) {
       const signin = new URL("/signin", request.url);
       signin.searchParams.set("next", pathname);
-      return NextResponse.redirect(signin);
+      return withNoindex(NextResponse.redirect(signin));
     }
-    return pass();
+    return withNoindex(pass());
   }
 
   if (!pathname.startsWith("/orbit") && !pathname.startsWith("/api/orbit")) {
     /* The internal refresh authenticates with its own token inside the route. */
-    return pass();
+    return withNoindex(pass());
   }
 
   const publicPaths = ["/orbit/login", "/api/orbit/auth/login"];
   if (publicPaths.includes(pathname)) {
-    return pass();
+    return withNoindex(pass());
   }
 
   const token = request.cookies.get(ORBIT_COOKIE_NAME)?.value;
   const ok = await verifyOrbitSessionToken(token);
   if (!ok) {
     if (pathname.startsWith("/api/orbit")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return withNoindex(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
     }
     const login = new URL("/orbit/login", request.url);
     login.searchParams.set("next", pathname);
-    return NextResponse.redirect(login);
+    return withNoindex(NextResponse.redirect(login));
   }
 
-  return pass();
+  return withNoindex(pass());
 }
 
 export const config = {

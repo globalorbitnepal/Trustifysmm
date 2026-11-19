@@ -19,29 +19,59 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = findPost(slug);
-  if (!post) return { title: "Blog | TrustifySMM" };
+  if (!post) return { title: "Blog | TrustifySMM", robots: { index: false, follow: false } };
 
-  const ogImage = post.image.src.startsWith("http") ? post.image.src : `https://trustifysmm.com${post.image.src}`;
+  const managed = post as typeof post & {
+    canonical?: string;
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImage?: string;
+    noindex?: boolean;
+    status?: string;
+  };
+
+  const ogImage = managed.ogImage
+    ? managed.ogImage.startsWith("http")
+      ? managed.ogImage
+      : `https://trustifysmm.com${managed.ogImage}`
+    : post.image.src.startsWith("http")
+      ? post.image.src
+      : `https://trustifysmm.com${post.image.src}`;
+
+  const canonical = managed.canonical
+    ? managed.canonical.startsWith("http")
+      ? managed.canonical
+      : `https://trustifysmm.com${managed.canonical}`
+    : `https://trustifysmm.com/blogs/${post.slug}`;
+
+  const title = managed.ogTitle || post.metaTitle;
+  const noindex = Boolean(managed.noindex) || managed.status === "draft";
 
   return {
     title: post.metaTitle,
     description: post.metaDescription,
-    keywords: post.focusKeywords,
-    alternates: { canonical: `/blogs/${post.slug}` },
+    alternates: { canonical },
+    // Meta keywords are not a ranking factor and are deliberately not emitted.
+    robots: noindex
+      ? { index: false, follow: false, nocache: true }
+      : { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
     openGraph: {
-      title: post.metaTitle,
-      description: post.metaDescription,
-      url: `/blogs/${post.slug}`,
+      title,
+      description: managed.ogDescription || post.metaDescription,
+      url: canonical,
+      siteName: "TrustifySMM",
+      locale: "en_US",
       type: "article",
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
       authors: [post.author],
-      images: [{ url: ogImage, alt: post.image.alt }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: post.image.alt }],
     },
     twitter: {
       card: "summary_large_image",
-      title: post.metaTitle,
-      description: post.metaDescription,
+      site: "@trustifysmm",
+      title,
+      description: managed.ogDescription || post.metaDescription,
       images: [ogImage],
     },
   };
@@ -76,7 +106,8 @@ export default async function BlogPostPage({ params }: PageProps) {
       name: "TrustifySMM",
       logo: { "@type": "ImageObject", url: "https://trustifysmm.com/brand/logo-premium.png" },
     },
-    mainEntityOfPage: `https://trustifysmm.com/blogs/${post.slug}`,
+    isPartOf: { "@id": "https://trustifysmm.com/#website" },
+    mainEntityOfPage: { "@id": `https://trustifysmm.com/blogs/${post.slug}#webpage` },
     keywords: post.focusKeywords.join(", "),
   };
 

@@ -45,6 +45,10 @@ export async function POST(request: Request) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+  const secondaryKeywords = String(body.secondaryKeywords || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
   const saved = await saveManagedPost({
     title: String(body.title || ""),
     slug: String(body.slug || ""),
@@ -58,6 +62,12 @@ export async function POST(request: Request) {
     status: body.status === "published" || body.status === "scheduled" ? body.status : "draft",
     publishedAt: String(body.publishedAt || new Date().toISOString()),
     tags,
+    secondaryKeywords,
+    canonical: String(body.canonical || ""),
+    ogTitle: String(body.ogTitle || ""),
+    ogDescription: String(body.ogDescription || ""),
+    ogImage: String(body.ogImage || ""),
+    noindex: body.noindex === true || body.noindex === "true",
     image: body.image ? { src: String(body.image), alt: String(body.title || "Blog") } : undefined,
   });
   if ("error" in saved) return NextResponse.json(saved, { status: 400 });
