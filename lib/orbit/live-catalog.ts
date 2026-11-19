@@ -30,12 +30,21 @@ function readOverrides() {
   }
 }
 
+type SiteCache = { stamp: string; data: OrbitSiteConfig };
+let siteCache: SiteCache | null = null;
+
 export function liveSiteConfig(): OrbitSiteConfig {
+  const mark = existsSync(configPath) ? String(statSync(configPath).mtimeMs) : "0";
+  if (siteCache?.stamp === mark) return siteCache.data;
   try {
     const parsed = JSON.parse(readFileSync(configPath, "utf8")) as OrbitSiteConfig;
-    return mergeSiteConfig(parsed);
+    const data = mergeSiteConfig(parsed);
+    siteCache = { stamp: mark, data };
+    return data;
   } catch {
-    return mergeSiteConfig({} as OrbitSiteConfig);
+    const data = mergeSiteConfig({} as OrbitSiteConfig);
+    siteCache = { stamp: mark, data };
+    return data;
   }
 }
 

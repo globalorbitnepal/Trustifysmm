@@ -61,6 +61,11 @@ export function Header({
               prefetch
               className={item.href === "/" ? (pathname === "/" ? "is-active" : "") : pathname === item.href || pathname.startsWith(`${item.href}/`) ? "is-active" : ""}
               onClick={() => setOpen(false)}
+              onMouseEnter={() => {
+                if (item.href === "/services" || item.href === "/pricing") {
+                  void fetch("/api/public/catalog").catch(() => undefined);
+                }
+              }}
             >
               {item.label}
             </Link>

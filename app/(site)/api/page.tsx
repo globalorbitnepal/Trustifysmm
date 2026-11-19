@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { ApiDocumentation } from "@/components/ApiDocumentation";
-import { Footer } from "@/components/Footer";
 import { HeroStat, HeroStatGrid, PublicPageHero } from "@/components/PublicPageHero";
-import { SiteHeader } from "@/components/SiteHeader";
 import { metadataForPath } from "@/lib/orbit/page-meta";
 import { pageExtras } from "@/lib/orbit/page-extras";
 import { pageHero } from "@/lib/orbit/public-copy";
@@ -42,7 +40,6 @@ export default function ApiPage() {
   });
   return (
     <main className="page">
-      <SiteHeader />
       <section className="api-page public-page-band">
         <div className="api-page-inner public-page-inner">
           <PublicPageHero
@@ -87,7 +84,6 @@ export default function ApiPage() {
           ) : null}
         </div>
       </section>
-      <Footer />
     </main>
   );
 }

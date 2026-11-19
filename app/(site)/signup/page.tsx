@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { Footer } from "@/components/Footer";
-import { SiteHeader } from "@/components/SiteHeader";
 import { SignUpPageContent } from "@/components/SignUpPageContent";
 import { metadataForPath } from "@/lib/orbit/page-meta";
 import { authCopy } from "@/lib/orbit/page-extras";
@@ -40,14 +38,12 @@ export default function SignUpPage() {
 
   return (
     <main className="page">
-      <SiteHeader />
       <section className="auth-signup">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
         <div className="auth-signup-inner">
             <SignUpPageContent copy={authCopy("/signup")} />
         </div>
       </section>
-      <Footer />
     </main>
   );
 }

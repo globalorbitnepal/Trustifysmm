@@ -11,27 +11,27 @@ import {
   minRate,
   organizePlatformChapters,
 } from "@/data/pricing-utils";
-import pricingData from "@/data/service-pricing.json";
-import { applyOrbitPricing } from "@/lib/orbit/pricing-display";
+import { usePublicCatalog } from "@/lib/public-catalog";
 
 export function PricingCatalog({ data: initial }: { data?: ServicePricingData }) {
-  const data = useMemo(
-    () => initial ?? applyOrbitPricing(pricingData as ServicePricingData),
-    [initial],
-  );
+  const { data, error } = usePublicCatalog(initial);
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState("all");
   const deferredQuery = useDeferredValue(query);
 
   const filtered = useMemo(
-    () => filterPricingServices(data, { query: deferredQuery, platform, group: "all" }),
-    [deferredQuery, platform],
+    () => (data ? filterPricingServices(data, { query: deferredQuery, platform, group: "all" }) : []),
+    [data, deferredQuery, platform],
   );
 
   const chapters = useMemo(
-    () => organizePlatformChapters(filtered, data.platformLabel, platform),
-    [filtered, platform],
+    () => (data ? organizePlatformChapters(filtered, data.platformLabel, platform) : []),
+    [data, filtered, platform],
   );
+
+  if (!data) {
+    return <p className="services-pricing-empty">{error || "Loading catalog…"}</p>;
+  }
 
   return (
     <div className="price-deck">

@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { Footer } from "@/components/Footer";
-import { SiteHeader } from "@/components/SiteHeader";
 import { HeroStat, HeroStatGrid, PublicPageHero } from "@/components/PublicPageHero";
 import { SupportPageContent } from "@/components/SupportPageContent";
 import { liveSiteConfig } from "@/lib/orbit/live-catalog";
@@ -70,7 +68,6 @@ export default function SupportPage() {
 
   return (
     <main className="page">
-      <SiteHeader />
       <section className="support-page public-page-band">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(helpPageJsonLd) }} />
@@ -124,7 +121,6 @@ export default function SupportPage() {
           />
         </div>
       </section>
-      <Footer />
     </main>
   );
 }

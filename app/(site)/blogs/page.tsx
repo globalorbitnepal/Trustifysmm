@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { BlogCard } from "@/components/BlogCard";
 import { BlogIndexFaq } from "@/components/BlogIndexFaq";
-import { Footer } from "@/components/Footer";
 import { HeroStat, HeroStatGrid, PublicPageHero } from "@/components/PublicPageHero";
-import { SiteHeader } from "@/components/SiteHeader";
 import { blogsIndexFaq } from "@/data/blogs-index-faq";
 import { getAllBlogPosts } from "@/data/blog-utils";
 import { publicManagedPosts } from "@/lib/orbit/blog-store";
@@ -81,7 +79,6 @@ export default function BlogsPage() {
 
   return (
     <main className="page">
-      <SiteHeader />
       <section className="blog-page public-page-band">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
@@ -121,7 +118,6 @@ export default function BlogsPage() {
           <BlogIndexFaq />
         </div>
       </section>
-      <Footer />
     </main>
   );
 }

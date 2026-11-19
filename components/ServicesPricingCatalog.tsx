@@ -4,33 +4,33 @@ import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
 import type { ServicePricingData } from "@/data/service-pricing-types";
 import { filterPricingServices, formatRatePer1000, groupPricingServices, groupsForPlatform } from "@/data/pricing-utils";
-import pricingData from "@/data/service-pricing.json";
-import { applyOrbitPricing } from "@/lib/orbit/pricing-display";
 import { PlatformFilterIcon } from "@/components/PlatformFilterIcon";
+import { usePublicCatalog } from "@/lib/public-catalog";
 
 export function ServicesPricingCatalog({ data: initial }: { data?: ServicePricingData }) {
-  const data = useMemo(
-    () => initial ?? applyOrbitPricing(pricingData as ServicePricingData),
-    [initial],
-  );
+  const { data, error } = usePublicCatalog(initial);
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState<string>("all");
   const [group, setGroup] = useState("all");
   const deferredQuery = useDeferredValue(query);
 
-  const platformGroups = useMemo(() => groupsForPlatform(data, platform), [platform]);
+  const platformGroups = useMemo(() => (data ? groupsForPlatform(data, platform) : ["all"]), [data, platform]);
 
   const filtered = useMemo(
-    () => filterPricingServices(data, { query: deferredQuery, platform, group }),
-    [deferredQuery, platform, group],
+    () => (data ? filterPricingServices(data, { query: deferredQuery, platform, group }) : []),
+    [data, deferredQuery, platform, group],
   );
 
   const sections = useMemo(() => groupPricingServices(filtered), [filtered]);
 
   const platformTabs = useMemo(
-    () => ["all", ...data.platforms].map((id) => ({ id, label: id === "all" ? "All" : (data.platformLabel[id] ?? id) })),
+    () => ["all", ...(data?.platforms ?? [])].map((id) => ({ id, label: id === "all" ? "All" : (data?.platformLabel[id] ?? id) })),
     [data],
   );
+
+  if (!data) {
+    return <p className="services-pricing-empty">{error || "Loading catalog…"}</p>;
+  }
 
   return (
     <div className="services-pricing">

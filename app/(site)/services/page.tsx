@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { Footer } from "@/components/Footer";
 import { HeroStat, HeroStatGrid, PublicPageHero } from "@/components/PublicPageHero";
-import { SiteHeader } from "@/components/SiteHeader";
 import { ServicesFaq } from "@/components/ServicesFaq";
 import { ServicesPricingCatalog } from "@/components/ServicesPricingCatalog";
 import { livePricingData } from "@/lib/orbit/live-catalog";
@@ -68,7 +66,6 @@ export default function ServicesPage() {
 
   return (
     <main className="page">
-      <SiteHeader />
       <section className="services-page public-page-band" id="all-services">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
@@ -99,12 +96,11 @@ export default function ServicesPage() {
             </HeroStatGrid>
           </PublicPageHero>
 
-          <ServicesPricingCatalog data={catalog} />
+          <ServicesPricingCatalog />
         </div>
       </section>
 
       <ServicesFaq />
-      <Footer />
     </main>
   );
 }

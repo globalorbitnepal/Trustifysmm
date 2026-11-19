@@ -93,17 +93,22 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     void (async () => {
       const res = await fetch("/api/dashboard/session");
+      if (cancelled) return;
       if (!res.ok) {
-        router.replace(`/signin?next=${encodeURIComponent(pathname)}`);
+        router.replace(`/signin?next=${encodeURIComponent(window.location.pathname)}`);
         return;
       }
       const data = (await res.json()) as { user: SessionUser; unread: number };
       setUser(data.user);
       setUnread(data.unread);
     })();
-  }, [pathname, router]);
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   useEffect(() => {
     function onWallet(event: Event) {
@@ -191,7 +196,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   );
                 }
                 return (
-                  <Link key={href} href={href} className={`cp-link ${active ? "is-active" : ""}`}>
+                  <Link key={href} href={href} prefetch className={`cp-link ${active ? "is-active" : ""}`}>
                     <Icon name={icon} />
                     <span>{label}</span>
                   </Link>

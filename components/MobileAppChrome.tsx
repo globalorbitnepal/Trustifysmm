@@ -19,11 +19,10 @@ export function MobileAppChrome() {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    if (pathname.startsWith("/dashboard") || pathname.startsWith("/orbit")) return;
     void fetch("/api/dashboard/session").then((res) => {
       if (res.ok) setAccountHref("/dashboard");
     });
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {

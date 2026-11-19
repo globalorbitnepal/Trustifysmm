@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/SiteHeader";
 import { liveSiteConfig } from "@/lib/orbit/live-catalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
 import { HeroLogoField, SocialOrbit } from "@/components/SocialOrbit";
@@ -10,7 +9,6 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PopularServices } from "@/components/PopularServices";
 import { PaymentMethods } from "@/components/PaymentMethods";
 import { CustomerReviews } from "@/components/CustomerReviews";
-import { Footer } from "@/components/Footer";
 
 const homeMetadata: Metadata = {
   title: "TrustifySMM · SMM Panel",
@@ -36,7 +34,6 @@ export default function HomePage() {
   const enabled = (id: string) => site.sections?.[id] !== false;
   return (
     <main className="page">
-      <SiteHeader />
       {enabled("hero") ? (
       <section className="hero-band" aria-labelledby="hero-title">
         <HeroLogoField />
@@ -116,7 +113,6 @@ export default function HomePage() {
           </div>
         </section>
       ))}
-      <Footer />
     </main>
   );
 }

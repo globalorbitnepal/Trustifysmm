@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BlogArticle } from "@/components/BlogArticle";
-import { Footer } from "@/components/Footer";
-import { SiteHeader } from "@/components/SiteHeader";
 import { getBlogPostBySlug, getBlogSlugs } from "@/data/blog-utils";
 import { publicManagedPosts } from "@/lib/orbit/blog-store";
 
@@ -84,7 +82,6 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   return (
     <main className="page">
-      <SiteHeader />
       <section className="blog-post-page">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
@@ -92,7 +89,6 @@ export default async function BlogPostPage({ params }: PageProps) {
           <BlogArticle post={post} />
         </div>
       </section>
-      <Footer />
     </main>
   );
 }

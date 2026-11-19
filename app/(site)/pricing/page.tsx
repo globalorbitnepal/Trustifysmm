@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { Footer } from "@/components/Footer";
 import { HeroStat, HeroStatGrid, PublicPageHero } from "@/components/PublicPageHero";
-import { SiteHeader } from "@/components/SiteHeader";
 import { PricingCatalog } from "@/components/PricingCatalog";
 import { metadataForPath } from "@/lib/orbit/page-meta";
 import { livePricingData, liveSiteConfig } from "@/lib/orbit/live-catalog";
@@ -51,7 +49,6 @@ export default function PricingPage() {
   const pricingFaq = pageExtras("/pricing").faq;
   return (
     <main className="page">
-      <SiteHeader />
       <section className="pricing-page public-page-band" id="pricing">
         <script
           type="application/ld+json"
@@ -92,7 +89,7 @@ export default function PricingPage() {
             </HeroStatGrid>
           </PublicPageHero>
 
-          <PricingCatalog data={catalog} />
+          <PricingCatalog />
         </div>
       </section>
 
@@ -112,7 +109,6 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <Footer />
     </main>
   );
 }

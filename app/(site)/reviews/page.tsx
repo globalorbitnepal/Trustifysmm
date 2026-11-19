@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { Footer } from "@/components/Footer";
 import { SeoArticle } from "@/components/SeoArticle";
-import { SiteHeader } from "@/components/SiteHeader";
 import { reviewsPage } from "@/lib/seo-long-pages";
 import { metadataForPath } from "@/lib/orbit/page-meta";
 
@@ -26,9 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function ReviewsPage() {
   return (
     <main className="page">
-      <SiteHeader />
       <SeoArticle id="reviews" canonicalPath="/reviews" {...reviewsPage} />
-      <Footer />
     </main>
   );
 }

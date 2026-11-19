@@ -7,7 +7,11 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
   experimental: {
-    optimizePackageImports: ["@/components"],
+    optimizePackageImports: ["simple-icons"],
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
   },
 };
 
