@@ -9,6 +9,20 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set("x-pathname", pathname);
   const pass = () => NextResponse.next({ request: { headers: requestHeaders } });
 
+  /*
+   * The session cookie is scoped to one host. Serving the same app on both trustifysmm.com
+   * and www.trustifysmm.com makes a signed-in customer look signed out on the other host,
+   * so every www request is permanently redirected to the canonical apex host.
+   */
+  const host = (request.headers.get("host") || "").toLowerCase();
+  if (host === "www.trustifysmm.com") {
+    const canonical = request.nextUrl.clone();
+    canonical.host = "trustifysmm.com";
+    canonical.port = "";
+    canonical.protocol = "https:";
+    return NextResponse.redirect(canonical, 308);
+  }
+
   if (pathname.startsWith("/dashboard")) {
     const token = request.cookies.get(CUSTOMER_COOKIE_NAME)?.value;
     const userId = await verifyCustomerSessionTokenEdge(token);

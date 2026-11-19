@@ -3,10 +3,10 @@ export function AuthBrandMark() {
     <div className="auth-signup-card-mark">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/brand/glass/glass-trustify-t.png"
-        alt=""
-        width={64}
-        height={64}
+        src="/brand/trustify-lockup.png"
+        alt="TrustifySMM"
+        width={220}
+        height={59}
         decoding="async"
         fetchPriority="high"
       />

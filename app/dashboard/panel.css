@@ -1752,6 +1752,28 @@ html[data-dash="light"] .cp-account-hero,
   .cp-plat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cp-auth-qr { width: min(240px, 70vw); height: auto; }
   .cp-auth-pair { flex-direction: column; }
+  .cp-card { padding: 16px; border-radius: 16px; }
+  .cp-funds-method-card { flex-wrap: wrap; }
+  .cp-funds-method-card .cp-btn,
+  .cp-funds-method-card .cp-btn-ghost { width: 100%; min-height: 46px; }
+  .cp-deposit-copy code,
+  .cp-api-key { word-break: break-all; }
+  .cp-stat { padding: 12px; }
+  .cp-spec { grid-template-columns: minmax(0, 1fr); }
+  .cp-banker-head { gap: 8px; }
+  .cp-table-wrap { border-radius: 14px; }
+}
+
+@media (max-width: 420px) {
+  .cp-top h1 { font-size: 15px; max-width: 38vw; }
+  .cp-balance { max-width: 40vw; padding: 5px 8px; }
+  .cp-hero-glass h2 { font-size: 20px; }
+  .cp-hero-actions { grid-template-columns: minmax(0, 1fr); }
+  .cp-stats { gap: 8px; }
+  .cp-stat strong { font-size: 18px; }
+  .cp-content { padding-inline: 10px; }
+  .cp-dock a, .cp-dock button { font-size: 10px; min-height: 52px; }
+  .cp-dock svg { width: 20px; height: 20px; }
 }
 
 .cp-dock {

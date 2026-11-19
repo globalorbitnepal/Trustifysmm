@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <AuthSocialBackdrop />
       <Link href="/" className="auth-app-home" aria-label="TrustifySMM home">
         <span className="auth-app-home-mark">
-          <Image src="/brand/glass/glass-trustify-t.png" alt="" width={40} height={40} priority />
+          <Image src="/brand/trustify-lockup.png" alt="TrustifySMM" width={220} height={59} priority />
         </span>
       </Link>
       {children}
