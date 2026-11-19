@@ -102,14 +102,25 @@ export async function estimateNowPayment(amountUsd: number, payCurrency: string,
 /**
  * Fee-inclusive quote plus the plain quote. A second pass runs only when the
  * provider omits one side or the two prices land in the wrong order.
+ *
+ * Quotes are serialized: NOWPayments rate-limits a burst of estimates, and the checkout asks
+ * for two per refresh. One at a time keeps every quote real instead of failing under load.
  */
-export async function quoteCustomerFee(amountUsd: number, payCurrency: string) {
+let quoteQueue: Promise<unknown> = Promise.resolve();
+
+export function quoteCustomerFee(amountUsd: number, payCurrency: string) {
+  const run = quoteQueue.then(() => quoteCustomerFeeOnce(amountUsd, payCurrency));
+  quoteQueue = run.catch(() => undefined);
+  return run;
+}
+
+async function quoteCustomerFeeOnce(amountUsd: number, payCurrency: string) {
   let last: {
     gross: string | null;
     base: string | null;
     fee: ReturnType<typeof feeFromQuotes>;
   } = { gross: null, base: null, fee: null };
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
     const gross = await estimateNowPayment(amountUsd, payCurrency, true);
     const base = await estimateNowPayment(amountUsd, payCurrency, false);
     const grossAmount = gross.ok && gross.data.estimated_amount != null ? String(gross.data.estimated_amount) : null;
@@ -117,7 +128,7 @@ export async function quoteCustomerFee(amountUsd: number, payCurrency: string) {
     const fee = grossAmount && baseAmount ? feeFromQuotes(amountUsd, baseAmount, grossAmount) : null;
     last = { gross: grossAmount, base: baseAmount, fee };
     if (fee && grossAmount) return last;
-    await new Promise((resolve) => setTimeout(resolve, 450 * (attempt + 1)));
+    await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1) + attempt * 250));
   }
   return last;
 }

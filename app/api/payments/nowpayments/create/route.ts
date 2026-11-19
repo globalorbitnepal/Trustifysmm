@@ -4,6 +4,7 @@ import { requireCustomer } from "@/lib/customer/guard";
 import { findDepositOption } from "@/lib/nowpayments/currencies";
 import { rateLimit } from "@/lib/nowpayments/rate-limit";
 import { loadNowPaymentsConfig } from "@/lib/nowpayments/config";
+import { ensureDepositReconciler } from "@/lib/nowpayments/reconciler";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,6 +55,9 @@ export async function POST(request: Request) {
     requireLive: true,
   });
   if ("error" in created) return NextResponse.json({ error: created.error }, { status: 422 });
+
+  // Any new deposit arms the background sweep, so a closed tab or a missed webhook still credits.
+  ensureDepositReconciler();
 
   return NextResponse.json({
     ...created,

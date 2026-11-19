@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { configuredPayCurrencies, createBankerInvoice } from "@/lib/banker/handler";
 import { publicGatewayConfig } from "@/lib/nowpayments/config";
+import { ensureDepositReconciler } from "@/lib/nowpayments/reconciler";
 import { customerDepositReason } from "@/lib/nowpayments/status";
 import { requireCustomer } from "@/lib/customer/guard";
 import { listInvoicesForKey } from "@/lib/smm-api/demo-store";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await requireCustomer();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  ensureDepositReconciler();
   const gateway = { ...configuredPayCurrencies(), ...publicGatewayConfig() };
   const invoices = await listInvoicesForKey(user.apiKey);
   return NextResponse.json({
@@ -21,8 +23,10 @@ export async function GET() {
       id: invoice.id,
       amountUsd: invoice.amountUsd,
       payCurrency: invoice.payCurrency ?? null,
-      payAmount: invoice.payAmount ?? null,
-      address: invoice.address ?? null,
+    payAmount: invoice.payAmount ?? null,
+    baseCrypto: invoice.baseCrypto ?? null,
+    feeUsd: invoice.quotedFeeUsd ?? null,
+    address: invoice.address ?? null,
       payUrl: invoice.payUrl ?? null,
       txHash: invoice.txHash ?? null,
       status: invoice.status,

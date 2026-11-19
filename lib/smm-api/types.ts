@@ -49,6 +49,9 @@ export type BankerInvoice = {
   paidAt?: string;
   payCurrency?: string;
   payAmount?: string;
+  /** Provider quote without the customer fee, kept so the fee shown is the provider's own gap. */
+  baseCrypto?: string;
+  quotedFeeUsd?: number;
   actuallyPaidAmount?: string;
   verifiedFiatUsd?: string;
   overpaidCrypto?: string;
@@ -57,6 +60,8 @@ export type BankerInvoice = {
   expiresAt?: string;
   nowPaymentId?: string;
   providerStatus?: string;
+  /** Last server-side provider check made while the customer watched the checkout. */
+  lastProviderSyncAt?: string;
   network?: string;
   walletCredited?: boolean;
   creditedAmountUsd?: number;

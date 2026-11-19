@@ -82,6 +82,25 @@ function isTerminal(status: string) {
   return status === "paid" || status === "expired" || status === "failed";
 }
 
+/** Plain words for the provider's own status, so a customer never sees `partially_paid`. */
+function paymentStatusLabel(providerStatus?: string | null, internal?: string) {
+  const provider = (providerStatus ?? "").trim().toLowerCase();
+  const labels: Record<string, string> = {
+    waiting: "Waiting for payment",
+    confirming: "Confirming on-chain",
+    confirmed: "Confirmed on-chain",
+    sending: "Delivering funds",
+    partially_paid: "Partially paid",
+    finished: "Credited",
+    failed: "Failed",
+    refunded: "Refunded",
+    expired: "Timed out",
+  };
+  if (provider && labels[provider]) return labels[provider];
+  if (internal && LABELS[internal]) return LABELS[internal];
+  return provider ? provider.replace(/_/g, " ") : "Waiting for payment";
+}
+
 export function AddFundsView() {
   const [balance, setBalance] = useState(0);
   const [gateway, setGateway] = useState<CurrenciesResponse | null>(null);
@@ -229,6 +248,24 @@ export function AddFundsView() {
     if (!silent) setPolling(false);
   }, []);
 
+  /*
+   * A paid invoice is the only thing that credits a wallet, so pull the real balance once it
+   * lands and drop it into the header. The success card never guesses the credited amount.
+   */
+  useEffect(() => {
+    if (payment?.status !== "paid") return;
+    let stop = false;
+    void (async () => {
+      const res = await fetch("/api/dashboard/payments");
+      if (!res.ok || stop) return;
+      const data = (await res.json()) as { balance: number };
+      if (!stop) setBalance(data.balance);
+    })();
+    return () => {
+      stop = true;
+    };
+  }, [payment?.status]);
+
   useEffect(() => {
     if (!checkoutOpen) return;
     setNowTick(Date.now());
@@ -250,7 +287,7 @@ export function AddFundsView() {
       return;
     }
     if (!amountValid) {
-      setError("Choose $10, $20, $25, $50, or $100.");
+      setError(`Use at least $${effectiveMin.toFixed(2)} for ${selected.symbol} on ${networkBadge(selected.code, selected.network)}.`);
       return;
     }
     setBusy(true);
@@ -272,6 +309,8 @@ export function AddFundsView() {
       provider_status?: string;
       nowpayments_payment_id?: string | null;
       network?: string | null;
+      base_crypto?: string | null;
+      fee_usd?: number | null;
     };
     setBusy(false);
     if (!res.ok || !(data.deposit_id || data.invoice_id)) {
@@ -284,8 +323,8 @@ export function AddFundsView() {
       payCurrency: data.pay_currency ?? selected.code,
       payAmount: data.pay_amount ?? null,
       quoteCrypto: quote?.crypto ?? null,
-      baseCrypto: quote?.base ?? null,
-      feeUsd: quote?.feeUsd ?? null,
+      baseCrypto: data.base_crypto ?? quote?.base ?? null,
+      feeUsd: data.fee_usd ?? quote?.feeUsd ?? null,
       symbol: selected.symbol,
       logoUrl: selected.logoUrl,
       address: data.pay_address ?? null,
@@ -395,6 +434,8 @@ export function AddFundsView() {
                     key={preset}
                     type="button"
                     className={Number(amount) === preset ? "is-on" : ""}
+                    disabled={preset < effectiveMin}
+                    title={preset < effectiveMin ? `Minimum for this coin is $${effectiveMin.toFixed(2)}` : undefined}
                     onClick={() => setAmount(String(preset))}
                   >
                     ${preset}
@@ -506,10 +547,10 @@ export function AddFundsView() {
             <button
               className="cp-btn cp-deposit-submit"
               type="button"
-              disabled={busy || !selected || !amountValid || quote?.feeUsd == null}
+              disabled={busy || !selected || !amountValid}
               onClick={() => void createInvoice()}
             >
-              {busy ? "Creating payment…" : "Continue to crypto checkout"}
+              {busy ? "Creating payment…" : quote?.feeUsd == null ? "Continue — fee confirmed at checkout" : "Continue to crypto checkout"}
             </button>
             <p className="cp-banker-secure">Secured by NOWPayments · Provider window, capped at 1 hour</p>
             <Link className="cp-btn-ghost cp-funds-link" href="/dashboard/payments">
@@ -542,7 +583,7 @@ export function AddFundsView() {
               </div>
               <div className="cp-deposit-head-actions">
                 <span className={`cp-deposit-status cp-deposit-status--${statusTone(payment.status)}`}>
-                  {payment.providerStatus ? payment.providerStatus.replace(/_/g, " ") : payment.status}
+                  {payment.status === "paid" ? "Paid" : paymentStatusLabel(payment.providerStatus, payment.status)}
                 </span>
                 <button type="button" className="cp-deposit-close" onClick={() => setCheckoutOpen(false)} aria-label="Close checkout">
                   ×
@@ -556,7 +597,8 @@ export function AddFundsView() {
                 <div>
                   <strong>Payment successful</strong>
                   <p>
-                    ${payment.amountUsd.toFixed(2)} was added to your balance. The provider fee was not added.
+                    ${payment.amountUsd.toFixed(2)} was added to your wallet. New balance{" "}
+                    {formatWalletUsd(balance)}. The provider fee was not added.
                     {payment.nowPaymentId ? ` Provider ref ${payment.nowPaymentId}.` : ""}
                   </p>
                 </div>
@@ -673,8 +715,15 @@ export function AddFundsView() {
                     >
                       New deposit
                     </button>
-                  ) : null}
+                  ) : (
+                    <button type="button" className="cp-btn cp-btn-ghost" onClick={() => setCheckoutOpen(false)}>
+                      Leave page
+                    </button>
+                  )}
                 </div>
+                <p className="cp-banker-secure">
+                  Payment is watched automatically. You can leave this page — the wallet updates the moment the provider confirms.
+                </p>
 
                 {payment.status !== "paid" ? (
                   <details className="cp-deposit-hash">

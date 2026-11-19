@@ -10,7 +10,7 @@ import {
 import type { BankerInvoice, DepositStatusHistory } from "@/lib/smm-api/types";
 import { addNotification } from "@/lib/customer/panel-store";
 import { getUserByApiKey, syncCustomerBalanceFromWallet } from "@/lib/customer/user-store";
-import { createNowPayment, getNowPaymentStatus, minNowPaymentAmount, providerMinUsd } from "@/lib/nowpayments/client";
+import { createNowPayment, estimateNowPayment, getNowPaymentStatus, minNowPaymentAmount, providerMinUsd } from "@/lib/nowpayments/client";
 import { findDepositOption } from "@/lib/nowpayments/currencies";
 import { loadNowPaymentsConfig, publicGatewayConfig } from "@/lib/nowpayments/config";
 import { evaluateNowPaymentsCredit } from "@/lib/nowpayments/credit-policy";
@@ -79,7 +79,8 @@ export async function createBankerInvoice(input: {
     const providerMin = minimum.ok ? providerMinUsd(minimum.data) : null;
     if (providerMin != null && amount + 1e-9 < providerMin) {
       return {
-        error: `NOWPayments cannot accept $${amount.toFixed(2)} for this coin.`,
+        error: `NOWPayments requires at least $${providerMin.toFixed(2)} for this coin. Raise the amount and try again.`,
+        minUsd: providerMin,
       } as const;
     }
   }
@@ -113,6 +114,22 @@ export async function createBankerInvoice(input: {
     const data = created.data;
     if (created.ok && data.payment_id) {
       const expiryMs = cfg.paymentExpiryMinutes * 60 * 1000;
+      /*
+       * The provider's returned pay_amount is what the customer must send, fee included.
+       * Quote once more without the fee so the summary shows the provider's real fee gap,
+       * never a locally invented markup.
+       */
+      let baseCrypto: string | undefined;
+      let quotedFeeUsd: number | undefined;
+      if (data.pay_amount != null) {
+        const baseQuote = await estimateNowPayment(amount, payCurrency, false);
+        const baseAmount = baseQuote.ok && baseQuote.data.estimated_amount != null ? Number(baseQuote.data.estimated_amount) : null;
+        const grossAmount = Number(data.pay_amount);
+        if (baseAmount && Number.isFinite(baseAmount) && baseAmount > 0 && Number.isFinite(grossAmount) && grossAmount > 0) {
+          baseCrypto = String(baseQuote.data.estimated_amount);
+          quotedFeeUsd = Math.max(0, Math.round(amount * (grossAmount / baseAmount - 1) * 100) / 100);
+        }
+      }
       invoice = {
         ...invoice,
         provider: "nowpayments",
@@ -122,6 +139,8 @@ export async function createBankerInvoice(input: {
         address: data.pay_address,
         payCurrency: data.pay_currency ?? payCurrency,
         payAmount: data.pay_amount != null ? String(data.pay_amount) : undefined,
+        baseCrypto,
+        quotedFeeUsd,
         network: data.network || option?.network,
         expiresAt: data.expiration_estimate_date ?? new Date(Date.now() + expiryMs).toISOString(),
         statusHistory: pushHistory(invoice, "pending", data.payment_status),
@@ -165,6 +184,8 @@ export async function createBankerInvoice(input: {
     pay_address: invoice.address ?? null,
     pay_currency: invoice.payCurrency ?? null,
     pay_amount: invoice.payAmount ?? null,
+    base_crypto: invoice.baseCrypto ?? null,
+    fee_usd: invoice.quotedFeeUsd ?? null,
     network: invoice.network ?? null,
     expires_at: invoice.expiresAt ?? null,
     provider: invoice.provider,
@@ -577,8 +598,51 @@ export async function reconcileNowPaymentsDeposit(input: {
   };
 }
 
-/** Append one audit entry to the deposit's reconciliation history. */
-async function recordReconcile(
+/**
+ * Customer-facing provider sync, run from the checkout poll.
+ *
+ * The customer's browser never supplies payment data: the server asks NOWPayments with the
+ * server API key and pushes the answer through the same `applyNowPaymentsPayload()` policy as
+ * the signed IPN. A finished, fully matched payment credits the wallet here even if the webhook
+ * is late or dropped; nothing else can credit it.
+ *
+ * Provider calls are throttled per deposit so a 30-second poll cannot spam the provider.
+ */
+const PROVIDER_SYNC_COOLDOWN_MS = 15_000;
+
+export async function syncNowPaymentsInvoice(invoiceId: string): Promise<void> {
+  const invoice = await getInvoice(invoiceId);
+  if (!invoice) return;
+  if (invoice.provider !== "nowpayments" || !invoice.nowPaymentId) return;
+  if (invoice.walletCredited || invoice.status === "paid") return;
+  const last = invoice.lastProviderSyncAt ? Date.parse(invoice.lastProviderSyncAt) : 0;
+  if (Number.isFinite(last) && Date.now() - last < PROVIDER_SYNC_COOLDOWN_MS) return;
+
+  const provider = await getNowPaymentStatus(invoice.nowPaymentId);
+  if (!provider.ok) {
+    await updateInvoice(invoice.id, { lastProviderSyncAt: new Date().toISOString() });
+    return;
+  }
+
+  const data = provider.data as Record<string, unknown>;
+  const providerPaymentId = data.payment_id != null ? String(data.payment_id) : "";
+  if (providerPaymentId && providerPaymentId !== String(invoice.nowPaymentId)) {
+    await updateInvoice(invoice.id, { lastProviderSyncAt: new Date().toISOString() });
+    return;
+  }
+
+  const payload: Record<string, unknown> = {
+    ...data,
+    payment_id: providerPaymentId || String(invoice.nowPaymentId),
+    order_id: invoice.id,
+    payment_status: data.payment_status ?? data.status ?? "",
+  };
+
+  await applyNowPaymentsPayload(invoice, payload, { source: "reconcile" });
+  await updateInvoice(invoice.id, { lastProviderSyncAt: new Date().toISOString() });
+}
+
+/** Append one audit entry to the deposit's reconciliation history. */async function recordReconcile(
   invoiceId: string,
   entry: { adminId: string; providerStatus: string; result: string; reason?: string },
 ) {
@@ -634,6 +698,8 @@ export async function getBankerInvoiceStatus(
     paid_at: invoice.paidAt ?? null,
     pay_currency: invoice.payCurrency ?? null,
     pay_amount: invoice.payAmount ?? null,
+    base_crypto: invoice.baseCrypto ?? null,
+    fee_usd: invoice.quotedFeeUsd ?? null,
     expires_at: invoice.expiresAt ?? null,
     tx_hash: invoice.txHash ?? null,
     status_history: invoice.statusHistory ?? [],
